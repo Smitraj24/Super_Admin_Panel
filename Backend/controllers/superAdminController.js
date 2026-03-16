@@ -277,6 +277,7 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
+
 export const getDashboardStats = async (req, res) => {
   try {
     const userCount = await User.countDocuments();
@@ -285,7 +286,6 @@ export const getDashboardStats = async (req, res) => {
     const departmentCount = await Department.countDocuments();
     const roleCount = await Role.countDocuments();
 
-   
     const userGrowth = [
       { month: "Jan", users: 200 },
       { month: "Feb", users: 400 },

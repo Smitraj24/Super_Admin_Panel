@@ -16,7 +16,7 @@ router.post(
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware(["SUPER_ADMIN", "ADMIN"]),
+  roleMiddleware(["SUPER_ADMIN", "ADMIN", "USER"]),
   getRoles,
 );
 

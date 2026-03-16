@@ -242,6 +242,7 @@ export const getDashboardStats = async (req, res) => {
     const userRole = await Role.findOne({ name: "USER" });
     const userCount = await User.countDocuments({ role: userRole?._id });
     const departmentCount = await Department.countDocuments();
+    const roleCount = await Role.countDocuments();
 
     // Active today could be users who logged in today (if we had a lastLogin field)
     // For now we'll mock some data or use a subset
@@ -252,6 +253,7 @@ export const getDashboardStats = async (req, res) => {
         totalUsers: userCount,
         departments: departmentCount,
         activeToday: activeToday,
+        roles: roleCount,
       },
       recentActivity: [
         { id: 1, text: "New user registered", time: "2 hours ago" },

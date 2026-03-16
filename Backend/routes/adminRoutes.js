@@ -19,14 +19,33 @@ import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// Apply authentication and role middleware to all admin routes
+// Apply authentication
 router.use(authMiddleware);
-router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN"]));
 
-router.get("/departments", getDepartments);
-router.post("/departments", createDepartment);
-router.put("/departments/:id", updateDepartment);
-router.delete("/departments/:id", deleteDepartment);
+// Departments routes - allow USER to view
+router.get(
+  "/departments",
+  roleMiddleware(["ADMIN", "SUPER_ADMIN", "USER"]),
+  getDepartments,
+);
+router.post(
+  "/departments",
+  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  createDepartment,
+);
+router.put(
+  "/departments/:id",
+  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  updateDepartment,
+);
+router.delete(
+  "/departments/:id",
+  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  deleteDepartment,
+);
+
+// Apply role middleware for remaining routes
+router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN"]));
 
 router.get("/roles", getRoles);
 router.post("/roles", createRole);
