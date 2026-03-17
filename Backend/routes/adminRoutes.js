@@ -19,10 +19,10 @@ import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// Apply authentication
+
 router.use(authMiddleware);
 
-// Departments routes - allow USER to view
+
 router.get(
   "/departments",
   roleMiddleware(["ADMIN", "SUPER_ADMIN", "USER"]),
@@ -44,7 +44,7 @@ router.delete(
   deleteDepartment,
 );
 
-// Apply role middleware for remaining routes
+
 router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN"]));
 
 router.get("/roles", getRoles);

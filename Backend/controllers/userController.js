@@ -11,6 +11,31 @@ import {
 } from "../services/userService.js";
 
 import User from "../models/User.models.js";
+import Role from "../models/Roles.models.js";
+
+export const getUser = async (req, res) => {
+  try {
+    const userRole = await Role.findOne({ name: "USER" });
+
+    if (!userRole) {
+      return res.status(404).json({
+        message: "USER role not found",
+      });
+    }
+
+    const users = await User.find({ role: userRole._id })
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
 
 export const getProfile = async (req, res) => {
   try {

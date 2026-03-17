@@ -12,6 +12,7 @@ import userRoutes from "./routes/userRoutes.js";
 import roleRoutes from "./routes/roleRoutes.js";
 import departmentRoutes from "./routes/departmentRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
+import holidayRoutes from "./routes/holidays.js";
 
 dotenv.config();
 await connectDB();
@@ -34,6 +35,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/audit", auditRoutes);
+app.use("/api/holidays", holidayRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running...");

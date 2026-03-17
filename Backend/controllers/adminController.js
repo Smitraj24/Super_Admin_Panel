@@ -70,9 +70,9 @@ export const updateDepartment = async (req, res) => {
 };
 export const getUser = async (req, res) => {
   try {
-    const role = await Role.findOne({ name: "USER" });
+    const userRole = await Role.findOne({ name: "USER" });
 
-    const users = await User.find({ role: role._id })
+    const users = await User.find({ role: userRole._id })
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
@@ -125,7 +125,7 @@ export const updateRole = async (req, res) => {
 
     if (!role) {
       return res.status(404).json({
-        message: "Role not found",
+        message: "Role not found or cannot be updated",
       });
     }
 
