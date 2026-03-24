@@ -94,6 +94,7 @@ const adminDeptMenus = {
   hr: [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Profile", icon: Users },
+    {name: "Admins", icon: ShieldCheck },
     { name: "Users", icon: Users },
     { name: "Departments", icon: Building2 },
     { name: "Roles", icon: UserCog },

@@ -77,7 +77,15 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Targets",
         "Reports",
       ],
-      hr: ["Dashboard", "Profile", "Users", "Departments", "Roles", "Holidays"],
+      hr: [
+        "Dashboard",
+        "Profile",
+        "Admins",
+        "Users",
+        "Departments",
+        "Roles",
+        "Holidays",
+      ],
     };
     return (
       adminDeptMenus[department?.toLowerCase()] || [

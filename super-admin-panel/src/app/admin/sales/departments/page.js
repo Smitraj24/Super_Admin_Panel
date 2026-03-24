@@ -97,7 +97,7 @@ export default function DepartmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
       <Sidebar />
       <Navbar />
 
@@ -105,11 +105,11 @@ export default function DepartmentsPage() {
         <div className="p-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Building2 className="text-indigo-600" size={28} />
+              <h1 className="text-2xl font-bold flex items-center gap-2 text-purple-900">
+                <Building2 className="text-purple-900" size={28} />
                 Manage Departments
               </h1>
-              <p className="text-gray-500 text-sm">
+              <p className="text-sm text-purple-900">
                 Create and manage company departments
               </p>
             </div>
@@ -122,7 +122,7 @@ export default function DepartmentsPage() {
 
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-6 h-fit">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-purple-900">
                 <PlusCircle size={18} />
                 Add Department
               </h3>
@@ -133,13 +133,13 @@ export default function DepartmentsPage() {
                   placeholder="Department Name"
                   value={departmentInput}
                   onChange={(e) => setDepartmentInput(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-indigo-500"
                 />
 
                 <button
                   onClick={handleAddDepartment}
                   disabled={submitting || !departmentInput.trim()}
-                  className="w-full bg-indigo-600 text-white py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-purple-600 text-white py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Adding..." : "Add Department"}
                 </button>
@@ -151,8 +151,12 @@ export default function DepartmentsPage() {
                 <table className="w-full text-md">
                   <thead className="border-b border-slate-200">
                     <tr>
-                      <th className="p-4 text-left">Department</th>
-                      <th className="p-4 text-right">Actions</th>
+                      <th className="p-4 text-left text-purple-900">
+                        Department
+                      </th>
+                      <th className="p-4 text-right text-purple-900">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
 

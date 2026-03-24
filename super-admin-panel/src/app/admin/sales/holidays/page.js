@@ -77,17 +77,19 @@ export default function HolidayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-purple-100">
       <Sidebar />
       <Navbar />
 
-      <main className="md:pl-64 pt-16 p-8">
-        <h1 className="text-3xl font-bold mb-6 p-4">Holiday Management</h1>
+      <main className="md:pl-64 pt-16  p-8">
+        <h1 className="text-3xl font-bold mb-6 p-4 text-purple-900">
+          Holiday Management
+        </h1>
 
         {editingId && (
           <form
             onSubmit={handleUpdate}
-            className="bg-yellow-50 p-6 rounded-xl mb-8 border-l-4 border-yellow-400"
+            className="bg-purple-50 p-6 rounded-xl mb-8 border-l-4 border-purple-400 ml-4"
           >
             <h2 className="text-xl font-semibold mb-4">Edit Holiday</h2>
 
@@ -150,8 +152,8 @@ export default function HolidayPage() {
           </form>
         )}
 
-        <div className="bg-white p-6 rounded-xl">
-          <h2 className="text-xl font-semibold mb-4">Holiday List</h2>
+        <div className="bg-purple-50 p-6 rounded-xl border border-purple-200 shadow ml-4">
+          <h2 className="text-xl font-semibold mb-4 t text-purple-900">Holiday List</h2>
 
           {holidays.length === 0 ? (
             <p className="text-gray-500">No holidays found.</p>

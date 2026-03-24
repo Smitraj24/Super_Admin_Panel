@@ -107,11 +107,11 @@ export default function UsersPage() {
   const filteredUsers = users.filter(
     (user) =>
       (user.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (user.email || "").toLowerCase().includes(search.toLowerCase())
+      (user.email || "").toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
       <Sidebar />
       <Navbar />
       <main className="md:pl-64 pt-16">
@@ -122,9 +122,7 @@ export default function UsersPage() {
                 <Users className="text-purple-600" size={28} />
                 {dept.toUpperCase()} - User Management
               </h1>
-              <p className="text-gray-500 text-sm">
-                Manage department users
-              </p>
+              <p className="text-gray-500 text-sm">Manage department users</p>
             </div>
 
             <div className="bg-white rounded-lg border p-2 flex items-center gap-4">
@@ -286,13 +284,5 @@ export default function UsersPage() {
         </div>
       </main>
     </div>
-  );
-}
-              Sales Users management system coming soon...
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
   );
 }
