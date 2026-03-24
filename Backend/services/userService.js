@@ -21,10 +21,11 @@ export const createUser = async (
     throw new Error("Role not found");
   }
 
+
   const user = await User.create({
     name,
     email,
-    password,
+    password, // Pass plain password - model will hash it
     role: role._id,
     department: departmentId,
     createdBy,

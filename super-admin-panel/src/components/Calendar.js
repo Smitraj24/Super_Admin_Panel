@@ -6,7 +6,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 export default function Calendar() {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border">
+    <div className="bg-white p-6 rounded-2xl  ">
       <h2 className="text-xl font-bold mb-4">System Calendar</h2>
 
       <FullCalendar

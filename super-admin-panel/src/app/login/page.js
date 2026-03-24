@@ -4,7 +4,7 @@ import { useState } from "react";
 import { loginApi } from "../../services/authApi";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
-import { ROLES } from "../../utils/constants";
+import { ROLES, DEPARTMENTS } from "../../utils/constants";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
 export default function Login() {
@@ -15,6 +15,32 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const getDepartmentPath = (departmentData) => {
+    if (!departmentData) {
+      console.log("⚠️ No department data provided");
+      return null;
+    }
+
+    const departmentName =
+      typeof departmentData === "object" ? departmentData.name : departmentData;
+
+    console.log("📝 Department name extracted:", departmentName);
+
+    if (!departmentName) {
+      console.log("⚠️ No department name found");
+      return null;
+    }
+
+    const departmentKey = departmentName.toUpperCase().replace(/\s+/g, "_");
+    console.log("🔑 Department key:", departmentKey);
+    console.log("📋 Available departments:", Object.keys(DEPARTMENTS));
+
+    const path = DEPARTMENTS[departmentKey]?.path || null;
+    console.log(" Department path found:", path);
+
+    return path;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -23,7 +49,11 @@ export default function Login() {
 
       const res = await loginApi({ email, password });
 
-      console.log("Login Response:", res.data);
+      console.log(" Login Response:", res.data);
+      console.log(" User Data:", res.data.user);
+      console.log(" Department:", res.data.user.department);
+      console.log(" Role Object:", res.data.user.role);
+      console.log(" Role Name:", res.data.user.role?.name);
 
       if (!res?.data?.user) {
         throw new Error("Invalid response from server");
@@ -31,19 +61,47 @@ export default function Login() {
 
       login(res.data);
 
-      const role = res.data.user.role?.name;
+      const roleObj = res.data.user.role;
+      const roleName = typeof roleObj === "object" ? roleObj?.name : roleObj;
 
-      if (role === ROLES.SUPER_ADMIN) {
+      const department = res.data.user.department;
+
+      if (roleName === "SUPER_ADMIN") {
+        console.log(" Redirecting SUPER_ADMIN to: /superadmin/dashboard");
         router.push("/superadmin/dashboard");
-      } else if (role === ROLES.ADMIN) {
-        router.push("/admin/dashboard");
-      } else if (role === ROLES.USER) {
-        router.push("/user/dashboard");
+      } else if (roleName === "ADMIN") {
+        const departmentName =
+          typeof department === "object" ? department?.name : department;
+        const departmentKey = departmentName
+          ?.toUpperCase()
+          .replace(/\s+/g, "_");
+        const adminPath = DEPARTMENTS[departmentKey]?.adminPath || null;
+        console.log(" Admin Department Path:", adminPath);
+
+        if (adminPath) {
+          console.log(" Redirecting ADMIN to:", adminPath);
+          router.push(adminPath);
+        } else {
+          console.log("Admin department not found, redirecting to fallback");
+          router.push("/admin/it/dashboard");
+        }
+      } else if (roleName === "USER") {
+        const departmentPath = getDepartmentPath(department);
+        console.log(" Department Path for USER:", departmentPath);
+
+        if (departmentPath) {
+          console.log(" Redirecting USER to:", departmentPath);
+          router.push(departmentPath);
+        } else {
+          console.log("Department not found, redirecting to fallback");
+          router.push("/dashboard/ce");
+        }
       } else {
+        console.log(" Unknown role:", roleName, "redirecting to home");
         router.push("/");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error(" Login error:", error);
 
       const message =
         error?.response?.data?.message || "Invalid email or password";
@@ -57,7 +115,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
       <div className="max-w-[1000px] w-full bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 flex overflow-hidden border border-slate-100">
-        {/* LEFT SIDE */}
         <div className="hidden lg:flex w-1/2 relative">
           <img
             src="/images/login.jpg"
@@ -66,7 +123,6 @@ export default function Login() {
           />
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center">
           <div className="mb-10 text-center lg:text-left">
             <h2 className="text-3xl font-bold text-slate-900 mb-2">
@@ -78,7 +134,6 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* EMAIL */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">
                 Email Address
@@ -101,7 +156,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* PASSWORD */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700">
                 Password
@@ -124,7 +178,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* BUTTON */}
             <button
               type="submit"
               disabled={loading}

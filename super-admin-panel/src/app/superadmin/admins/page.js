@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import Sidebar from "../../../components/Sidebar";
 import Navbar from "../../../components/Navbar";
-import API from "@/lib/api";
+import {
+  getAdminsApi,
+  createAdminApi,
+  updateAdminApi,
+  deleteAdminApi,
+  getDepartmentsApi,
+} from "@/services/superAdminApi";
 import {
   Users,
   UserPlus,
@@ -24,10 +30,12 @@ export default function AdminsPage() {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+   const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
+    password: "",
     role: "ADMIN",
     department: "",
   });
@@ -38,8 +46,8 @@ export default function AdminsPage() {
     setLoading(true);
     try {
       const [adminsRes, deptsRes] = await Promise.all([
-        API.get("/superadmin/admins"),
-        API.get("/superadmin/departments"),
+        getAdminsApi(),
+        getDepartmentsApi(),
       ]);
       setAdmins(adminsRes.data);
       setDepartments(deptsRes.data);
@@ -61,21 +69,26 @@ export default function AdminsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.department) {
-      alert("Please fill all required fields");
+      alert("Please fill all required fields (name, email, department)");
+      return;
+    }
+
+    if (!editingId && !form.password) {
+      alert("Password is required for new admins");
       return;
     }
 
     try {
       if (editingId) {
-        const res = await API.put(`/superadmin/admins/${editingId}`, form);
+        const res = await updateAdminApi(editingId, form);
         setAdmins(admins.map((a) => (a._id === editingId ? res.data : a)));
         setEditingId(null);
       } else {
-        const password = Math.random().toString(36).slice(-8);
-        const res = await API.post("/superadmin/admins", { ...form, password });
-        setAdmins([...admins, { ...res.data, tempPassword: password }]);
+        const res = await createAdminApi(form);
+        setAdmins([...admins, res.data]);
       }
-      setForm({ name: "", email: "", role: "ADMIN", department: "" });
+      setForm({ name: "", email: "", password: "", role: "ADMIN", department: "" });
+      alert("Admin " + (editingId ? "updated" : "created") + " successfully!");
     } catch (err) {
       alert(err.response?.data?.message || "Operation failed");
     }
@@ -84,7 +97,7 @@ export default function AdminsPage() {
   const deleteAdmin = async (id) => {
     if (!confirm("Are you sure you want to remove this admin?")) return;
     try {
-      await API.delete(`/superadmin/admins/${id}`);
+      await deleteAdminApi(id);
       setAdmins(admins.filter((a) => a._id !== id));
     } catch (err) {
       console.error(err.response?.data);
@@ -96,6 +109,7 @@ export default function AdminsPage() {
     setForm({
       name: admin.name,
       email: admin.email,
+      password: "",
       role: admin.role?._id || "ADMIN",
       department: admin.department?._id || "",
     });
@@ -139,47 +153,79 @@ export default function AdminsPage() {
             <div className="bg-white rounded-2xl border border-slate-200  p-6 overflow-hidden">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
-                {editingId ? "Edit Admin" : "Add Admin"}
+                {editingId ? "Edit Admin" : "Add New Admin"}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Full Name"
-                  className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="e.g., John Doe"
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    required
+                  />
+                </div>
 
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="e.g., admin@company.com"
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    required
+                  />
+                </div>
 
-                <select
-                  name="department"
-                  value={form.department}
-                  onChange={handleChange}
-                  className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept._id} value={dept._id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
+                {!editingId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password *
+                    </label>
+                    <input
+                      name="password"
+                      type="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Enter secure password"
+                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department *
+                  </label>
+                  <select
+                    name="department"
+                    value={form.department}
+                    onChange={handleChange}
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    required
+                  >
+                    <option value="">-- Select Department --</option>
+                    {departments.map((dept) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 text-white py-2 rounded-lg"
+                  className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium transition"
                 >
                   {editingId ? "Update Admin" : "Create Admin"}
                 </button>
@@ -189,9 +235,9 @@ export default function AdminsPage() {
                     type="button"
                     onClick={() => {
                       setEditingId(null);
-                      setForm({ name: "", email: "", department: "" });
+                      setForm({ name: "", email: "", password: "", department: "" });
                     }}
-                    className="w-full text-sm text-gray-500"
+                    className="w-full text-sm text-gray-500 hover:text-gray-700"
                   >
                     Cancel
                   </button>
@@ -204,7 +250,7 @@ export default function AdminsPage() {
                 <Search size={18} className="text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search admins..."
+                  placeholder="Search by name, email, or department..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="flex-1 outline-none"
@@ -217,7 +263,7 @@ export default function AdminsPage() {
                     <tr>
                       <th className="p-3 text-left">Admin</th>
                       <th className="p-3 text-left">Department</th>
-                      <th className="p-3 text-left">Access Key</th>
+                      <th className="p-3 text-left">Status</th>
                       <th className="p-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -231,12 +277,12 @@ export default function AdminsPage() {
                         >
                           <td className="p-3">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-indigo-600">
-                                {admin.name.charAt(0)}
+                              <div className="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-indigo-600 font-bold">
+                                {admin.name.charAt(0).toUpperCase()}
                               </div>
 
                               <div>
-                                <div>{admin.name}</div>
+                                <div className="font-medium">{admin.name}</div>
                                 <div className="text-xs text-gray-500">
                                   {admin.email}
                                 </div>
@@ -245,20 +291,41 @@ export default function AdminsPage() {
                           </td>
 
                           <td className="p-3">
-                            {admin.department?.name || "No Dept"}
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                              <Building2 size={14} />
+                              {admin.department?.name || "No Dept"}
+                            </span>
                           </td>
 
                           <td className="p-3">
-                            {admin.tempPassword || "Verified"}
+                            {admin.isActive ? (
+                              <span className="flex items-center gap-1 text-green-600">
+                                <CheckCircle2 size={16} />
+                                Active
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-gray-400">
+                                <XCircle size={16} />
+                                Inactive
+                              </span>
+                            )}
                           </td>
 
                           <td className="p-3 text-right">
                             <div className="flex justify-end gap-2">
-                              <button onClick={() => startEdit(admin)}>
+                              <button
+                                onClick={() => startEdit(admin)}
+                                className="p-1 hover:bg-gray-100 rounded transition"
+                                title="Edit"
+                              >
                                 <Edit3 size={16} />
                               </button>
 
-                              <button onClick={() => deleteAdmin(admin._id)}>
+                              <button
+                                onClick={() => deleteAdmin(admin._id)}
+                                className="p-1 hover:bg-red-50 text-red-600 rounded transition"
+                                title="Delete"
+                              >
                                 <Trash2 size={16} />
                               </button>
                             </div>

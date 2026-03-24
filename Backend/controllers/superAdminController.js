@@ -1,19 +1,34 @@
 import User from "../models/User.models.js";
 import Role from "../models/Roles.models.js";
 import Department from "../models/Department.models.js";
-import bcrypt from "bcryptjs";
+import AuditLogs from "../models/AuditLogs.models.js";
+import {
+  createUserValidation,
+  updateUserValidation,
+} from "../validations/userValidation.js";
+import {
+  createUser as createUserService,
+  deleteUserById,
+} from "../services/userService.js";
 
 export const getAdmins = async (req, res) => {
   try {
-    const role = await Role.findOne({ name: "ADMIN" });
+    const adminRole = await Role.findOne({ name: "ADMIN" });
 
-    const admins = await User.find({ role: role._id })
+    if (!adminRole) {
+      return res.status(404).json({
+        message: "ADMIN role not found",
+      });
+    }
+
+    const admins = await User.find({ role: adminRole._id })
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
 
     res.json(admins);
   } catch (error) {
+    console.error(" Error fetching admins:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -24,38 +39,27 @@ export const createAdmin = async (req, res) => {
   try {
     const { name, email, password, department } = req.body;
 
-    const role = await Role.findOne({ name: "ADMIN" });
+    console.log("👤 Creating admin:", { name, email, department });
 
-    if (!role) {
-      return res.status(400).json({
-        message: "Admin role not found",
-      });
-    }
-
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: "Email already exists",
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const admin = await User.create({
+    const user = await createUserService(
       name,
       email,
-      password: hashedPassword,
-      role: role._id,
+      password || "123456",
+      "ADMIN",
       department,
-    });
+      req.user._id,
+    );
 
-    const populatedAdmin = await User.findById(admin._id)
+    const createdAdmin = await User.findById(user._id)
       .populate("role", "name")
-      .populate("department", "name");
+      .populate("department", "name")
+      .select("-password");
 
-    res.status(201).json(populatedAdmin);
+    console.log("✓ Admin created successfully:", createdAdmin._id);
+
+    res.status(201).json(createdAdmin);
   } catch (error) {
+    console.error("Error creating admin:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -64,9 +68,17 @@ export const createAdmin = async (req, res) => {
 
 export const updateAdmin = async (req, res) => {
   try {
+    const { id } = req.params;
     const { name, email, department } = req.body;
 
-    const admin = await User.findById(req.params.id);
+    const admin = await User.findByIdAndUpdate(
+      id,
+      { name, email, department },
+      { new: true },
+    )
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
 
     if (!admin) {
       return res.status(404).json({
@@ -74,19 +86,9 @@ export const updateAdmin = async (req, res) => {
       });
     }
 
-    admin.name = name || admin.name;
-    admin.email = email || admin.email;
-    admin.department = department || admin.department;
-
-    await admin.save();
-
-    const updatedAdmin = await User.findById(admin._id)
-      .populate("role", "name")
-      .populate("department", "name")
-      .select("-password");
-
-    res.json(updatedAdmin);
+    res.json(admin);
   } catch (error) {
+    console.error(" Error updating admin:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -95,12 +97,12 @@ export const updateAdmin = async (req, res) => {
 
 export const deleteAdmin = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    await deleteUserById(id);
 
-    res.json({
-      message: "Admin deleted successfully",
-    });
+    res.json({ message: "Admin deleted successfully" });
   } catch (error) {
+    console.error(" Error deleting admin:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -110,9 +112,9 @@ export const deleteAdmin = async (req, res) => {
 export const getDepartments = async (req, res) => {
   try {
     const departments = await Department.find();
-
     res.json(departments);
   } catch (error) {
+    console.error(" Error fetching departments:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -123,26 +125,17 @@ export const createDepartment = async (req, res) => {
   try {
     const { name } = req.body;
 
-    const department = await Department.create({
-      name,
-    });
+    const deptExists = await Department.findOne({ name });
+    if (deptExists) {
+      return res.status(400).json({
+        message: "Department already exists",
+      });
+    }
 
+    const department = await Department.create({ name });
     res.status(201).json(department);
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-export const deleteDepartment = async (req, res) => {
-  try {
-    await Department.findByIdAndDelete(req.params.id);
-
-    res.json({
-      message: "Department deleted",
-    });
-  } catch (error) {
+    console.error(" Error creating department:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -151,10 +144,11 @@ export const deleteDepartment = async (req, res) => {
 
 export const updateDepartment = async (req, res) => {
   try {
+    const { id } = req.params;
     const { name } = req.body;
 
     const department = await Department.findByIdAndUpdate(
-      req.params.id,
+      id,
       { name },
       { new: true },
     );
@@ -167,6 +161,28 @@ export const updateDepartment = async (req, res) => {
 
     res.json(department);
   } catch (error) {
+    console.error(" Error updating department:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const deleteDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const department = await Department.findByIdAndDelete(id);
+
+    if (!department) {
+      return res.status(404).json({
+        message: "Department not found",
+      });
+    }
+
+    res.json({ message: "Department deleted successfully" });
+  } catch (error) {
+    console.error(" Error deleting department:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -175,15 +191,27 @@ export const updateDepartment = async (req, res) => {
 
 export const getUser = async (req, res) => {
   try {
-    const role = await Role.findOne({ name: "USER" });
+    const userRole = await Role.findOne({ name: "USER" });
 
-    const users = await User.find({ role: role._id })
+    if (!userRole) {
+      return res.status(404).json({
+        message: "USER role not found",
+      });
+    }
+
+    const filter = { role: userRole._id };
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      filter.department = req.user.department._id;
+    }
+
+    const users = await User.find(filter)
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
 
     res.json(users);
   } catch (error) {
+    console.error(" Error fetching users:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -192,13 +220,20 @@ export const getUser = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, department } = req.body;
+    const { name, email, password, department, sidebarPermissions } = req.body;
+
+    console.log("👤 Creating user:", {
+      name,
+      email,
+      department,
+      sidebarPermissions,
+    });
 
     const role = await Role.findOne({ name: "USER" });
 
     if (!role) {
       return res.status(400).json({
-        message: "User role not found",
+        message: "USER role not found",
       });
     }
 
@@ -206,28 +241,32 @@ export const createUser = async (req, res) => {
 
     if (existingUser) {
       return res.status(400).json({
-        message: "Email already exists",
+        message: "User already exists",
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password || "123456", 10);
-
+    // Pass plain password - let the model's pre-save hook hash it
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password: password || "123456",
       role: role._id,
       department,
+      createdBy: req.user._id,
+      sidebarPermissions: sidebarPermissions || [],
     });
 
-    const populatedUser = await User.findById(user._id)
+    const createdUser = await User.findById(user._id)
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
 
-    res.status(201).json(populatedUser);
+    console.log("✓ User created successfully:", createdUser._id);
+
+    res.status(201).json(createdUser);
   } catch (error) {
-    res.status(400).json({
+    console.error(" Error creating user:", error);
+    res.status(500).json({
       message: error.message,
     });
   }
@@ -235,9 +274,17 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
+    const { id } = req.params;
     const { name, email, department } = req.body;
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findByIdAndUpdate(
+      id,
+      { name, email, department },
+      { new: true },
+    )
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -245,19 +292,9 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    user.name = name || user.name;
-    user.email = email || user.email;
-    user.department = department || user.department;
-
-    await user.save();
-
-    const updatedUser = await User.findById(user._id)
-      .populate("role", "name")
-      .populate("department", "name")
-      .select("-password");
-
-    res.json(updatedUser);
+    res.json(user);
   } catch (error) {
+    console.error(" Error updating user:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -266,12 +303,12 @@ export const updateUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    await deleteUserById(id);
 
-    res.json({
-      message: "User deleted successfully",
-    });
+    res.json({ message: "User deleted successfully" });
   } catch (error) {
+    console.error(" Error deleting user:", error);
     res.status(500).json({
       message: error.message,
     });
@@ -280,42 +317,51 @@ export const deleteUser = async (req, res) => {
 
 export const getDashboardStats = async (req, res) => {
   try {
-    const userCount = await User.countDocuments();
+    const userRole = await Role.findOne({ name: "USER" });
     const adminRole = await Role.findOne({ name: "ADMIN" });
-    const adminCount = await User.countDocuments({ role: adminRole?._id });
-    const departmentCount = await Department.countDocuments();
-    const roleCount = await Role.countDocuments();
+
+    const totalUsers = await User.countDocuments({ role: userRole._id });
+    const totalAdmins = await User.countDocuments({ role: adminRole._id });
+    const totalDepartments = await Department.countDocuments();
+    const totalRoles = await Role.countDocuments();
+
+    const recentAuditLogs = await AuditLogs.find()
+      .limit(10)
+      .sort({ createdAt: -1 });
 
     const userGrowth = [
-      { month: "Jan", users: 200 },
-      { month: "Feb", users: 400 },
-      { month: "Mar", users: 650 },
-      { month: "Apr", users: 800 },
-      { month: "May", users: 1000 },
-      { month: "Jun", users: userCount },
+      { month: "Jan", users: await User.countDocuments() },
+      { month: "Feb", users: await User.countDocuments() },
+      { month: "Mar", users: await User.countDocuments() },
+      { month: "Apr", users: await User.countDocuments() },
     ];
 
     const departments = await Department.find();
-    const departmentUsage = await Promise.all(
-      departments.map(async (dept) => {
-        const count = await User.countDocuments({ department: dept._id });
-        return { name: dept.name, users: count };
-      }),
-    );
+
+    const departmentUsage = [];
+
+    for (let dept of departments) {
+      const count = await User.countDocuments({ department: dept._id });
+
+      departmentUsage.push({
+        name: dept.name,
+        users: count,
+      });
+    }
 
     res.json({
       stats: {
-        users: userCount,
-        admins: adminCount,
-        departments: departmentCount,
-        roles: roleCount,
+        users: totalUsers,
+        admins: totalAdmins,
+        departments: totalDepartments,
+        roles: totalRoles,
       },
       userGrowth,
       departmentUsage,
+      recentAuditLogs,
     });
   } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+    console.error(error);
+    res.status(500).json({ message: error.message });
   }
 };

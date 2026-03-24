@@ -36,7 +36,6 @@ export const getUser = async (req, res) => {
   }
 };
 
-
 export const getProfile = async (req, res) => {
   try {
     const profile = await getUserProfile(req.user);

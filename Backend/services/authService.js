@@ -3,12 +3,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.models.js";
 import Role from "../models/Roles.models.js";
 import Department from "../models/Department.models.js";
-
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-};
+import generateToken from "../utils/generateToken.js";
 
 // REGISTER USER
 export const registerUser = async (name, email, password, role, department) => {
@@ -47,9 +42,12 @@ export const registerUser = async (name, email, password, role, department) => {
     department: departmentId,
   });
 
-  const token = generateToken(user._id);
+  const populatedUser = await User.findById(user._id)
+    .populate("role")
+    .populate("department");
+  const token = generateToken(populatedUser);
 
-  return { user, token };
+  return { user: populatedUser, token };
 };
 
 export const loginUser = async (email, password) => {
@@ -73,9 +71,10 @@ export const loginUser = async (email, password) => {
     throw new Error("Invalid credentials");
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  const populatedUser = await User.findById(user._id)
+    .populate("role")
+    .populate("department");
+  const token = generateToken(populatedUser);
 
-  return { user, token };
+  return { user: populatedUser, token };
 };
