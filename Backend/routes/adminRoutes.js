@@ -16,12 +16,11 @@ import {
 } from "../controllers/adminController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
+import departmentScope from "../middleware/departmentScope.js";
 
 const router = express.Router();
 
-
 router.use(authMiddleware);
-
 
 router.get(
   "/departments",
@@ -44,14 +43,17 @@ router.delete(
   deleteDepartment,
 );
 
-
 router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN"]));
+
+// Apply department scope to admin routes (SUPER_ADMIN bypasses)
+router.use(departmentScope);
 
 router.get("/roles", getRoles);
 router.post("/roles", createRole);
 router.put("/roles/:id", updateRole);
 router.delete("/roles/:id", deleteRole);
 
+// User routes - admins can only manage their department users
 router.get("/users", getUser);
 router.post("/users", createUser);
 router.put("/users/:id", updateUser);

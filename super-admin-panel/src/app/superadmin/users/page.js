@@ -16,6 +16,8 @@ import {
   UserCircle,
   MoreVertical,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 export default function UsersPage() {
@@ -23,10 +25,12 @@ export default function UsersPage() {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
     email: "",
+    password: "",
     role: "USER",
     department: "",
   });
@@ -66,17 +70,29 @@ export default function UsersPage() {
 
     try {
       if (editingId) {
-        const res = await API.put(`/superadmin/users/${editingId}`, form);
+        const res = await API.put(`/superadmin/users/${editingId}`, {
+          name: form.name,
+          email: form.email,
+          department: form.department,
+        });
         setUsers(users.map((u) => (u._id === editingId ? res.data : u)));
         setEditingId(null);
       } else {
         const res = await API.post("/superadmin/users", {
-          ...form,
-          password: "password123",
+          name: form.name,
+          email: form.email,
+          password: form.password || "123456",
+          department: form.department,
         });
         setUsers([...users, res.data]);
       }
-      setForm({ name: "", email: "", role: "USER", department: "" });
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+        role: "USER",
+        department: "",
+      });
     } catch (err) {
       alert(err.response?.data?.message || "Operation failed");
     }
@@ -97,6 +113,7 @@ export default function UsersPage() {
     setForm({
       name: user.name,
       email: user.email,
+      password: "",
       role: user.role?.name || "USER",
       department: user.department?._id || "",
     });
@@ -118,7 +135,7 @@ export default function UsersPage() {
       <Navbar />
       <main className=" md:pl-64 pt-16 ">
         <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center py-3 mb-8 gap-3">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Users className="text-indigo-600" size={28} />
@@ -162,6 +179,24 @@ export default function UsersPage() {
                   required
                 />
 
+                <div className="relative">
+                  <input
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Password (optional)"
+                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
                 <select
                   name="department"
                   value={form.department}
@@ -189,7 +224,12 @@ export default function UsersPage() {
                     type="button"
                     onClick={() => {
                       setEditingId(null);
-                      setForm({ name: "", email: "", department: "" });
+                      setForm({
+                        name: "",
+                        email: "",
+                        password: "",
+                        department: "",
+                      });
                     }}
                     className="w-full text-sm text-gray-500"
                   >

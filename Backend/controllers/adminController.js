@@ -72,7 +72,19 @@ export const getUser = async (req, res) => {
   try {
     const userRole = await Role.findOne({ name: "USER" });
 
-    const users = await User.find({ role: userRole._id })
+    if (!userRole) {
+      return res.status(400).json({
+        message: "User role not found",
+      });
+    }
+
+    // Apply department filter if admin (SUPER_ADMIN has no filter)
+    const filter = { role: userRole._id };
+    if (req.departmentFilter) {
+      Object.assign(filter, req.departmentFilter);
+    }
+
+    const users = await User.find(filter)
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
@@ -150,9 +162,10 @@ export const deleteRole = async (req, res) => {
     });
   }
 };
+
 export const createUser = async (req, res) => {
   try {
-    const { name, email, password, department } = req.body;
+    const { name, email, password, department, sidebarPermissions } = req.body;
 
     const role = await Role.findOne({ name: "USER" });
 
@@ -160,6 +173,17 @@ export const createUser = async (req, res) => {
       return res.status(400).json({
         message: "User role not found",
       });
+    }
+
+   
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      if (department && department !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "Admins can only create users in their own department",
+        });
+      }
+      // Use admin's department by default
+      req.body.department = req.user.department._id;
     }
 
     const existingUser = await User.findOne({ email });
@@ -170,14 +194,14 @@ export const createUser = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password || "123456", 10);
-
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password: password || "123456",
       role: role._id,
-      department,
+      department: req.body.department,
+      createdBy: req.user._id,
+      sidebarPermissions: sidebarPermissions || [],
     });
 
     const populatedUser = await User.findById(user._id)
@@ -195,7 +219,7 @@ export const createUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, department } = req.body;
+    const { name, email, department, sidebarPermissions } = req.body;
 
     const user = await User.findById(req.params.id);
 
@@ -205,9 +229,29 @@ export const updateUser = async (req, res) => {
       });
     }
 
+    // If admin (not SUPER_ADMIN), enforce department restriction
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      if (user.department.toString() !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "You can only manage users in your own department",
+        });
+      }
+      // Prevent admins from changing department
+      if (department && department !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "Cannot change user to a different department",
+        });
+      }
+    }
+
     user.name = name || user.name;
     user.email = email || user.email;
-    user.department = department || user.department;
+    if (sidebarPermissions) {
+      user.sidebarPermissions = sidebarPermissions;
+    }
+    if (!req.departmentFilter || req.user.role.name === "SUPER_ADMIN") {
+      user.department = department || user.department;
+    }
 
     await user.save();
 
@@ -226,6 +270,23 @@ export const updateUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    // If admin (not SUPER_ADMIN), enforce department restriction
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      if (user.department.toString() !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "You can only delete users in your own department",
+        });
+      }
+    }
+
     await User.findByIdAndDelete(req.params.id);
 
     res.json({
@@ -240,8 +301,27 @@ export const deleteUser = async (req, res) => {
 export const getDashboardStats = async (req, res) => {
   try {
     const userRole = await Role.findOne({ name: "USER" });
-    const userCount = await User.countDocuments({ role: userRole?._id });
-    const departmentCount = await Department.countDocuments();
+
+    // For ADMIN role, filter by their department
+    let filter = { role: userRole?._id };
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      filter.department = req.user.department._id;
+    }
+
+    const userCount = await User.countDocuments(filter);
+
+    // Get department info
+    let departmentCount = 1; // ADMIN sees their own department
+    let departmentName = "All Departments";
+
+    if (req.user.role.name === "ADMIN" && req.user.department) {
+      const dept = await Department.findById(req.user.department._id);
+      departmentName = dept?.name || "Unknown";
+      departmentCount = 1;
+    } else if (req.user.role.name === "SUPER_ADMIN") {
+      departmentCount = await Department.countDocuments();
+    }
+
     const roleCount = await Role.countDocuments();
 
     // Active today could be users who logged in today (if we had a lastLogin field)
@@ -254,6 +334,7 @@ export const getDashboardStats = async (req, res) => {
         departments: departmentCount,
         activeToday: activeToday,
         roles: roleCount,
+        departmentName: departmentName,
       },
       recentActivity: [
         { id: 1, text: "New user registered", time: "2 hours ago" },

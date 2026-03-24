@@ -96,7 +96,7 @@ export default function DepartmentsPage() {
 
       <main className="md:pl-64 pt-16">
         <div className="p-8">
-          <div className="flex justify-between items-center mb-10">
+          <div className="flex flex-col  md:flex-row md:justify-center md:items-center mb-10 gap-3">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
                 <Building2 className="text-indigo-600" size={30} />

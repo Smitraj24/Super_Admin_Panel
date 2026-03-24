@@ -1,14 +1,8 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import User from "../models/User.models.js";
 import Role from "../models/Roles.models.js";
 import { registerValidation } from "../validations/authValidation.js";
-
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
-  });
-};
+import generateToken from "../utils/generateToken.js";
 
 export const register = async (req, res) => {
   const { error } = registerValidation(req.body);
@@ -31,20 +25,25 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: `Role ${roleName} not found` });
     }
 
+    // Don't hash here - let the model's pre-save hook handle it
     const user = await User.create({
       name,
       email,
-      password,
+      password, // Pass plain password - model will hash it
       role: roleDoc._id,
       department,
     });
 
-    const token = generateToken(user._id);
+    // include role and department in token for convenience
+    const populatedUser = await User.findById(user._id)
+      .populate("role")
+      .populate("department");
+    const token = generateToken(populatedUser);
 
     return res.status(201).json({
       success: true,
       token,
-      user,
+      user: populatedUser,
     });
   } catch (err) {
     console.error("Register Error:", err.message);
@@ -56,24 +55,43 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log("🔐 Login Attempt:", {
+      email,
+      passwordLength: password?.length,
+    });
+
     const user = await User.findOne({ email })
       .populate("role")
       .populate("department");
+
     if (!user) {
+      console.error("❌ User not found:", email);
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
+    console.log("✓ User found:", {
+      email,
+      hashedPassword: user.password?.substring(0, 10),
+    });
 
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log("🔑 Password match:", isMatch);
+
     if (!isMatch) {
+      console.error("❌ Password mismatch for user:", email);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = generateToken(user._id);
+    const populatedUser = await User.findById(user._id)
+      .populate("role")
+      .populate("department");
+
+    const token = generateToken(populatedUser);
 
     return res.status(200).json({
       success: true,
       token,
-      user,
+      user: populatedUser,
     });
   } catch (err) {
     console.error("Login Error:", err.message);

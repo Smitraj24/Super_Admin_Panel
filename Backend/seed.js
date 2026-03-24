@@ -2,13 +2,14 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import Role from "./models/Roles.models.js";
 import Holiday from "./models/Holiday.js";
+import User from "./models/User.models.js";
+import Department from "./models/Department.models.js";
 
 dotenv.config();
 await connectDB();
 
 const seedData = async () => {
   try {
-    
     const roles = [
       {
         name: "SUPER_ADMIN",
@@ -26,6 +27,82 @@ const seedData = async () => {
         console.log(`Created role: ${role.name}`);
       } else {
         console.log(`Role ${role.name} already exists`);
+      }
+    }
+
+    // Create departments
+    const departments = [
+      { name: "IT", description: "Information Technology Department" },
+      { name: "HR", description: "Human Resources Department" },
+      { name: "SALES", description: "Sales Department" },
+      { name: "CE", description: "Customer Experience Department" },
+    ];
+
+    const deptMap = {};
+    for (const dept of departments) {
+      const existing = await Department.findOne({ name: dept.name });
+      if (existing) {
+        deptMap[dept.name] = existing._id;
+        console.log(`Department ${dept.name} already exists`);
+      } else {
+        const created = await Department.create(dept);
+        deptMap[dept.name] = created._id;
+        console.log(`Created department: ${dept.name}`);
+      }
+    }
+
+    // Create test users
+    const superAdminRole = await Role.findOne({ name: "SUPER_ADMIN" });
+    const adminRole = await Role.findOne({ name: "ADMIN" });
+    const userRole = await Role.findOne({ name: "USER" });
+
+    const testUsers = [
+      {
+        name: "Super Admin",
+        email: "super@admin.com",
+        password: "password123",
+        role: superAdminRole._id,
+        department: null,
+      },
+      {
+        name: "IT Admin",
+        email: "admin@it.com",
+        password: "password123",
+        role: adminRole._id,
+        department: deptMap.IT,
+      },
+      {
+        name: "CE User",
+        email: "user@ce.com",
+        password: "password123",
+        role: userRole._id,
+        department: deptMap.CE,
+      },
+      {
+        name: "HR User",
+        email: "user@hr.com",
+        password: "password123",
+        role: userRole._id,
+        department: deptMap.HR,
+      },
+      {
+        name: "Sales User",
+        email: "user@sales.com",
+        password: "password123",
+        role: userRole._id,
+        department: deptMap.SALES,
+      },
+    ];
+
+    for (const testUser of testUsers) {
+      const existing = await User.findOne({ email: testUser.email });
+      if (existing) {
+        console.log(`User ${testUser.email} already exists`);
+      } else {
+        await User.create(testUser);
+        console.log(
+          `Created user: ${testUser.email} (password: ${testUser.password})`,
+        );
       }
     }
 

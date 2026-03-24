@@ -23,7 +23,7 @@ export default function HolidayWidget() {
   }, []);
 
   return (
-    <div className="bg-white p-6 rounded-3xl border">
+    <div className="bg-white p-6 rounded-3xl">
       <h3 className="text-lg font-bold mb-4">2026 Holidays</h3>
 
       {holidays.map((h) => (

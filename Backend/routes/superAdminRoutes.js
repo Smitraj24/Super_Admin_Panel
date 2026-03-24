@@ -25,7 +25,7 @@ import roleMiddleware from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// Apply authentication and role middleware to all super admin routes
+
 router.use(authMiddleware);
 router.use(roleMiddleware(["SUPER_ADMIN"]));
 

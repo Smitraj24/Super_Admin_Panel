@@ -127,7 +127,7 @@ export default function SuperAdminDashboard() {
 
       <main className="md:pl-64 pt-16">
         <div className="p-8">
-          <div className="mb-8"> 
+          <div className="mb-8">
             <p className="text-slate-500 font-medium mb-1">Overview</p>
             <h1 className="text-3xl font-bold text-slate-900">
               Platform Dashboard
