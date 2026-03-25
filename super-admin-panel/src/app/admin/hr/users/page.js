@@ -108,7 +108,7 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
       <Sidebar />
       <Navbar />
 
@@ -131,50 +131,84 @@ export default function UsersPage() {
           </div>
 
           <div className="grid grid-cols-1  md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm  top-24 p-6">
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 overflow-hidden">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Full Name"
-                  className="w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                />
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className="w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                />
-                <select
-                  name="department"
-                  value={form.department}
-                  onChange={handleChange}
-                  className="w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept._id} value={dept._id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="e.g., John Doe"
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="e.g., admin@company.com"
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    required
+                  />
+                </div>
+
+                {!editingId && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password *
+                    </label>
+                    <input
+                      name="password"
+                      type="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Enter secure password"
+                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      required
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department *
+                  </label>
+                  <select
+                    name="department"
+                    value={form.department}
+                    onChange={handleChange}
+                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    required
+                  >
+                    <option value="">-- Select Department --</option>
+                    {departments.map((dept) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <button
                   type="submit"
-                  className={`w-full py-2 rounded text-white ${editingId ? "bg-green-600" : "bg-indigo-600"}`}
+                  className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium transition"
                 >
-                  {editingId ? "Update User" : "Add User"}
+                  {editingId ? "Update User" : "Create User"}
                 </button>
 
                 {editingId && (
@@ -185,11 +219,11 @@ export default function UsersPage() {
                       setForm({
                         name: "",
                         email: "",
-                        role: "USER",
+                        password: "",
                         department: "",
                       });
                     }}
-                    className="w-full text-sm text-gray-500"
+                    className="w-full text-sm text-gray-500 hover:text-gray-700"
                   >
                     Cancel
                   </button>

@@ -13,6 +13,10 @@ import {
   updateUser,
   deleteUser,
   getDashboardStats,
+  getAdmins,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
 } from "../controllers/adminController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
@@ -58,6 +62,12 @@ router.get("/users", getUser);
 router.post("/users", createUser);
 router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
+
+// Admin routes - admins can only manage admins in their department
+router.get("/admins", getAdmins);
+router.post("/admins", createAdmin);
+router.put("/admins/:id", updateAdmin);
+router.delete("/admins/:id", deleteAdmin);
 
 router.get("/stats", getDashboardStats);
 

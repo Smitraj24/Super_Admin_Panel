@@ -131,7 +131,7 @@ export default function AdminsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
       <Sidebar />
       <Navbar />
 

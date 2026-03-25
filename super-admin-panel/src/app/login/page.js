@@ -17,23 +17,23 @@ export default function Login() {
 
   const getDepartmentPath = (departmentData) => {
     if (!departmentData) {
-      console.log("⚠️ No department data provided");
+      console.log(" No department data provided");
       return null;
     }
 
     const departmentName =
       typeof departmentData === "object" ? departmentData.name : departmentData;
 
-    console.log("📝 Department name extracted:", departmentName);
+    console.log(" Department name extracted:", departmentName);
 
     if (!departmentName) {
-      console.log("⚠️ No department name found");
+      console.log(" No department name found");
       return null;
     }
 
     const departmentKey = departmentName.toUpperCase().replace(/\s+/g, "_");
-    console.log("🔑 Department key:", departmentKey);
-    console.log("📋 Available departments:", Object.keys(DEPARTMENTS));
+    console.log(" Department key:", departmentKey);
+    console.log("Available departments:", Object.keys(DEPARTMENTS));
 
     const path = DEPARTMENTS[departmentKey]?.path || null;
     console.log(" Department path found:", path);

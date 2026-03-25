@@ -1,7 +1,7 @@
 import User from "../models/User.models.js";
 import Department from "../models/Department.models.js";
 import Role from "../models/Roles.models.js";
-import bcrypt from "bcryptjs";
+import { isHRAdmin } from "../utils/roleUtils.js";
 
 export const getDepartments = async (req, res) => {
   try {
@@ -78,9 +78,10 @@ export const getUser = async (req, res) => {
       });
     }
 
-    // Apply department filter if admin (SUPER_ADMIN has no filter)
+    // Apply department filter if admin (but not HR admin, SUPER_ADMIN has no filter)
     const filter = { role: userRole._id };
-    if (req.departmentFilter) {
+
+    if (req.departmentFilter && !isHRAdmin(req.user)) {
       Object.assign(filter, req.departmentFilter);
     }
 
@@ -96,6 +97,7 @@ export const getUser = async (req, res) => {
     });
   }
 };
+
 export const getRoles = async (req, res) => {
   try {
     const roles = await Role.find();
@@ -175,8 +177,11 @@ export const createUser = async (req, res) => {
       });
     }
 
-   
-    if (req.user.role.name === "ADMIN" && req.user.department) {
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
       if (department && department !== req.user.department._id.toString()) {
         return res.status(403).json({
           message: "Admins can only create users in their own department",
@@ -198,13 +203,13 @@ export const createUser = async (req, res) => {
       name,
       email,
       password: password || "123456",
-      role: role._id,
-      department: req.body.department,
+      role: role._id, 
+      department: req.body.department,    
       createdBy: req.user._id,
       sidebarPermissions: sidebarPermissions || [],
     });
 
-    const populatedUser = await User.findById(user._id)
+    const populatedUser = await User.findById(user._id) 
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
@@ -229,8 +234,12 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    // If admin (not SUPER_ADMIN), enforce department restriction
-    if (req.user.role.name === "ADMIN" && req.user.department) {
+    // If admin (not SUPER_ADMIN or HR admin), enforce department restriction
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
       if (user.department.toString() !== req.user.department._id.toString()) {
         return res.status(403).json({
           message: "You can only manage users in your own department",
@@ -278,8 +287,12 @@ export const deleteUser = async (req, res) => {
       });
     }
 
-    // If admin (not SUPER_ADMIN), enforce department restriction
-    if (req.user.role.name === "ADMIN" && req.user.department) {
+    // If admin (not SUPER_ADMIN or HR admin), enforce department restriction
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
       if (user.department.toString() !== req.user.department._id.toString()) {
         return res.status(403).json({
           message: "You can only delete users in your own department",
@@ -302,9 +315,13 @@ export const getDashboardStats = async (req, res) => {
   try {
     const userRole = await Role.findOne({ name: "USER" });
 
-    // For ADMIN role, filter by their department
+    // For ADMIN role (non-HR), filter by their department. HR admins see all
     let filter = { role: userRole?._id };
-    if (req.user.role.name === "ADMIN" && req.user.department) {
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
       filter.department = req.user.department._id;
     }
 
@@ -315,9 +332,15 @@ export const getDashboardStats = async (req, res) => {
     let departmentName = "All Departments";
 
     if (req.user.role.name === "ADMIN" && req.user.department) {
-      const dept = await Department.findById(req.user.department._id);
-      departmentName = dept?.name || "Unknown";
-      departmentCount = 1;
+      if (isHRAdmin(req.user)) {
+        // HR admin sees all departments
+        departmentCount = await Department.countDocuments();
+        departmentName = "All Departments (HR)";
+      } else {
+        const dept = await Department.findById(req.user.department._id);
+        departmentName = dept?.name || "Unknown";
+        departmentCount = 1;
+      }
     } else if (req.user.role.name === "SUPER_ADMIN") {
       departmentCount = await Department.countDocuments();
     }
@@ -336,13 +359,167 @@ export const getDashboardStats = async (req, res) => {
         roles: roleCount,
         departmentName: departmentName,
       },
-      recentActivity: [
-        { id: 1, text: "New user registered", time: "2 hours ago" },
-        { id: 2, text: "Admin updated department", time: "4 hours ago" },
-        { id: 3, text: "User logged in", time: "5 hours ago" },
-      ],
     });
   } catch (error) {
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+// ==================== ADMIN MANAGEMENT ====================
+export const getAdmins = async (req, res) => {
+  try {
+    const adminRole = await Role.findOne({ name: "ADMIN" });
+
+    if (!adminRole) {
+      return res.status(404).json({
+        message: "ADMIN role not found",
+      });
+    }
+
+    let filter = { role: adminRole._id };
+
+    // Only restrict if it's an admin that's NOT from HR department
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
+      filter.department = req.user.department._id;
+    }
+
+    const admins = await User.find(filter)
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    res.json(admins);
+  } catch (error) {
+    console.error("Error fetching admins:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const createAdmin = async (req, res) => {
+  try {
+    const { name, email, password, department } = req.body;
+
+    // If regular admin (not HR), they can only create admins in their department
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
+      if (department !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "You can only create admins in your own department",
+        });
+      }
+    }
+
+    const { createUserService } = await import("../services/userService.js");
+
+    const user = await createUserService(
+      name,
+      email,
+      password || "123456",
+      "ADMIN",
+      department,
+      req.user._id,
+    );
+
+    const createdAdmin = await User.findById(user._id)
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    res.status(201).json(createdAdmin);
+  } catch (error) {
+    console.error("Error creating admin:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const updateAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, department } = req.body;
+
+    const admin = await User.findById(id);
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    // If regular admin (not HR), they can only update admins in their department
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
+      if (admin.department.toString() !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "You can only update admins in your own department",
+        });
+      }
+    }
+
+    const updatedAdmin = await User.findByIdAndUpdate(
+      id,
+      { name, email, department },
+      { new: true },
+    )
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    res.json(updatedAdmin);
+  } catch (error) {
+    console.error("Error updating admin:", error);
+    res.status(500).json({
+      message: error.message,
+    });
+  }
+};
+
+export const deleteAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const admin = await User.findById(id);
+
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin not found",
+      });
+    }
+
+    // If regular admin (not HR), they can only delete admins in their department
+    if (
+      req.user.role.name === "ADMIN" &&
+      req.user.department &&
+      !isHRAdmin(req.user)
+    ) {
+      if (admin.department.toString() !== req.user.department._id.toString()) {
+        return res.status(403).json({
+          message: "You can only delete admins in your own department",
+        });
+      }
+    }
+
+    const { deleteUserById } = await import("../services/userService.js");
+    await deleteUserById(id);
+
+    res.json({ message: "Admin deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting admin:", error);
     res.status(500).json({
       message: error.message,
     });

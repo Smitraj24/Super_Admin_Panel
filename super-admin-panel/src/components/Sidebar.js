@@ -35,6 +35,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Help Desk", icon: Monitor },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -44,6 +45,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Projects", icon: Cpu },
     { name: "Reports", icon: ClipboardList },
+    { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -54,6 +56,7 @@ const userDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Apply Leave", icon: Calendar },
   ],
 };
 
@@ -68,6 +71,7 @@ const adminDeptMenus = {
     { name: "Help Desk", icon: Monitor },
     { name: "Asset Management", icon: Server },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -79,6 +83,7 @@ const adminDeptMenus = {
     { name: "Projects", icon: Cpu },
     { name: "Lab Equipment", icon: FlaskConical },
     { name: "Reports", icon: ClipboardList },
+    { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
     { name: "Dashboard", icon: LayoutDashboard },
@@ -90,15 +95,17 @@ const adminDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Apply Leave", icon: Calendar },
   ],
   hr: [
     { name: "Dashboard", icon: LayoutDashboard },
     { name: "Profile", icon: Users },
-    {name: "Admins", icon: ShieldCheck },
+    { name: "Admins", icon: ShieldCheck },
     { name: "Users", icon: Users },
     { name: "Departments", icon: Building2 },
     { name: "Roles", icon: UserCog },
     { name: "Holidays", icon: Calendar },
+    { name: "Apply Leave", icon: Calendar },
   ],
 };
 
@@ -108,6 +115,7 @@ const defaultUserMenu = [
   { name: "Users", icon: Users },
   { name: "Departments", icon: Building2 },
   { name: "Roles", icon: UserCog },
+  { name: "Apply Leave", icon: Calendar },
 ];
 
 const defaultAdminMenu = [
@@ -117,6 +125,7 @@ const defaultAdminMenu = [
   { name: "Departments", icon: Building2 },
   { name: "Roles", icon: UserCog },
   { name: "Holidays", icon: Calendar },
+  { name: "Apply Leave", icon: Calendar },
 ];
 
 const toSlug = (name) => name.toLowerCase().replace(/\s+/g, "-");
