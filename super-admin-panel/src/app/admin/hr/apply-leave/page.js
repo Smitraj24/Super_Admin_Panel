@@ -161,12 +161,12 @@ export default function HRLeaveDashboard() {
   const rejected = allLeaves.filter((l) => l.status === "REJECTED").length;
 
   return (
-    <main className="flex min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+    <main className=" min-h-screen bg-gradient-to-br from-green-50 to-green-100">
       <Sidebar />
       <Navbar />
 
-      <div className="lg:ml-64 pt-20 flex-1">
-        <div className="p-6 space-y-6">
+      <div className="lg:ml-64 pt-20 ">
+        <div className="p-6 space-y-6  min-h-screen rounded-tl-3xl">
           <h2 className="text-2xl font-bold">Leave Management</h2>
 
           <div className="flex gap-4 border-b">
