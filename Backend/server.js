@@ -40,7 +40,7 @@ app.use("/api/audit", auditRoutes);
 app.use("/api/holidays", holidayRoutes);
 app.use("/api/leaves", leaveRoutes);
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send("API is running...");
 });
 
