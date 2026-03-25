@@ -11,7 +11,7 @@ import {
 } from "@/services/leaveApi";
 
 export default function HRLeaveDashboard() {
-  const [activeTab, setActiveTab] = useState("personal"); // personal or all
+  const [activeTab, setActiveTab] = useState("personal");
   const [userLeaves, setUserLeaves] = useState([]);
   const [allLeaves, setAllLeaves] = useState([]);
   const [filteredLeaves, setFilteredLeaves] = useState([]);
@@ -48,16 +48,20 @@ export default function HRLeaveDashboard() {
     }
   };
 
-  const fetchLeaves = async () => {
-    setLoading(true);
+  const fetchLeaves = async (showLoader = true) => {
+    if (showLoader) setLoading(true);
+
     await Promise.all([fetchUserLeaves(), fetchAllLeaves()]);
-    setLoading(false);
+
+    if (showLoader) setLoading(false);
   };
 
   useEffect(() => {
-    fetchLeaves();
+    fetchLeaves(true); // first load with loading
 
-    const interval = setInterval(fetchLeaves, 5000);
+    const interval = setInterval(() => {
+      fetchLeaves(false); // background refresh (no loading UI)
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -201,7 +205,6 @@ export default function HRLeaveDashboard() {
                 </button>
               </div>
 
-              {/* Add Leave Form */}
               {showForm && (
                 <div className="bg-white p-6 rounded-lg shadow-lg border border-blue-200">
                   <h3 className="text-xl font-bold mb-4">Apply for Leave</h3>
@@ -284,11 +287,7 @@ export default function HRLeaveDashboard() {
 
               {/* Personal Leaves Table */}
               <div className="bg-white rounded-lg shadow overflow-hidden">
-                {loading ? (
-                  <div className="p-6 text-center text-gray-500">
-                    Loading...
-                  </div>
-                ) : userLeaves.length === 0 ? (
+                {userLeaves.length === 0 ? (
                   <div className="p-6 text-center text-gray-500">
                     No leave requests. Click "Add Leave" to apply for leave.
                   </div>

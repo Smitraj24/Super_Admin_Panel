@@ -34,7 +34,7 @@ export default function Navbar() {
         </p>
       </div>
 
-      {/*  Right Section */}
+  
       <div className="flex items-center gap-4">
         <button className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all shadow-md">
           <Sparkles size={16} />
