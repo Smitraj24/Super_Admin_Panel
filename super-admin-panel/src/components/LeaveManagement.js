@@ -18,24 +18,13 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
     reason: "",
   });
 
-  const fetchLeaves = async () => {
-    setLoading(true);
-    try {
-      const res = await getUserLeavesApi();
-      setLeaves(res.data.data);
-    } catch (err) {
-      console.log(err);
-    }
-    setLoading(false);
+  const fetchLeaves = async (showLoader = true) => {
+    const res = await getUserLeavesApi();
+    setLeaves(res.data.data);
   };
 
   useEffect(() => {
-    fetchLeaves();
-
-    // Poll for updates every 5 seconds
-    const interval = setInterval(fetchLeaves, 5000);
-
-    return () => clearInterval(interval);
+    fetchLeaves(true);
   }, []);
 
   const handleChange = (e) => {

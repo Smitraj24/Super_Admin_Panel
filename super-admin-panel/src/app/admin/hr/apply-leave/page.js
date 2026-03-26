@@ -57,10 +57,10 @@ export default function HRLeaveDashboard() {
   };
 
   useEffect(() => {
-    fetchLeaves(true); // first load with loading
+    fetchLeaves(true);
 
     const interval = setInterval(() => {
-      fetchLeaves(false); // background refresh (no loading UI)
+      fetchLeaves(false);  
     }, 5000);
 
     return () => clearInterval(interval);

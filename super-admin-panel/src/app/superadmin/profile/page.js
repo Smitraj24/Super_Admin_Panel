@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "../../../context/AuthContext";
-import Sidebar from "../../../components/Sidebar.js";
-import Navbar from "../../../components/Navbar.js";
+import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/Navbar";
 import { User, Mail, Shield, Settings } from "lucide-react";
 
 export default function AdminProfilePage() {
@@ -17,7 +17,7 @@ export default function AdminProfilePage() {
         <div className="w-full max-w-2xl p-4 md:p-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-              Super Admin Profile
+              My Profile
             </h1>
 
             <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition w-full sm:w-auto justify-center">
@@ -44,7 +44,7 @@ export default function AdminProfilePage() {
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-auto">
             <div className="p-6 border-b border-slate-200 ">
               <h3 className="text-lg font-semibold text-slate-900">
-                Admin Information
+                My Information
               </h3>
             </div>
 

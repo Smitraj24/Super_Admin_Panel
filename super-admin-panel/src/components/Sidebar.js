@@ -79,10 +79,9 @@ const adminDeptMenus = {
     { name: "Users", icon: Users },
     { name: "Departments", icon: Building2 },
     { name: "Roles", icon: UserCog },
-    { name: "Holidays", icon: Calendar },
     { name: "Projects", icon: Cpu },
-    { name: "Lab Equipment", icon: FlaskConical },
     { name: "Reports", icon: ClipboardList },
+    { name: "Holidays", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
