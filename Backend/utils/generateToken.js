@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// Accept either a user object or an id string. When a user object is
-// provided include role and department names for convenience on the client.
+
 const generateToken = (userOrId) => {
   let payload = {};
 

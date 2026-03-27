@@ -34,7 +34,7 @@ export const register = async (req, res) => {
       department,
     });
 
-    // include role and department in token for convenience
+    
     const populatedUser = await User.findById(user._id)
       .populate("role")
       .populate("department");
@@ -55,7 +55,7 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("🔐 Login Attempt:", {
+    console.log(" Login Attempt:", {
       email,
       passwordLength: password?.length,
     });
@@ -65,20 +65,20 @@ export const login = async (req, res) => {
       .populate("department");
 
     if (!user) {
-      console.error("❌ User not found:", email);
+      console.error(" User not found:", email);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    console.log("✓ User found:", {
+    console.log(" User found:", {
       email,
       hashedPassword: user.password?.substring(0, 10),
     });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    console.log("🔑 Password match:", isMatch);
+    console.log(" Password match:", isMatch);
 
     if (!isMatch) {
-      console.error("❌ Password mismatch for user:", email);
+      console.error(" Password mismatch for user:", email);
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
