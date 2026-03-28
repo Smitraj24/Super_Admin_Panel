@@ -38,7 +38,7 @@ export const register = async (req, res) => {
     const populatedUser = await User.findById(user._id)
       .populate("role")
       .populate("department");
-    
+
     const token = generateToken(populatedUser);
 
     return res.status(201).json({
