@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import Calander from "../../../components/Calendar.js";
 import HolidayWidget from "@/components/HolidayWidget.js";
+import AttendanceButtons from "../../../components/AttendanceButtons";
 
 function CEDashboard() {
   const { user } = useAuth();
@@ -16,6 +17,10 @@ function CEDashboard() {
 
       <div className="lg:ml-64 pt-20 p-4 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
+          <div style={{ padding: 40 }}>
+            <h1>Attendance System</h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
           <div className="mb-10">
             <h1 className="text-3xl sm:text-4xl font-bold text-blue-900">
               CE Department Dashboard

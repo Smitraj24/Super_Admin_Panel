@@ -48,8 +48,10 @@ export default function AttendanceButtons({ userId }) {
       setMessage(response.data.message);
       setMessageType("success");
 
+      // Fetch status immediately after action
+      await fetchStatus();
+
       setTimeout(() => {
-        fetchStatus();
         setMessage("");
       }, 1500);
     } catch (error) {
@@ -160,56 +162,56 @@ export default function AttendanceButtons({ userId }) {
       )}
 
       <div className="grid grid-cols-2 gap-4">
-        {/* Check In Button */}
+        {/* Check In Button - Only clickable when NOT_CHECKED_IN */}
         <button
           disabled={loading || status !== "NOT_CHECKED_IN"}
           onClick={() => handleAction("checkIn")}
           className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            status !== "NOT_CHECKED_IN"
+            loading || status !== "NOT_CHECKED_IN"
               ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-green-500 hover:bg-green-600 text-white"
+              : "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
           }`}
         >
           <LogIn size={20} />
           Check In
         </button>
 
-        {/* Break In Button */}
+        {/* Break In Button - Clickable when CHECKED_IN or BACK_TO_WORK */}
         <button
           disabled={loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)}
           onClick={() => handleAction("breakIn")}
           className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+            loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
               ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-yellow-500 hover:bg-yellow-600 text-white"
+              : "bg-yellow-500 hover:bg-yellow-600 text-white cursor-pointer"
           }`}
         >
           <Coffee size={20} />
           Break In
         </button>
 
-        {/* Check Out Button */}
+        {/* Check Out Button - Clickable when CHECKED_IN or BACK_TO_WORK */}
         <button
           disabled={loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)}
           onClick={() => handleAction("checkOut")}
           className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+            loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
               ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-red-500 hover:bg-red-600 text-white"
+              : "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
           }`}
         >
           <LogOut size={20} />
           Check Out
         </button>
 
-        {/* Break Out Button */}
+        {/* Break Out Button - Only clickable when ON_BREAK */}
         <button
           disabled={loading || status !== "ON_BREAK"}
           onClick={() => handleAction("breakOut")}
           className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            status !== "ON_BREAK"
+            loading || status !== "ON_BREAK"
               ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-cyan-400 hover:bg-cyan-500 text-white"
+              : "bg-cyan-400 hover:bg-cyan-500 text-white cursor-pointer"
           }`}
         >
           <Clock size={20} />
