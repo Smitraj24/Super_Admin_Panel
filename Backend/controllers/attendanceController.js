@@ -14,6 +14,7 @@ export const checkIn = async (req, res) => {
       userId,
       date: today,
       checkIn: new Date(),
+      status: "CHECKED_IN",
     });
 
     res.json({ message: "Checked in successfully", record });
