@@ -21,17 +21,28 @@ export const createUser = async (
     throw new Error("Role not found");
   }
 
+  // Ensure password is provided and valid
+  const finalPassword = password || "123456";
+  if (!finalPassword || finalPassword.length < 6) {
+    throw new Error("Password must be at least 6 characters");
+  }
 
   const user = await User.create({
     name,
     email,
-    password, // Pass plain password - model will hash it
+    password: finalPassword, // This will be hashed by pre-save hook
     role: role._id,
     department: departmentId,
     createdBy,
   });
 
-  return user;
+  // Return user with populated fields and password excluded
+  const populatedUser = await User.findById(user._id)
+    .populate("role", "name")
+    .populate("department", "name")
+    .select("-password");
+
+  return populatedUser;
 };
 
 export const getUsersByDepartment = async (departmentId) => {

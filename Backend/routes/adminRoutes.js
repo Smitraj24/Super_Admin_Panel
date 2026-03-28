@@ -47,7 +47,7 @@ router.delete(
   deleteDepartment,
 );
 
-router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN", "CE", "HR", "IT", "SALES"]));
+router.use(roleMiddleware(["ADMIN", "SUPER_ADMIN"]));
 
 // Apply department scope to admin routes (SUPER_ADMIN bypasses)
 router.use(departmentScope);

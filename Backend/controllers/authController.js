@@ -25,19 +25,20 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: `Role ${roleName} not found` });
     }
 
-    // Don't hash here - let the model's pre-save hook handle it
+    // Create user with plain password - pre-save hook will hash it
     const user = await User.create({
       name,
       email,
-      password, // Pass plain password - model will hash it
+      password, // This will be hashed by pre-save hook
       role: roleDoc._id,
       department,
     });
 
-    
+    // Fetch populated user (password will be excluded if needed)
     const populatedUser = await User.findById(user._id)
       .populate("role")
       .populate("department");
+    
     const token = generateToken(populatedUser);
 
     return res.status(201).json({

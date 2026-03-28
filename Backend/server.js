@@ -25,7 +25,6 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
-      "http://localhost:3001",
       "https://super-admin-panel-gray.vercel.app",
     ],
     credentials: true,
