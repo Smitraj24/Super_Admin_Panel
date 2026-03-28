@@ -12,6 +12,7 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useEffect, useState } from "react";
 import { getUsersApi } from "@/services/superAdminApi";
+import AttendanceButtons from "../../../components/AttendanceButtons";
 
 function CEAdminDashboard() {
   const { user } = useAuth();
@@ -51,6 +52,10 @@ function CEAdminDashboard() {
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-8">
+          <div style={{ padding: 40 }}>
+            <h1>Attendance System</h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
               CE Department Admin Dashboard

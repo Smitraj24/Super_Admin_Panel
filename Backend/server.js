@@ -14,6 +14,7 @@ import departmentRoutes from "./routes/departmentRoutes.js";
 import auditRoutes from "./routes/auditRoutes.js";
 import holidayRoutes from "./routes/holidays.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
 
 dotenv.config();
 await connectDB();
@@ -43,6 +44,7 @@ app.use("/api/departments", departmentRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/holidays", holidayRoutes);
 app.use("/api/leaves", leaveRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
