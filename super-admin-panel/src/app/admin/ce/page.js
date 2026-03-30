@@ -51,9 +51,9 @@ function CEAdminDashboard() {
       <Sidebar />
 
       <div className="lg:ml-64 pt-20">
-        <div className="max-w-7xl mx-auto p-8">
-          <div style={{ padding: 40 }}>
-            <h1>Attendance System</h1>
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="mb-8 items-center gap-4">
+            <h1 className="text-4xl text-gray-900 font-bold mb-4">Attendance System</h1>
             <AttendanceButtons userId={user?._id} />
           </div>
           <div className="mb-12">

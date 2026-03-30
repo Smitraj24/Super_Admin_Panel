@@ -43,32 +43,11 @@ const AttendanceSchema = new mongoose.Schema(
 AttendanceSchema.index({ userId: 1, date: 1 }, { unique: true });
 
 // Pre-save validation to prevent null userId
-AttendanceSchema.pre("save", function (next) {
+AttendanceSchema.pre("save", function () {
   if (!this.userId) {
-    const error = new Error(
-      "userId is required and cannot be null or undefined",
-    );
-    return next(error);
+    throw new Error("userId is required and cannot be null or undefined");
   }
-  next();
 });
-
-// Pre-create validation to prevent null userId
-AttendanceSchema.pre("create", function (next) {
-  if (!this.userId) {
-    const error = new Error(
-      "userId is required and cannot be null or undefined",
-    );
-    return next(error);
-  }
-  next();
-});
-
 const Attendance = mongoose.model("Attendance", AttendanceSchema);
-
-// Drop old indexes and recreate on model load (handles migration)
-Attendance.collection.dropIndex("user_1_date_1").catch(() => {
-  // Index may not exist, which is fine
-});
 
 export default Attendance;
