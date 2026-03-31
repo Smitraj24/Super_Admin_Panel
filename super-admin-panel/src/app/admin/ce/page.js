@@ -52,8 +52,10 @@ function CEAdminDashboard() {
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-6">
-          <div className="mb-8 items-center gap-4">
-            <h1 className="text-4xl text-gray-900 font-bold mb-4">Attendance System</h1>
+          <div className="grid gap-3 mb-10">
+            <h1 className=" text-4xl font-bold text-blue-900">
+              Attendance System
+            </h1>
             <AttendanceButtons userId={user?._id} />
           </div>
           <div className="mb-12">

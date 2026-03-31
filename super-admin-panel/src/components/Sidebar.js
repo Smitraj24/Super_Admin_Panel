@@ -35,6 +35,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Help Desk", icon: Monitor },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
@@ -45,6 +46,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Projects", icon: Cpu },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
@@ -56,6 +58,7 @@ const userDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
 };
@@ -71,6 +74,7 @@ const adminDeptMenus = {
     { name: "Help Desk", icon: Monitor },
     { name: "Asset Management", icon: Server },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
@@ -82,6 +86,7 @@ const adminDeptMenus = {
     { name: "Projects", icon: Cpu },
     { name: "Reports", icon: ClipboardList },
     { name: "Holidays", icon: Calendar },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
@@ -94,6 +99,7 @@ const adminDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   hr: [
@@ -104,6 +110,7 @@ const adminDeptMenus = {
     { name: "Departments", icon: Building2 },
     { name: "Roles", icon: UserCog },
     { name: "Holidays", icon: Calendar },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
 };
@@ -114,6 +121,7 @@ const defaultUserMenu = [
   { name: "Users", icon: Users },
   { name: "Departments", icon: Building2 },
   { name: "Roles", icon: UserCog },
+  { name: "Attendance", icon: Calendar },
   { name: "Apply Leave", icon: Calendar },
 ];
 
@@ -124,6 +132,7 @@ const defaultAdminMenu = [
   { name: "Departments", icon: Building2 },
   { name: "Roles", icon: UserCog },
   { name: "Holidays", icon: Calendar },
+  { name: "Attendance", icon: Calendar },
   { name: "Apply Leave", icon: Calendar },
 ];
 
@@ -296,3 +305,11 @@ export default function Sidebar() {
     </>
   );
 }
+
+
+
+
+
+
+  
+

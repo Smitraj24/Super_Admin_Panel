@@ -17,20 +17,32 @@ function CEDashboard() {
 
       <div className="lg:ml-64 pt-20 p-4 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
-          <div style={{ padding: 40 }}>
-            <h1>Attendance System</h1>
-            <AttendanceButtons userId={user?._id} />
-          </div>
           <div className="mb-10">
-            <h1 className="text-3xl sm:text-4xl font-bold text-blue-900">
-              CE Department Dashboard
+            <h1 className="text-3xl font-bold  text-blue-900 mb-2">
+              Welcome back, {user?.name} 👋
             </h1>
-            <p className="text-blue-700 mt-2">
-              Welcome, {user?.name}! Here's your Computer Engineering overview.
+            <p className="text-gray-400">
+              Here's what's happening in your CE dashboard today.
             </p>
           </div>
 
+          <div className="grid gap-3 mb-10">
+            <h1 className=" text-2xl font-bold text-blue-900">
+              Attendance System
+            </h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
+
           <div className="mb-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-7">
+              <div className="bg-white rounded-2xl p-4  ">
+                <Calander />
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 h-[700px] overflow-y-auto shadow-md ">
+                <HolidayWidget />
+              </div>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {[
                 {
@@ -74,16 +86,6 @@ function CEDashboard() {
                   <p className="text-xs text-blue-500 mt-1">{item.desc}</p>
                 </div>
               ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
-              <div className="bg-white rounded-2xl p-4  ">
-                <Calander />
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 h-[700px] overflow-y-auto shadow-md ">
-                <HolidayWidget />
-              </div>
             </div>
           </div>
 

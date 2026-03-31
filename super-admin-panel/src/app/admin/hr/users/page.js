@@ -131,7 +131,7 @@ export default function UsersPage() {
           </div>
 
           <div className="grid grid-cols-1  md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 overflow-hidden">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 p-6 shadow-lg h-fit ">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
@@ -244,9 +244,9 @@ export default function UsersPage() {
               </div>
 
               <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm md:text-md min-w-[600px]">
-                    <thead className="border-b border-slate-300 bg-slate-50">
+                <div className="flex overflow-auto h-[500px]">
+                  <table className="w-full text-sm  ">
+                    <thead className="border-b border-slate-300 bg-slate-50 sticky top-0 z-10">
                       <tr>
                         <th className="p-3 text-left">User</th>
 

@@ -17,6 +17,9 @@ import { useEffect, useState } from "react";
 import { getUsers } from "@/services/userApi";
 import { getAdminsApi } from "@/services/adminApi";
 import { useRouter } from "next/navigation";
+import AttendanceButtons from "@/components/AttendanceButtons";
+import Calander from "@/components/Calendar";
+import HolidayWidget from "@/components/HolidayWidget";
 
 function HRAdminDashboard() {
   const { user } = useAuth();
@@ -81,7 +84,6 @@ function HRAdminDashboard() {
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-8">
-         
           <div className="mb-12 flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold text-green-900 mb-2">
@@ -90,7 +92,6 @@ function HRAdminDashboard() {
               <p className="text-green-700 text-lg">Welcome, {user?.name}!</p>
             </div>
 
-         
             <button
               onClick={fetchStats}
               className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow hover:bg-gray-100"
@@ -99,22 +100,35 @@ function HRAdminDashboard() {
               Refresh
             </button>
           </div>
+          <div className="grid gap-3 mb-10">
+            <h1 className=" text-2xl font-bold text-green-900">
+              Attendance System
+            </h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
 
-      
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-7">
+            <div className="bg-white rounded-2xl p-4  ">
+              <Calander />
+            </div>
+
+            <div className="bg-white rounded-2xl p-4 h-[700px] overflow-y-auto shadow-md ">
+              <HolidayWidget />
+            </div>
+          </div>
+
           {error && (
             <div className="bg-red-100 text-red-600 p-3 rounded mb-6">
               {error}
             </div>
           )}
 
-          
           {loading ? (
             <div className="text-center py-20 text-gray-500">
               Loading dashboard...
             </div>
           ) : (
             <>
-          
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <Card
                   title="Total HR Users"
@@ -208,25 +222,41 @@ function HRAdminDashboard() {
 
               {/* Stats Summary */}
               <div className="bg-gradient-to-r from-green-600 to-green-700 rounded-2xl p-8 shadow-lg text-white">
-                <h2 className="text-2xl font-bold mb-6">HR Management Summary</h2>
-                
+                <h2 className="text-2xl font-bold mb-6">
+                  HR Management Summary
+                </h2>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="border-l-4 border-green-300 pl-4">
                     <p className="text-green-100 text-sm">Total Workforce</p>
                     <p className="text-4xl font-bold">{stats.totalUsers}</p>
-                    <p className="text-green-100 text-xs mt-1">employees managed</p>
+                    <p className="text-green-100 text-xs mt-1">
+                      employees managed
+                    </p>
                   </div>
-                  
+
                   <div className="border-l-4 border-green-300 pl-4">
                     <p className="text-green-100 text-sm">Administration</p>
                     <p className="text-4xl font-bold">{stats.totalAdmins}</p>
-                    <p className="text-green-100 text-xs mt-1">admins assigned</p>
+                    <p className="text-green-100 text-xs mt-1">
+                      admins assigned
+                    </p>
                   </div>
-                  
+
                   <div className="border-l-4 border-green-300 pl-4">
                     <p className="text-green-100 text-sm">Department Health</p>
-                    <p className="text-4xl font-bold">{stats.activeUsers > 0 ? ((stats.activeUsers / stats.totalUsers) * 100).toFixed(0) : 0}%</p>
-                    <p className="text-green-100 text-xs mt-1">active employees</p>
+                    <p className="text-4xl font-bold">
+                      {stats.activeUsers > 0
+                        ? (
+                            (stats.activeUsers / stats.totalUsers) *
+                            100
+                          ).toFixed(0)
+                        : 0}
+                      %
+                    </p>
+                    <p className="text-green-100 text-xs mt-1">
+                      active employees
+                    </p>
                   </div>
                 </div>
               </div>
