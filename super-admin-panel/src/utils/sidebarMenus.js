@@ -8,6 +8,7 @@ export const userDeptMenus = {
     "Roles",
     "Help Desk",
     "Network Monitor",
+    "Attedance",
   ],
   ce: [
     "Dashboard",
@@ -17,6 +18,7 @@ export const userDeptMenus = {
     "Roles",
     "Projects",
     "Reports",
+    "Attedance",
   ],
   sales: [
     "Dashboard",
@@ -27,6 +29,7 @@ export const userDeptMenus = {
     "Leads",
     "Targets",
     "Reports",
+    "Attedance",
   ],
   hr: ["Dashboard", "Profile", "Users", "Departments", "Roles"],
 };
@@ -38,6 +41,7 @@ export const defaultUserMenu = [
   "Users",
   "Departments",
   "Roles",
+  "Attedance",
 ];
 
 // Get available menu items for a specific department and user role
@@ -54,6 +58,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Help Desk",
         "Asset Management",
         "Network Monitor",
+        "Attedance",
       ],
       ce: [
         "Dashboard",
@@ -65,6 +70,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Projects",
         "Lab Equipment",
         "Reports",
+        "Attedance",
       ],
       sales: [
         "Dashboard",
@@ -76,6 +82,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Leads",
         "Targets",
         "Reports",
+        "Attedance",
       ],
       hr: [
         "Dashboard",
@@ -85,6 +92,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Departments",
         "Roles",
         "Holidays",
+        "Attedance",
       ],
     };
     return (
@@ -95,6 +103,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Departments",
         "Roles",
         "Holidays",
+        "Attedance",
       ]
     );
   }

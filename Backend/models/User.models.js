@@ -30,28 +30,28 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-userSchema.pre("save", async function (next) {
-  // Only hash password if it has been modified
+userSchema.pre("save", async function () {
+  // Only hash password if modified
   if (!this.isModified("password")) {
-    console.log(" Password not modified, skipping hash");
-    return next();
+    console.log("Password not modified, skipping hash");
+    return;
   }
 
-  // Skip hashing if password is already hashed (starts with $2)
+  // Skip if already hashed
   if (this.password && this.password.startsWith("$2")) {
-    console.log(" Password already hashed, skipping re-hash");
-    return next();
+    console.log("Password already hashed, skipping re-hash");
+    return;
   }
 
-  console.log(" Pre-save hook: Hashing password...");
+  console.log("Hashing password...");
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    console.log(" Password hashed successfully");
-    next();
+    console.log("Password hashed successfully");
   } catch (error) {
-    console.error(" Password hashing error:", error.message);
-    next(error);
+    console.error("Password hashing error:", error.message);
+    throw error; // important
   }
 });
 

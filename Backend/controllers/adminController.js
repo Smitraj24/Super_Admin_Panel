@@ -437,9 +437,9 @@ export const createAdmin = async (req, res) => {
       }
     }
 
-    const { createUserService } = await import("../services/userService.js");
+    const { createUser } = await import("../services/userService.js");
 
-    const user = await createUserService(
+    const user = await createUser(
       name,
       email,
       password || "123456",

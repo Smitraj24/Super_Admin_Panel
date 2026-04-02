@@ -17,16 +17,16 @@ function CEDashboard() {
 
       <div className="lg:ml-64 pt-20 p-4 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-10">
+          <div className="mb-10 ">
             <h1 className="text-3xl font-bold  text-blue-900 mb-2">
               Welcome back, {user?.name} 👋
             </h1>
             <p className="text-gray-400">
-              Here's what's happening in your CE dashboard today.
+              Here`s what`s happening in your CE dashboard today.
             </p>
           </div>
 
-          <div className="grid gap-3 mb-10">
+          <div className="grid grid-cols-1 gap-3 mb-10">
             <h1 className=" text-2xl font-bold text-blue-900">
               Attendance System
             </h1>

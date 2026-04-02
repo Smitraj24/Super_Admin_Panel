@@ -153,7 +153,7 @@ export default function UsersPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm  top-24 p-6">
+            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm h-[450px] p-6 ">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
@@ -214,7 +214,7 @@ export default function UsersPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 text-white py-2 rounded"
+                  className="w-full bg-green-600 text-white py-2 rounded"
                 >
                   {editingId ? "Update User" : "Create User"}
                 </button>
@@ -231,7 +231,7 @@ export default function UsersPage() {
                         department: "",
                       });
                     }}
-                    className="w-full text-sm text-gray-500"
+                    className="w-full text-white bg-red-300 rounded py-2 hover:bg-red-500 transition"
                   >
                     Cancel
                   </button>
@@ -251,9 +251,9 @@ export default function UsersPage() {
                 />
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto">
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto h-[500px]">
                 <table className="w-full text-md">
-                  <thead className="border-b border-slate-300 hover:bg-gray-50">
+                  <thead className="border-b border-slate-300 hover:bg-gray-50 sticky top-0  text-gray-700 bg-gray-50">
                     <tr>
                       <th className="p-3 text-left">User</th>
                       <th className="p-3 text-left">Department</th>

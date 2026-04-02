@@ -150,7 +150,7 @@ export default function AdminsPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl border border-slate-200  p-6 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200  p-6 overflow-hidden h-[500px]">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit Admin" : "Add New Admin"}
@@ -225,7 +225,7 @@ export default function AdminsPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 font-medium transition"
+                  className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium transition"
                 >
                   {editingId ? "Update Admin" : "Create Admin"}
                 </button>
@@ -237,7 +237,7 @@ export default function AdminsPage() {
                       setEditingId(null);
                       setForm({ name: "", email: "", password: "", department: "" });
                     }}
-                    className="w-full text-sm text-gray-500 hover:text-gray-700"
+                    className="w-full  text-white bg-red-300  hover:bg-red-500 rounded-lg py-2 font-medium transition"
                   >
                     Cancel
                   </button>
@@ -257,9 +257,9 @@ export default function AdminsPage() {
                 />
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto">
+              <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto h-[500px]">
                 <table className="w-full text-md">
-                  <thead className="border-b border-slate-300 hover:bg-gray-50">
+                  <thead className="border-b border-slate-300 hover:bg-gray-50 sticky top-0 text-gray-700 bg-gray-50">
                     <tr>
                       <th className="p-3 text-left">Admin</th>
                       <th className="p-3 text-left">Department</th>

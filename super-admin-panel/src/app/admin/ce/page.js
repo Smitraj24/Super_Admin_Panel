@@ -52,7 +52,7 @@ function CEAdminDashboard() {
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-6">
-          <div className="grid gap-3 mb-10">
+          <div className="grid grid-cols-1 gap-3 mb-10">
             <h1 className=" text-4xl font-bold text-blue-900">
               Attendance System
             </h1>
@@ -63,7 +63,7 @@ function CEAdminDashboard() {
               CE Department Admin Dashboard
             </h1>
             <p className="text-black text-lg">
-              Welcome, {user?.name}! Here's your CE management overview.
+              Welcome, {user?.name}! Here`s your CE management overview.
             </p>
           </div>
 

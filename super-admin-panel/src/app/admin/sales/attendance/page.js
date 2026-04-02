@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  getMonthlyAttendanceApi,
-  getAttendanceSummary,
-} from "@/services/attandanceApi";
+import { getMonthlyAttendanceApi } from "@/services/attandanceApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { Menu } from "lucide-react";
@@ -14,8 +11,7 @@ export default function Attendance() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false); // mobile sidebar..
-  const [summary, setSummary] = useState(null);
+  const [open, setOpen] = useState(false); // mobile sidebar
 
   useEffect(() => {
     fetchCurrentMonth();
@@ -25,17 +21,14 @@ export default function Attendance() {
     setLoading(true);
     try {
       const now = new Date();
-
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 2)
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString()
         .split("T")[0];
-
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 1)
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
         .toISOString()
         .split("T")[0];
 
       const res = await getMonthlyAttendanceApi(firstDay, lastDay);
-
       setAttendance(res.data);
       setStartDate(firstDay);
       setEndDate(lastDay);
@@ -45,34 +38,6 @@ export default function Attendance() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        setLoading(true);
-
-        const today = new Date();
-
-        const startDate = new Date(today.getFullYear(), today.getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-
-        const endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-          .toISOString()
-          .split("T")[0];
-
-        const res = await getAttendanceSummary(startDate, endDate);
-
-        setSummary(res.data);
-      } catch (err) {
-        console.error("Error fetching summary:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSummary();
-  }, []);
 
   const handleFilter = async () => {
     if (!startDate || !endDate) {
@@ -153,68 +118,6 @@ export default function Attendance() {
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 p-4">
-            <div className="bg-indigo-500 shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Days</p>
-              <h2 className="text-xl text-white font-semibold">
-                {summary?.totalDays || 0}
-              </h2>
-            </div>
-
-            <div className="bg-orange-500 shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Late</p>
-              <h2 className="text-xl text-white font-semibold">
-                {" "}
-                {summary?.late || 0}
-              </h2>
-            </div>
-
-            <div className="bg-red-500 shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Absent</p>
-              <h2 className="text-xl text-white font-semibold">
-                {" "}
-                {summary?.absent || 0}
-              </h2>
-            </div>
-
-            <div className="bg-amber-500 shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Half Day</p>
-              <h2 className="text-xl text-white font-semibold">
-                {" "}
-                {summary?.halfDay || 0}
-              </h2>
-            </div>
-
-            <div className="bg-blue-500  shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Total Office Work</p>
-              <h2 className="text-xl text-white font-semibold">
-                {summary?.totalOfficeHours || 0}
-              </h2>
-            </div>
-
-            <div className="bg-purple-500  shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Total Work</p>
-              <h2 className="text-xl text-white font-semibold">
-                {summary?.totalWorkHours || 0}h
-              </h2>
-            </div>
-
-            <div className="bg-green-500  shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">Productivity</p>
-              <h2 className="text-xl text-white font-semibold text-green-600">
-                {summary?.productivity || 0}%
-              </h2>
-            </div>
-
-            <div className="bg-rose-800 shadow-md rounded-xl p-4 text-center">
-              <p className="text-white text-md">PL Leaves (2026)</p>
-              <h2 className="text-xl text-white font-semibold">
-                {" "}
-                {summary?.leaves || 0}
-              </h2>
-            </div>
-          </div>
-
           <h2 className="text-xl md:text-2xl font-semibold mb-4">
             Monthly Attendance
           </h2>
@@ -264,3 +167,4 @@ export default function Attendance() {
     </div>
   );
 }
+

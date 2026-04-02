@@ -98,7 +98,7 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
 
       <div className="lg:ml-64 pt-20 flex-1">
         <div className="p-6 space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex  justify-between items-center">
             <h2 className="text-2xl font-bold">My Leave Requests</h2>
             <button
               onClick={() => setShowForm(!showForm)}
@@ -195,10 +195,10 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
               <div className="p-6 text-center text-gray-500">Loading...</div>
             ) : leaves.length === 0 ? (
               <div className="p-6 text-center text-gray-500">
-                No leave requests found. Click "Add Leave" to apply for leave.
+                No leave requests found. Click Add Leave to apply for leave.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="grid grid-cols-1 overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-100 border-b">
                     <tr className="text-left">

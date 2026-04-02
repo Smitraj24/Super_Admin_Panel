@@ -15,7 +15,7 @@ import Role from "../models/Roles.models.js";
 
 export const getUser = async (req, res) => {
   try {
-    const userRole = await Role.findOne({ name: "USER" });
+    const userRole = await Role.findOne({ name: "USER" });        
 
     if (!userRole) {
       return res.status(404).json({
