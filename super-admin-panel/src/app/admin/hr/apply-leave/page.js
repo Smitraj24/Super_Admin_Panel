@@ -60,7 +60,7 @@ export default function HRLeaveDashboard() {
     fetchLeaves(true);
 
     const interval = setInterval(() => {
-      fetchLeaves(false);  
+      fetchLeaves(false);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -468,9 +468,12 @@ export default function HRLeaveDashboard() {
                                   </button>
                                 </>
                               ) : (
-                                <span className="text-gray-500 text-sm">
-                                  No Action
-                                </span>
+                                <button
+                                  className="text-sm  transition flex gap-3 font-semibold bg-red-200 hover:bg-red-300 px-3 py-1 rounded-full text-red-800"
+                                  onClick={() => delete user.id}
+                                >
+                                  Delete
+                                </button>
                               )}
                             </td>
                           </tr>
