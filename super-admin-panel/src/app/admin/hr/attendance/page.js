@@ -20,10 +20,17 @@ export default function HRAttendance() {
   const fetchAttendance = async (start, end) => {
     setLoading(true);
     try {
+      console.log("[FRONTEND] Fetching attendance:", { start, end });
       const res = await getAllUsersAttendanceApi(start, end);
-      setAttendance(res.data);
+      console.log("[FRONTEND] Full response:", res);
+      console.log("[FRONTEND] Response.data:", res.data);
+      console.log("[FRONTEND] Response.data.data:", res.data?.data);
+      // Backend returns { data: [...], pagination: {...} }
+      // Axios wraps it in res.data, so we need res.data.data
+      setAttendance(res.data?.data || []);
     } catch (error) {
       console.error("Error fetching attendance:", error);
+      console.error("Error response:", error.response?.data);
       alert("Failed to fetch attendance data");
     } finally {
       setLoading(false);

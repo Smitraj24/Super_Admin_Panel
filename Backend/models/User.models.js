@@ -16,8 +16,13 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
       required: true,
+      index: true,
     },
-    department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      index: true,
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     sidebarPermissions: {
       type: [String],

@@ -67,10 +67,10 @@ async function cleanup() {
     console.log(`Total attendance records: ${totalRecords}`);
     console.log(`Valid records (with userId): ${validRecords}`);
 
-    console.log("\n✅ Cleanup completed successfully!");
+    console.log("\nCleanup completed successfully!");
     process.exit(0);
   } catch (error) {
-    console.error("❌ Cleanup error:", error.message);
+    console.error("Cleanup error:", error.message);
     console.error(error.stack);
     process.exit(1);
   }

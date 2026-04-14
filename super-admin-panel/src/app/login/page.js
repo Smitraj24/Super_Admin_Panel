@@ -83,7 +83,7 @@ export default function Login() {
           router.push(adminPath);
         } else {
           console.log("Admin department not found, redirecting to fallback");
-          router.push("/admin/it/dashboard");
+          router.push("/admin/it");
         }
       } else if (roleName === "USER") {
         const departmentPath = getDepartmentPath(department);

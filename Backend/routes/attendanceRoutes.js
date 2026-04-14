@@ -14,6 +14,7 @@ import {
 } from "../controllers/attendanceController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
+import departmentScope from "../middleware/departmentScope.js";
 
 const router = express.Router();
 
@@ -31,16 +32,19 @@ router.get("/monthly", getAttendanceByDateRange);
 router.get(
   "/all",
   roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  departmentScope,
   getAllUsersAttendance,
 );
 router.put(
   "/:id",
   roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  departmentScope,
   updateAttendanceRecord,
 );
 router.put(
   "/:id/complete-break",
   roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
+  departmentScope,
   completeBreakOut,
 );
 

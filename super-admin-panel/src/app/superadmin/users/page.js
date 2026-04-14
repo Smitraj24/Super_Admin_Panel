@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Sidebar from "../../../components/Sidebar";
 import Navbar from "../../../components/Navbar";
 import API from "@/lib/api";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES } from "@/utils/constants";
 import {
   Users,
   UserPlus,
@@ -44,7 +46,7 @@ export default function UsersPage() {
         API.get("/superadmin/users"),
         API.get("/superadmin/departments"),
       ]);
-      setUsers(usersRes.data);
+      setUsers(usersRes.data.users || usersRes.data);
       setDepartments(deptsRes.data);
     } catch (err) {
       console.error("Fetch Error:", err.response?.data);
@@ -130,195 +132,191 @@ export default function UsersPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] ">
-      <Sidebar />
-      <Navbar />
-      <main className=" md:pl-64 pt-16 ">
-        <div className="p-8">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-center py-3 mb-8 gap-3">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Users className="text-indigo-600" size={28} />
-                User Directory
-              </h1>
-              <p className="text-gray-500 text-sm">
-                Manage user accounts and departments
-              </p>
-            </div>
-
-            <div className="bg-white rounded-lg border  p-2 flex items-center gap-4  ">
-              <UserCircle size={16} />
-              {users.length} Users
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm h-[450px] p-6 ">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
-                {editingId ? "Edit User" : "Add User"}
-              </h3>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <input
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Full Name"
-                  className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                />
-
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Email"
-                  className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                />
-
-                <div className="relative">
-                  <input
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    value={form.password}
-                    onChange={handleChange}
-                    placeholder="Password (optional)"
-                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-
-                <select
-                  name="department"
-                  value={form.department}
-                  onChange={handleChange}
-                  className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
-                  required
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept._id} value={dept._id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  type="submit"
-                  className="w-full bg-green-600 text-white py-2 rounded"
-                >
-                  {editingId ? "Update User" : "Create User"}
-                </button>
-
-                {editingId && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingId(null);
-                      setForm({
-                        name: "",
-                        email: "",
-                        password: "",
-                        department: "",
-                      });
-                    }}
-                    className="w-full text-white bg-red-300 rounded py-2 hover:bg-red-500 transition"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </form>
-            </div>
-
-            <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-2">
-                <Search size={18} className="text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 outline-none"
-                />
+    <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
+      <div className="min-h-screen bg-[#F8FAFC] ">
+        <Sidebar />
+        <Navbar />
+        <main className=" md:pl-64 pt-16 ">
+          <div className="p-8">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center py-3 mb-8 gap-3">
+              <div>
+                <h1 className="text-2xl font-bold flex items-center gap-2">
+                  <Users className="text-indigo-600" size={28} />
+                  User Directory
+                </h1>
+                <p className="text-gray-500 text-sm">
+                  Manage user accounts and departments
+                </p>
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-x-auto h-[500px]">
-                <table className="w-full text-md">
-                  <thead className="border-b border-slate-300 hover:bg-gray-50 sticky top-0  text-gray-700 bg-gray-50">
-                    <tr>
-                      <th className="p-3 text-left">User</th>
-                      <th className="p-3 text-left">Department</th>
-                      <th className="p-3 text-left">Role</th>
-                      <th className="p-3 text-right">Actions</th>
-                    </tr>
-                  </thead>
+              <div className="bg-white rounded-lg border  p-2 flex items-center gap-4  ">
+                <UserCircle size={16} />
+                {users.length} Users
+              </div>
+            </div>
 
-                  <tbody>
-                    {filteredUsers.length > 0 ? (
-                      filteredUsers.map((user) => (
-                        <tr
-                          key={user._id}
-                          className="border-b border-slate-200 hover:bg-gray-50 "
-                        >
-                          <td className="p-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-indigo-100 rounded flex items-center justify-center text-indigo-600">
-                                {user.name.charAt(0)}
-                              </div>
-                              <div>
-                                <div>{user.name}</div>
-                                <div className="text-xs text-gray-500">
-                                  {user.email}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm h-[450px] p-6 ">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
+                  {editingId ? "Edit User" : "Add User"}
+                </h3>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <input
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    placeholder="Full Name"
+                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    required
+                  />
+
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="Email"
+                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    required
+                  />
+
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Password (optional)"
+                      className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+
+                  <select
+                    name="department"
+                    value={form.department}
+                    onChange={handleChange}
+                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    required
+                  >
+                    <option value="">Select Department</option>
+                    {departments.map((dept) => (
+                      <option key={dept._id} value={dept._id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="submit"
+                    className=" w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 active:scale-95 transition-all"
+                  >
+                    {editingId ? "Update User" : "Create User"}
+                  </button>
+                </form>
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                    <div className="relative w-full max-w-md">
+                      <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={18}
+                      />
+                      <input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search users..."
+                        className=" w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50">
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                            USER
+                          </th>
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                            DEPARTMENT
+                          </th>
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                            ROLE
+                          </th>
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                            ACTIONS
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {filteredUsers.map((user) => (
+                          <tr
+                            key={user._id}
+                            className="hover:bg-slate-50 transition"
+                          >
+                            <td className="p-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                  {user.name?.charAt(0)}
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-slate-900">
+                                    {user.name}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    {user.email}
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          </td>
-
-                          <td className="p-3">
-                            {user.department?.name || "Member"}
-                          </td>
-
-                          <td className="p-3">{user.role?.name || "User"}</td>
-
-                          <td className="p-3 text-right">
-                            <div className="flex justify-end gap-2">
-                              <button onClick={() => startEdit(user)}>
-                                <Edit3 size={16} />
-                              </button>
-
-                              <button onClick={() => deleteUser(user._id)}>
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="4"
-                          className="p-10 text-center text-gray-400"
-                        >
-                          No Users Found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="p-5">
+                              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase">
+                                {user.department?.name || "Unassigned"}
+                              </span>
+                            </td>
+                            <td className="p-5">
+                              <span className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold uppercase">
+                                {user.role?.name}
+                              </span>
+                            </td>
+                            <td className="p-5">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => startEdit(user)}
+                                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                                >
+                                  <Edit3 size={18} />
+                                </button>
+                                <button
+                                  onClick={() => deleteUser(user._id)}
+                                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ProtectedDashboardRoute>
   );
 }

@@ -13,6 +13,9 @@ import Sidebar from "@/components/Sidebar";
 import { useEffect, useState } from "react";
 import { getUsersApi } from "@/services/superAdminApi";
 import AttendanceButtons from "../../../components/AttendanceButtons";
+import BroadcastMessage from "@/components/BroadcastMessage";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES, DEPARTMENTS } from "@/utils/constants";
 
 function SalesAdminDashboard() {
   const { user } = useAuth();
@@ -48,9 +51,13 @@ function SalesAdminDashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
-      <Navbar />
-      <Sidebar />
+    <ProtectedDashboardRoute
+      requiredRole={ROLES.ADMIN}
+      requiredDepartment={DEPARTMENTS.SALES.name}
+    >
+      <main className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
+        <Navbar />
+        <Sidebar />
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-8">
@@ -60,13 +67,16 @@ function SalesAdminDashboard() {
             </h1>
             <AttendanceButtons userId={user?._id} />
           </div>
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-purple-900 mb-2">
-              Sales Department Admin Dashboard
-            </h1>
-            <p className="text-purple-700 text-lg">
-              Welcome, {user?.name}! Here's your Sales management overview.
-            </p>
+          <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-purple-900 mb-2">
+                Sales Department Admin Dashboard
+              </h1>
+              <p className="text-purple-700 text-lg">
+                Welcome, {user?.name}! Here's your Sales management overview.
+              </p>
+            </div>
+            <BroadcastMessage />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -182,6 +192,7 @@ function SalesAdminDashboard() {
         </div>
       </div>
     </main>
+    </ProtectedDashboardRoute>
   );
 }
 

@@ -3,8 +3,8 @@ import { AuthProvider } from "../context/AuthContext";
 
 export default function RootLayout({ children }) {
   return (
-    <html>
-      <body>
+    <html suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

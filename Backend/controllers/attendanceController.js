@@ -246,14 +246,11 @@ export const getAttendanceByDateRange = async (req, res) => {
 // HR Admin: Get all users' attendance
 export const getAllUsersAttendance = async (req, res) => {
   try {
-    console.log(
-      "[GET ALL ATTENDANCE] User:",
-      req.user?.email,
-      "Role:",
-      req.user?.role?.name,
-    );
+    const { startDate, endDate, date, page = 1, limit = 50 } = req.query;
 
-    const { startDate, endDate, date } = req.query;
+    console.log("[GET ALL ATTENDANCE] User:", req.user?.email, "Role:", req.user?.role?.name, "Department:", req.user?.department?.name);
+    console.log("[GET ALL ATTENDANCE] Query params:", { startDate, endDate, date });
+    console.log("[GET ALL ATTENDANCE] Department filter:", req.departmentFilter);
 
     let filter = {};
 
@@ -269,21 +266,55 @@ export const getAllUsersAttendance = async (req, res) => {
       };
     }
 
-    const attendance = await Attendance.find(filter)
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    console.log("[GET ALL ATTENDANCE] MongoDB filter:", filter);
+
+    // First, get all attendance records
+    let attendance = await Attendance.find(filter)
       .populate({
         path: "userId",
-        select: "name email _id",
+        select: "name email _id department role",
         populate: {
           path: "role department",
           select: "name",
         },
       })
-      .sort({ date: -1, createdAt: -1 });
+      .sort({ date: -1, createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
 
-    console.log("[GET ALL ATTENDANCE] Found records:", attendance.length);
-    res.json(attendance);
+    console.log("[GET ALL ATTENDANCE] Found records before filter:", attendance.length);
+
+    // Filter by department if departmentFilter is set (for non-SUPER_ADMIN and non-HR)
+    if (req.departmentFilter && req.departmentFilter.department) {
+      console.log("[GET ALL ATTENDANCE] Applying department filter");
+      attendance = attendance.filter(
+        (record) =>
+          record.userId?.department?._id?.toString() ===
+          req.departmentFilter.department.toString()
+      );
+      console.log("[GET ALL ATTENDANCE] After filter:", attendance.length);
+    }
+
+    // For SUPER_ADMIN or HR department admins, show all records (no filtering)
+    // This is already handled by departmentScope middleware
+
+    const total = attendance.length;
+
+    console.log("[GET ALL ATTENDANCE] Returning:", total, "records");
+
+    res.json({
+      data: attendance,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
   } catch (error) {
     console.error("Get All Users Attendance Error:", error.message);
+    console.error("Stack:", error.stack);
     res
       .status(500)
       .json({ message: error.message || "Error fetching attendance" });
@@ -443,11 +474,11 @@ export const getAttendanceSummary = async (req, res) => {
       const checkInHour = new Date(r.checkIn).getHours();
       const checkInMin = new Date(r.checkIn).getMinutes();
 
-      if (checkInHour > 9 || (checkInHour === 9 && checkInMin > 30)) {
+      if (checkInHour > 10 || (checkInHour === 10 && checkInMin > 30)) {
         late++;
       }
-
-
+    
+     const  totalWorkMinutes =  (checkOut - checkInHour) / 1000 * 60 * 60 ;
 
     }
 
@@ -476,3 +507,6 @@ export const getAttendanceSummary = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+           
+
+

@@ -146,7 +146,7 @@ export default function Attendance() {
 
             <button
               onClick={fetchCurrentMonth}
-              className="bg-blue-500 text-white px-4 py-2 rounded"
+              className="bg-blue-500 text-white px-4 py -2 rounded"
               disabled={loading}
             >
               Reset

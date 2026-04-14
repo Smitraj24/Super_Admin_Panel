@@ -18,8 +18,12 @@ import { getUsers } from "@/services/userApi";
 import { getAdminsApi } from "@/services/adminApi";
 import { useRouter } from "next/navigation";
 import AttendanceButtons from "@/components/AttendanceButtons";
+import BroadcastMessage from "@/components/BroadcastMessage";
 import Calander from "@/components/Calendar";
 import HolidayWidget from "@/components/HolidayWidget";
+
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES, DEPARTMENTS } from "@/utils/constants";
 
 function HRAdminDashboard() {
   const { user } = useAuth();
@@ -35,6 +39,8 @@ function HRAdminDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const fetchStats = async () => {
     setLoading(true);
@@ -65,6 +71,8 @@ function HRAdminDashboard() {
         totalLeaves: allUsers.length * 20,
         pendingTasks,
       });
+      
+      setLastUpdated(new Date());
     } catch (err) {
       console.error(err);
       setError("Failed to load dashboard data");
@@ -77,28 +85,65 @@ function HRAdminDashboard() {
     fetchStats();
   }, []);
 
+  // Auto-refresh every 30 seconds when enabled
+  useEffect(() => {
+    let interval;
+    if (autoRefresh) {
+      interval = setInterval(() => {
+        fetchStats();
+      }, 30000); // 30 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoRefresh]);
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
-      <Navbar />
-      <Sidebar />
+    <ProtectedDashboardRoute
+      requiredRole={ROLES.ADMIN}
+      requiredDepartment={DEPARTMENTS.HR.name}
+    >
+      <main className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+        <Navbar />
+        <Sidebar />
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-12 flex justify-between items-center">
+          <div className="mb-12 flex justify-between items-center flex-wrap gap-4">
             <div>
               <h1 className="text-4xl font-bold text-green-900 mb-2">
                 HR Department Admin Dashboard
               </h1>
               <p className="text-green-700 text-lg">Welcome, {user?.name}!</p>
+              {lastUpdated && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                </p>
+              )}
             </div>
 
-            <button
-              onClick={fetchStats}
-              className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow hover:bg-gray-100"
-            >
-              <RefreshCw size={18} />
-              Refresh
-            </button>
+            <div className="flex flex-wrap gap-3 items-center">
+              <BroadcastMessage />
+              
+              <label className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => setAutoRefresh(e.target.checked)}
+                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                />
+                <span className="text-sm text-gray-700">Auto-refresh (30s)</span>
+              </label>
+              
+              <button
+                onClick={fetchStats}
+                disabled={loading}
+                className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+                Refresh
+              </button>
+            </div>
           </div>
           <div className="grid  grid-cols-1  gap-3 mb-10">
             <h1 className=" text-2xl font-bold text-green-900">
@@ -265,6 +310,7 @@ function HRAdminDashboard() {
         </div>
       </div>
     </main>
+    </ProtectedDashboardRoute>
   );
 }
 

@@ -11,31 +11,42 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
     const storedToken = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    if (storedToken) {
-      setToken(storedToken);
-      fetchProfile(storedToken);
+    if (storedToken && storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setToken(storedToken);
+        setUser(parsedUser);
+        setLoading(false); // Set loading false immediately with cached data
+        
+        // Fetch fresh data in background without blocking UI
+        fetchProfile();
+      } catch (error) {
+        console.error("Failed to parse stored user:", error);
+        setLoading(false);
+      }
     } else {
       setLoading(false);
     }
   }, []);
 
-  const fetchProfile = async (authToken) => {
+  const fetchProfile = async () => {
     try {
       const res = await getProfile();
       if (res.data) {
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
       }
+      setLoading(false);
     } catch (error) {
       console.error("Failed to fetch profile:", error);
-    } finally {
+      // If profile fetch fails (e.g., invalid token), clear auth state
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      setToken(null);
+      setUser(null);
       setLoading(false);
     }
   };

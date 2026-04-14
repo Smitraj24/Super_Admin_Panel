@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../../components/Sidebar";
 import Navbar from "../../../components/Navbar";
 import { Shield, PlusCircle, Trash2, Edit3 } from "lucide-react";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES } from "@/utils/constants";
 import {
   getRolesApi,
   createRoleApi,
@@ -90,137 +92,138 @@ export default function RolesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
-      <Navbar />
+    <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Sidebar />
+        <Navbar />
 
-      <main className="md:pl-64 pt-16">
-        <div className="p-8">
-          <div className="flex justify-between items-center mb-10">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                <Shield className="text-indigo-600" size={30} />
-                Roles Management
-              </h1>
-              <p className="text-slate-500 mt-1">
-                Manage system roles and permissions.
-              </p>
-            </div>
+        <main className="md:pl-64 pt-16">
+          <div className="p-8">
+            <div className="flex justify-between items-center mb-10">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                  <Shield className="text-indigo-600" size={30} />
+                  Roles Management
+                </h1>
+                <p className="text-slate-500 mt-1">
+                  Manage system roles and permissions.
+                </p>
+              </div>
 
-            <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
-              {roles.length} Roles
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                  <PlusCircle className="text-indigo-600" size={20} />
-                  Add Role
-                </h3>
-
-                <input
-                  type="text"
-                  placeholder="Enter role name"
-                  value={roleName}
-                  onChange={(e) => setRoleName(e.target.value)}
-                  className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none"
-                />
-
-                <button
-                  onClick={handleAddRole}
-                  disabled={submitting || !roleName.trim()}
-                  className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Creating..." : "Create Role"}
-                </button>
+              <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
+                {roles.length} Roles
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-x-auto">
-                {loading ? (
-                  <div className="p-8 text-center text-slate-500">
-                    Loading roles...
-                  </div>
-                ) : (
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-slate-50">
-                        <th className="p-5 text-xs font-bold text-slate-400 uppercase">
-                          Role Name
-                        </th>
-                        <th className="p-5 text-xs font-bold text-slate-400 uppercase text-right">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                    <PlusCircle className="text-indigo-600" size={20} />
+                    Add Role
+                  </h3>
 
-                    <tbody className="divide-y">
-                      {roles.map((role) => (
-                        <tr key={role._id} className="hover:bg-slate-50">
-                          <td className="p-5 font-semibold text-slate-700">
-                            {editingId === role._id ? (
-                              <input
-                                type="text"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                className="w-full p-2 border border-slate-200 rounded-lg outline-none"
-                                autoFocus
-                              />
-                            ) : (
-                              role.name
-                            )}
-                          </td>
+                  <input
+                    type="text"
+                    placeholder="Enter role name"
+                    value={roleName}
+                    onChange={(e) => setRoleName(e.target.value)}
+                    className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 outline-none"
+                  />
 
-                          <td className="p-5 text-right">
-                            <div className="flex justify-end gap-2">
-                              {editingId === role._id ? (
-                                <>
-                                  <button
-                                    onClick={() => handleEditRole(role._id)}
-                                    disabled={submitting}
-                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={cancelEditing}
-                                    className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => startEditing(role)}
-                                    className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg"
-                                  >
-                                    <Edit3 size={18} />
-                                  </button>
+                  <button
+                    onClick={handleAddRole}
+                    disabled={submitting || !roleName.trim()}
+                    className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? "Creating..." : "Create Role"}
+                  </button>
+                </div>
+              </div>
 
-                                  <button
-                                    onClick={() => handleDeleteRole(role._id)}
-                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                                  >
-                                    <Trash2 size={18} />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-x-auto">
+                  {loading ? (
+                    <div className="p-8 text-center text-slate-500">
+                      Loading roles...
+                    </div>
+                  ) : (
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50">
+                          <th className="p-5 text-xs font-bold text-slate-400 uppercase">
+                            Role Name
+                          </th>
+                          <th className="p-5 text-xs font-bold text-slate-400 uppercase text-right">
+                            Actions
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      </thead>
+
+                      <tbody className="divide-y">
+                        {roles.map((role) => (
+                          <tr key={role._id} className="hover:bg-slate-50">
+                            <td className="p-5 font-semibold text-slate-700">
+                              {editingId === role._id ? (
+                                <input
+                                  type="text"
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                  className="w-full p-2 border border-slate-200 rounded-lg outline-none"
+                                  autoFocus
+                                />
+                              ) : (
+                                role.name
+                              )}
+                            </td>
+
+                            <td className="p-5 text-right">
+                              <div className="flex justify-end gap-2">
+                                {editingId === role._id ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleEditRole(role._id)}
+                                      disabled={submitting}
+                                      className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => startEditing(role)}
+                                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                                    >
+                                      <Edit3 size={18} />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteRole(role._id)}
+                                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ProtectedDashboardRoute>
   );
 }
