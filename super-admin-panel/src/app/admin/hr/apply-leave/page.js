@@ -60,7 +60,7 @@ export default function HRLeaveDashboard() {
     fetchLeaves(true);
 
     const interval = setInterval(() => {
-      fetchLeaves(false);  
+      fetchLeaves(false);
     }, 5000);
 
     return () => clearInterval(interval);
@@ -128,6 +128,7 @@ export default function HRLeaveDashboard() {
     } catch (err) {
       console.log(err);
       alert(err.response?.data?.message || "Server error");
+      oe;
     }
 
     setFormLoading(false);

@@ -8,6 +8,7 @@ import {
 } from "@/services/attandanceApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import AttendanceSummary from "@/components/AttendanceSummary";
 
 export default function HRAttendance() {
   const [attendance, setAttendance] = useState([]);
@@ -191,6 +192,9 @@ export default function HRAttendance() {
           <h1 className="text-3xl font-bold mb-6 text-gray-800">
             All Users Attendance
           </h1>
+
+          {/* Attendance Summary */}
+          <AttendanceSummary startDate={startDate} endDate={endDate} />
 
           <div className="bg-white p-4 rounded-lg shadow mb-6">
             <div className="flex gap-3 items-center flex-wrap">

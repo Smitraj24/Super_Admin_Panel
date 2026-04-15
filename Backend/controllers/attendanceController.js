@@ -248,9 +248,23 @@ export const getAllUsersAttendance = async (req, res) => {
   try {
     const { startDate, endDate, date, page = 1, limit = 50 } = req.query;
 
-    console.log("[GET ALL ATTENDANCE] User:", req.user?.email, "Role:", req.user?.role?.name, "Department:", req.user?.department?.name);
-    console.log("[GET ALL ATTENDANCE] Query params:", { startDate, endDate, date });
-    console.log("[GET ALL ATTENDANCE] Department filter:", req.departmentFilter);
+    console.log(
+      "[GET ALL ATTENDANCE] User:",
+      req.user?.email,
+      "Role:",
+      req.user?.role?.name,
+      "Department:",
+      req.user?.department?.name,
+    );
+    console.log("[GET ALL ATTENDANCE] Query params:", {
+      startDate,
+      endDate,
+      date,
+    });
+    console.log(
+      "[GET ALL ATTENDANCE] Department filter:",
+      req.departmentFilter,
+    );
 
     let filter = {};
 
@@ -284,7 +298,10 @@ export const getAllUsersAttendance = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
-    console.log("[GET ALL ATTENDANCE] Found records before filter:", attendance.length);
+    console.log(
+      "[GET ALL ATTENDANCE] Found records before filter:",
+      attendance.length,
+    );
 
     // Filter by department if departmentFilter is set (for non-SUPER_ADMIN and non-HR)
     if (req.departmentFilter && req.departmentFilter.department) {
@@ -292,7 +309,7 @@ export const getAllUsersAttendance = async (req, res) => {
       attendance = attendance.filter(
         (record) =>
           record.userId?.department?._id?.toString() ===
-          req.departmentFilter.department.toString()
+          req.departmentFilter.department.toString(),
       );
       console.log("[GET ALL ATTENDANCE] After filter:", attendance.length);
     }
@@ -447,12 +464,21 @@ export const getAttendanceSummary = async (req, res) => {
     const { startDate, endDate } = req.query;
     const userId = req.user._id;
 
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "startDate and endDate are required" });
+    }
+
     const records = await Attendance.find({
       userId,
       date: { $gte: startDate, $lte: endDate },
     });
 
     const REQUIRED_DAILY_HOURS = 8.5;
+    const LATE_THRESHOLD_HOUR = 12;
+    const LATE_THRESHOLD_MIN = 30;
+    const HALF_DAY_HOURS = 4;
 
     let totalDays = 0;
     let present = 0;
@@ -471,24 +497,48 @@ export const getAttendanceSummary = async (req, res) => {
 
       present++;
 
-      const checkInHour = new Date(r.checkIn).getHours();
-      const checkInMin = new Date(r.checkIn).getMinutes();
+      const checkInTime = new Date(r.checkIn);
+      const checkInHour = checkInTime.getHours();
+      const checkInMin = checkInTime.getMinutes();
 
-      if (checkInHour > 10 || (checkInHour === 10 && checkInMin > 30)) {
+      // Check if late
+      if (
+        checkInHour > LATE_THRESHOLD_HOUR ||
+        (checkInHour === LATE_THRESHOLD_HOUR && checkInMin > LATE_THRESHOLD_MIN)
+      ) {
         late++;
       }
-    
-     const  totalWorkMinutes =  (checkOut - checkInHour) / 1000 * 60 * 60 ;
 
+      // Calculate work hours
+      if (r.checkOut) {
+        const checkOutTime = new Date(r.checkOut);
+        let workMinutes = (checkOutTime - checkInTime) / (1000 * 60);
+
+        // Subtract break time
+        if (r.breaks && r.breaks.length > 0) {
+          r.breaks.forEach((brk) => {
+            if (brk.breakIn && brk.breakOut) {
+              const breakMinutes =
+                (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60);
+              workMinutes -= breakMinutes;
+            }
+          });
+        }
+
+        totalWorkMinutes += workMinutes;
+
+        // Check if half day
+        const workHours = workMinutes / 60;
+        if (workHours < HALF_DAY_HOURS) {
+          halfDay++;
+        }
+      }
     }
 
     const totalWorkHours = (totalWorkMinutes / 60).toFixed(1);
-
     const totalOfficeHours = present * REQUIRED_DAILY_HOURS;
-
-    
     const productivity = totalOfficeHours
-      ? ((totalWorkHours / totalOfficeHours) * 100).toFixed(0)
+      ? ((totalWorkMinutes / 60 / totalOfficeHours) * 100).toFixed(0)
       : 0;
 
     res.json({
@@ -498,15 +548,13 @@ export const getAttendanceSummary = async (req, res) => {
       late,
       halfDay,
       totalOffice: present,
-      totalWorkHours,
-      totalOfficeHours, 
-      productivity,
+      totalWorkHours: parseFloat(totalWorkHours),
+      totalOfficeHours,
+      productivity: parseInt(productivity),
       leaves: totalDays - present,
     });
   } catch (err) {
+    console.error("Get Attendance Summary Error:", err.message);
     res.status(500).json({ message: err.message });
   }
 };
-           
-
-

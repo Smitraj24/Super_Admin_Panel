@@ -209,9 +209,9 @@ export default function Navbar() {
   return (
     <header className="h-16 fixed top-0 right-0 left-2 md:left-64 bg-white/80 backdrop-blur-md border-b border-slate-200 z-40 flex items-center justify-between px-4 md:px-6">
       {/* Left Side */}
-      <div className="p-4">
+      <div className=" p-4">
         <p className="text-sm text-slate-500">{getGreeting()}</p>
-        <p className="text-lg font-semibold text-slate-800">
+        <p className="text-md font-semibold text-slate-800">
           {time.toLocaleTimeString()}
         </p>
       </div>

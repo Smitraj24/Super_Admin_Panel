@@ -16,6 +16,7 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
     fromDate: "",
     toDate: "",
     reason: "",
+    isHalfDay: false,
   });
 
   const fetchLeaves = async (showLoader = true) => {
@@ -28,7 +29,11 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
   }, []);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({ 
+      ...form, 
+      [name]: type === "checkbox" ? checked : value 
+    });
   };
 
   const validateForm = () => {
@@ -40,6 +45,17 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
     if (new Date(form.toDate) < new Date(form.fromDate)) {
       alert("End date cannot be before start date");
       return false;
+    }
+
+    // Validate half-day leave
+    if (form.isHalfDay) {
+      const fromDate = new Date(form.fromDate).toDateString();
+      const toDate = new Date(form.toDate).toDateString();
+      
+      if (fromDate !== toDate) {
+        alert("Half-day leave must be for a single day. Please select the same date for both From and To.");
+        return false;
+      }
     }
 
     return true;
@@ -63,6 +79,7 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
           fromDate: "",
           toDate: "",
           reason: "",
+          isHalfDay: false,
         });
 
         setShowForm(false);
@@ -157,6 +174,26 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
                   </div>
                 </div>
 
+                {/* Half Day Checkbox */}
+                <div className="flex items-center gap-2 bg-blue-50 p-3 rounded border border-blue-200">
+                  <input
+                    type="checkbox"
+                    id="isHalfDay"
+                    name="isHalfDay"
+                    checked={form.isHalfDay}
+                    onChange={handleChange}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="isHalfDay" className="font-semibold text-gray-700 cursor-pointer">
+                    This is a half-day leave
+                  </label>
+                  {form.isHalfDay && (
+                    <span className="ml-2 text-sm text-blue-600">
+                      (From and To dates must be the same)
+                    </span>
+                  )}
+                </div>
+
                 <div>
                   <label className="block font-semibold mb-2">Reason</label>
                   <textarea
@@ -203,6 +240,7 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
                   <thead className="bg-gray-100 border-b">
                     <tr className="text-left">
                       <th className="p-4">Leave Type</th>
+                      <th className="p-4">Duration</th>
                       <th className="p-4">From Date</th>
                       <th className="p-4">To Date</th>
                       <th className="p-4">Reason</th>
@@ -218,6 +256,17 @@ export default function LeaveManagement({ bgGradient = "bg-gray-100" }) {
                         className="border-t hover:bg-gray-50 transition"
                       >
                         <td className="p-4 font-semibold">{leave.leaveType}</td>
+                        <td className="p-4">
+                          {leave.isHalfDay ? (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">
+                              Half Day
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-semibold">
+                              Full Day
+                            </span>
+                          )}
+                        </td>
                         <td className="p-4">
                           {new Date(leave.fromDate).toLocaleDateString()}
                         </td>
