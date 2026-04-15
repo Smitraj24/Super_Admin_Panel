@@ -13,6 +13,10 @@ const leaveSchema = new mongoose.Schema(
     leaveType: String,
     fromDate: Date,
     toDate: Date,
+    isHalfDay: {
+      type: Boolean,
+      default: false,
+    },
     reason: String,
     status: {
       type: String,

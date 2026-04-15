@@ -8,13 +8,18 @@ import {
   breakInApi,
   breakOutApi,
   checkOutApi,
+  getAttendanceApi,
 } from "../services/attandanceApi.js";
 
 export default function AttendanceButtons({ userId }) {
   const [attendance, setAttendance] = useState(null);
+  const [attendanceHistory, setAttendanceHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
 
   const fetchStatus = async () => {
     try {
@@ -25,19 +30,31 @@ export default function AttendanceButtons({ userId }) {
     }
   };
 
+  const fetchAttendanceHistory = async () => {
+    try {
+      const res = await getAttendanceApi(selectedDate);
+      setAttendanceHistory(res.data);
+    } catch (error) {
+      console.error("Error fetching attendance history:", error);
+    }
+  };
+
   useEffect(() => {
     fetchStatus();
-    // Poll for status updates every 30 seconds
     const interval = setInterval(fetchStatus, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    fetchAttendanceHistory();
+  }, [selectedDate]);
 
   const handleAction = async (type) => {
     try {
       setLoading(true);
       setMessage("");
 
-      const payload = { userId };
+      const payload = {};
 
       let response;
       if (type === "checkIn") response = await checkInApi(payload);
@@ -48,8 +65,10 @@ export default function AttendanceButtons({ userId }) {
       setMessage(response.data.message);
       setMessageType("success");
 
+      await fetchStatus();
+      await fetchAttendanceHistory();
+
       setTimeout(() => {
-        fetchStatus();
         setMessage("");
       }, 1500);
     } catch (error) {
@@ -62,13 +81,54 @@ export default function AttendanceButtons({ userId }) {
     }
   };
 
+  const formatTime = (date) => {
+    if (!date) return "-";
+    return new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const calculateBreakTime = (breaks) => {
+    if (!breaks || breaks.length === 0) return "0:00";
+    let totalBreakMinutes = 0;
+    breaks.forEach((breakRecord) => {
+      if (breakRecord.breakIn && breakRecord.breakOut) {
+        const breakLength =
+          new Date(breakRecord.breakOut) - new Date(breakRecord.breakIn);
+        totalBreakMinutes += breakLength / (1000 * 60);
+      }
+    });
+    const hours = Math.floor(totalBreakMinutes / 60);
+    const minutes = Math.floor(totalBreakMinutes % 60);
+    return `${hours}:${minutes.toString().padStart(2, "0")}`;
+  };
+
+  const calculateWorkingHours = (checkIn, checkOut, breaks) => {
+    if (!checkIn || !checkOut) return "-";
+    const totalTime = new Date(checkOut) - new Date(checkIn);
+    let breakTime = 0;
+    if (breaks && breaks.length > 0) {
+      breaks.forEach((breakRecord) => {
+        if (breakRecord.breakIn && breakRecord.breakOut) {
+          breakTime +=
+            new Date(breakRecord.breakOut) - new Date(breakRecord.breakIn);
+        }
+      });
+    }
+    const workingMinutes = (totalTime - breakTime) / (1000 * 60);
+    const hours = Math.floor(workingMinutes / 60);
+    const minutes = Math.floor(workingMinutes % 60);
+    return `${hours} hrs ${minutes} mins`;
+  };
+
   if (!attendance) {
     return (
       <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 mb-8">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           Attendance Tracking
         </h2>
-
         {message && (
           <div
             className={`mb-6 p-4 rounded-lg font-semibold ${
@@ -80,7 +140,6 @@ export default function AttendanceButtons({ userId }) {
             {message}
           </div>
         )}
-
         <div className="grid grid-cols-2 gap-4">
           <button
             disabled={loading}
@@ -119,102 +178,185 @@ export default function AttendanceButtons({ userId }) {
   const status = attendance.status;
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 mb-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Attendance Tracking</h2>
-        <span
-          className={`px-4 py-2 rounded-full font-semibold text-sm ${
-            status === "CHECKED_IN"
-              ? "bg-blue-100 text-blue-800"
+    <div className="space-y-6">
+      <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            Attendance Tracking
+          </h2>
+          <span
+            className={`px-4 py-2 rounded-full font-semibold text-sm ${
+              status === "CHECKED_IN"
+                ? "bg-blue-100 text-blue-800"
+                : status === "ON_BREAK"
+                  ? "bg-yellow-100 text-yellow-800"
+                  : status === "BACK_TO_WORK"
+                    ? "bg-purple-100 text-purple-800"
+                    : status === "CHECKED_OUT"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+            }`}
+          >
+            {status === "CHECKED_IN"
+              ? "Checked In"
               : status === "ON_BREAK"
-                ? "bg-yellow-100 text-yellow-800"
+                ? "On Break"
                 : status === "BACK_TO_WORK"
-                  ? "bg-purple-100 text-purple-800"
+                  ? "Back to Work"
                   : status === "CHECKED_OUT"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {status === "CHECKED_IN"
-            ? "Checked In"
-            : status === "ON_BREAK"
-              ? "On Break"
-              : status === "BACK_TO_WORK"
-                ? "Back to Work"
-                : status === "CHECKED_OUT"
-                  ? "Checked Out"
-                  : status}
-        </span>
+                    ? "Checked Out"
+                    : status}
+          </span>
+        </div>
+        {message && (
+          <div
+            className={`mb-6 p-4 rounded-lg font-semibold ${
+              messageType === "success"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {message}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            disabled={loading || status !== "NOT_CHECKED_IN"}
+            onClick={() => handleAction("checkIn")}
+            className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+              loading || status !== "NOT_CHECKED_IN"
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600 text-white cursor-pointer"
+            }`}
+          >
+            <LogIn size={20} />
+            Check In
+          </button>
+          <button
+            disabled={
+              loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+            }
+            onClick={() => handleAction("breakIn")}
+            className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+              loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-yellow-500 hover:bg-yellow-600 text-white cursor-pointer"
+            }`}
+          >
+            <Coffee size={20} />
+            Break In
+          </button>
+          <button
+            disabled={
+              loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+            }
+            onClick={() => handleAction("checkOut")}
+            className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+              loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-red-500 hover:bg-red-600 text-white cursor-pointer"
+            }`}
+          >
+            <LogOut size={20} />
+            Check Out
+          </button>
+          <button
+            disabled={loading || status !== "ON_BREAK"}
+            onClick={() => handleAction("breakOut")}
+            className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
+              loading || status !== "ON_BREAK"
+                ? "bg-gray-400 text-white cursor-not-allowed"
+                : "bg-cyan-400 hover:bg-cyan-500 text-white cursor-pointer"
+            }`}
+          >
+            <Clock size={20} />
+            Break Out
+          </button>
+        </div>
       </div>
 
-      {message && (
-        <div
-          className={`mb-6 p-4 rounded-lg font-semibold ${
-            messageType === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {message}
+      <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900">
+            Attendance History
+          </h2>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="px-4 py-2 grid grid-cols-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        {/* Check In Button */}
-        <button
-          disabled={loading || status !== "NOT_CHECKED_IN"}
-          onClick={() => handleAction("checkIn")}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            status !== "NOT_CHECKED_IN"
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-green-500 hover:bg-green-600 text-white"
-          }`}
-        >
-          <LogIn size={20} />
-          Check In
-        </button>
-
-        {/* Break In Button */}
-        <button
-          disabled={loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)}
-          onClick={() => handleAction("breakIn")}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-yellow-500 hover:bg-yellow-600 text-white"
-          }`}
-        >
-          <Coffee size={20} />
-          Break In
-        </button>
-
-        {/* Check Out Button */}
-        <button
-          disabled={loading || !["CHECKED_IN", "BACK_TO_WORK"].includes(status)}
-          onClick={() => handleAction("checkOut")}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            !["CHECKED_IN", "BACK_TO_WORK"].includes(status)
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-red-500 hover:bg-red-600 text-white"
-          }`}
-        >
-          <LogOut size={20} />
-          Check Out
-        </button>
-
-        {/* Break Out Button */}
-        <button
-          disabled={loading || status !== "ON_BREAK"}
-          onClick={() => handleAction("breakOut")}
-          className={`px-6 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-            status !== "ON_BREAK"
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-cyan-400 hover:bg-cyan-500 text-white"
-          }`}
-        >
-          <Clock size={20} />
-          Break Out
-        </button>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-gray-200">
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  Date
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  Entry Time
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  Exit Time
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  Break Time
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  Working Hours
+                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                  User Details
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendanceHistory.length > 0 ? (
+                attendanceHistory.map((record, index) => (
+                  <tr
+                    key={index}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
+                    <td className="py-3 px-4">{record.date}</td>
+                    <td className="py-3 px-4">{formatTime(record.checkIn)}</td>
+                    <td className="py-3 px-4">{formatTime(record.checkOut)}</td>
+                    <td className="py-3 px-4">
+                      {calculateBreakTime(record.breaks)}
+                    </td>
+                    <td className="py-3 px-4">
+                      {calculateWorkingHours(
+                        record.checkIn,
+                        record.checkOut,
+                        record.breaks,
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      <div className="text-blue-600 font-medium">
+                        {record.userId?.email || "N/A"}
+                      </div>
+                      <div className="text-gray-600 text-xs">
+                        {record.userId?.name || "N/A"}
+                      </div>
+                      <div className="text-gray-500 text-xs">
+                        ID: {record.userId?._id || "N/A"}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="6"
+                    className="py-8 px-4 text-center text-gray-500"
+                  >
+                    No attendance records for this date
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

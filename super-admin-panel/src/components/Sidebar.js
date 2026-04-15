@@ -20,8 +20,10 @@ import {
   Wifi,
   Cpu,
   Zap,
-  FlaskConical,
   ClipboardList,
+  User,
+  Shield,
+  Crown,
 } from "lucide-react";
 
 // "Dashboard" always resolves to the base path; others append /${toSlug(name)}.
@@ -35,6 +37,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Help Desk", icon: Monitor },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
@@ -45,6 +48,7 @@ const userDeptMenus = {
     { name: "Roles", icon: UserCog },
     { name: "Projects", icon: Cpu },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
@@ -56,6 +60,7 @@ const userDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
 };
@@ -71,6 +76,7 @@ const adminDeptMenus = {
     { name: "Help Desk", icon: Monitor },
     { name: "Asset Management", icon: Server },
     { name: "Network Monitor", icon: Wifi },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   ce: [
@@ -82,6 +88,7 @@ const adminDeptMenus = {
     { name: "Projects", icon: Cpu },
     { name: "Reports", icon: ClipboardList },
     { name: "Holidays", icon: Calendar },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   sales: [
@@ -94,6 +101,7 @@ const adminDeptMenus = {
     { name: "Leads", icon: Zap },
     { name: "Targets", icon: ClipboardList },
     { name: "Reports", icon: ClipboardList },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
   hr: [
@@ -104,36 +112,23 @@ const adminDeptMenus = {
     { name: "Departments", icon: Building2 },
     { name: "Roles", icon: UserCog },
     { name: "Holidays", icon: Calendar },
+    { name: "Attendance", icon: Calendar },
     { name: "Apply Leave", icon: Calendar },
   ],
 };
 
-const defaultUserMenu = [
-  { name: "Dashboard", icon: LayoutDashboard },
-  { name: "Profile", icon: Users },
-  { name: "Users", icon: Users },
-  { name: "Departments", icon: Building2 },
-  { name: "Roles", icon: UserCog },
-  { name: "Apply Leave", icon: Calendar },
-];
-
-const defaultAdminMenu = [
-  { name: "Dashboard", icon: LayoutDashboard },
-  { name: "Profile", icon: Users },
-  { name: "Users", icon: Users },
-  { name: "Departments", icon: Building2 },
-  { name: "Roles", icon: UserCog },
-  { name: "Holidays", icon: Calendar },
-  { name: "Apply Leave", icon: Calendar },
-];
-
 const toSlug = (name) => name.toLowerCase().replace(/\s+/g, "-");
 
 export default function Sidebar() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  // Show nothing while loading
+  if (loading || !user) {
+    return null;
+  }
 
   const role = (user?.role?.name || user?.role || "USER" || "USER")
     .toUpperCase()
@@ -168,7 +163,13 @@ export default function Sidebar() {
     }
 
     if (role === "ADMIN") {
-      const availableMenus = adminDeptMenus[dept] || defaultAdminMenu;
+      const availableMenus = adminDeptMenus[dept];
+      
+      // If department doesn't have specific menus, return empty array
+      if (!availableMenus) {
+        return [];
+      }
+
       const userPermissions = user?.sidebarPermissions || [];
 
       // Display menu items, filtering by permissions if they exist
@@ -188,7 +189,13 @@ export default function Sidebar() {
     }
 
     // USER
-    const availableMenus = userDeptMenus[dept] || defaultUserMenu;
+    const availableMenus = userDeptMenus[dept];
+    
+    // If department doesn't have specific menus, return empty array
+    if (!availableMenus) {
+      return [];
+    }
+
     const userPermissions = user?.sidebarPermissions || [];
 
     // Display menu items, filtering by permissions if they exist
@@ -208,12 +215,28 @@ export default function Sidebar() {
   })();
 
   const roleHeader = {
-    SUPER_ADMIN: { title: "Super Admin", color: "#34d399" },
-    ADMIN: { title: "Admin", color: "#60a5fa" },
-    USER: { title: "User", color: "#f59e0b" },
+    SUPER_ADMIN: {
+      title: "Super Admin",
+      color: "#18171cad",
+      secondaryColor: "#18171cad",
+    },
+    ADMIN: {
+      title: "Admin",
+      color: "#2efa65a9",
+      secondaryColor: "#059669",
+    },
+    USER: {
+      title: "User",
+      color: "#4f46e5",
+      secondaryColor: "#4338ca",
+    },
   };
 
-  const header = roleHeader[role] || { title: "Dashboard", color: "#34d399" };
+  const header = roleHeader[role] || { 
+    title: "Dashboard", 
+    color: "#4f46e5",
+    secondaryColor: "#4338ca" 
+  };
 
   return (
     <>
@@ -238,19 +261,12 @@ export default function Sidebar() {
             <X size={24} />
           </button>
 
-          <svg
-            width="40"
-            height="40"
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect x="5" y="5" width="35" height="20" fill={header.color} />
-            <rect x="60" y="5" width="35" height="20" fill="#10b981" />
-            <rect x="5" y="40" width="35" height="20" fill="#10b981" />
-            <rect x="60" y="40" width="35" height="20" fill={header.color} />
-            <rect x="30" y="65" width="40" height="25" fill="#059669" />
-          </svg>
+          {/* Dynamic Icon based on role */}
+          <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: header.color }}>
+            {role === "SUPER_ADMIN" && <Crown size={24} className="text-white mt-[-10px]" />}
+            {role === "ADMIN" && <Shield size={24} className="text-white" />}
+            {role === "USER" && <User size={24} className="text-white" />}
+          </div>
 
           <div>
             <h2 className="text-xl font-bold text-white leading-tight">
@@ -296,3 +312,11 @@ export default function Sidebar() {
     </>
   );
 }
+
+
+
+
+
+
+  
+

@@ -48,26 +48,28 @@ export const ProtectedDashboardRoute = ({
       requiredDepartment &&
       (userRole === ROLES.USER || userRole === ROLES.ADMIN)
     ) {
-      // Extract department from path (e.g., /dashboard/it or /admin/dashboard/it)
-      const pathDepartment = extractDepartmentFromPath(pathname);
+      // Get actual department name from user data
+      const actualDepartmentName =
+        typeof userDepartment === "object" && userDepartment !== null
+          ? userDepartment.name
+          : userDepartment;
 
-      if (pathDepartment) {
-        // Get actual department name from user data
-        const actualDepartmentName =
-          typeof userDepartment === "object"
-            ? userDepartment.name
-            : userDepartment;
+      if (!actualDepartmentName) {
+        // User has no department assigned, redirect to login
+        console.error("User has no department assigned");
+        router.push("/login");
+        setAuthLoading(false);
+        return;
+      }
 
-        // Compare case-insensitively
-        if (
-          actualDepartmentName &&
-          actualDepartmentName.toLowerCase() !== pathDepartment.toLowerCase()
-        ) {
-          // User/Admin trying to access different department dashboard
-          router.push("/unauthorized");
-          setAuthLoading(false);
-          return;
-        }
+      // Compare required department with user's department (case-insensitive)
+      if (
+        requiredDepartment.toLowerCase() !== actualDepartmentName.toLowerCase()
+      ) {
+        // User/Admin trying to access different department dashboard
+        router.push("/unauthorized");
+        setAuthLoading(false);
+        return;
       }
     }
 
@@ -92,15 +94,20 @@ export const ProtectedDashboardRoute = ({
 
 /**
  * Helper function to extract department from pathname
- * Example: /dashboard/it -> 'it'
+ * Example: /dashboard/it -> 'it', /admin/ce -> 'ce'
  */
 function extractDepartmentFromPath(pathname) {
   // Matches /dashboard/it or /admin/it/...
   const match = pathname.match(/\/(?:admin|dashboard)\/([a-z0-9_-]+)/i);
-  
-  // Exclude non-department generic paths safely
-  if (match && !["dashboard", "profile", "users", "departments", "roles", "holidays"].includes(match[1].toLowerCase())) {
-    return match[1];
+
+  if (match) {
+    const segment = match[1].toLowerCase();
+    // Valid departments
+    const validDepartments = ["it", "hr", "sales", "finance", "ce"];
+    
+    if (validDepartments.includes(segment)) {
+      return segment;
+    }
   }
   return null;
 }
@@ -120,8 +127,13 @@ export const useDepartmentAccess = (departmentSlug) => {
     }
 
     const userDepartment = getDepartment();
+    
+    if (!userDepartment) {
+      return false;
+    }
+    
     const actualDepartmentName =
-      typeof userDepartment === "object"
+      typeof userDepartment === "object" && userDepartment !== null
         ? userDepartment?.name
         : userDepartment;
 

@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Navbar from "../../../components/Navbar";
 import Sidebar from "../../../components/Sidebar";
 import { PlusCircle, Trash2, Edit3, Building2 } from "lucide-react";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES } from "@/utils/constants";
 import {
   getDepartmentsApi,
   createDepartmentApi,
@@ -41,7 +43,7 @@ export default function DepartmentsPage() {
     try {
       await createDepartmentApi({ name: departmentName.trim() });
       setDepartmentName("");
-      fetchDepartments(); 
+      fetchDepartments();
     } catch (error) {
       console.error("Failed to create department:", error);
       alert("Failed to create department");
@@ -58,7 +60,7 @@ export default function DepartmentsPage() {
       await updateDepartmentApi(id, { name: editName.trim() });
       setEditingId(null);
       setEditName("");
-      fetchDepartments(); 
+      fetchDepartments();
     } catch (error) {
       console.error("Failed to update department:", error);
       alert("Failed to update department");
@@ -72,7 +74,7 @@ export default function DepartmentsPage() {
 
     try {
       await deleteDepartmentApi(id);
-      fetchDepartments(); 
+      fetchDepartments();
     } catch (error) {
       console.error("Failed to delete department:", error);
       alert("Failed to delete department");
@@ -90,141 +92,145 @@ export default function DepartmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
-      <Sidebar />
-      <Navbar />
+    <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
+      <div className="min-h-screen bg-[#F8FAFC]">
+        <Sidebar />
+        <Navbar />
 
-      <main className="md:pl-64 pt-16">
-        <div className="p-8">
-          <div className="flex flex-col  md:flex-row md:justify-center md:items-center mb-10 gap-3">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
-                <Building2 className="text-indigo-600" size={30} />
-                Departments Management
-              </h1>
-              <p className="mt-2 text-slate-500">
-                Manage your organization's departments
-              </p>
-            </div>
+        <main className="md:pl-64 pt-16">
+          <div className="p-8">
+            <div className="flex flex-col  md:flex-row md:justify-center md:items-center mb-10 gap-3">
+              <div>
+                <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+                  <Building2 className="text-indigo-600" size={30} />
+                  Departments Management
+                </h1>
+                <p className="mt-2 text-slate-500">
+                  Manage your organization's departments
+                </p>
+              </div>
 
-            <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
-              {departments.length} Department
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <div className="bg-white p-4 rounded-[2rem] border border-slate-200 shadow-sm">
-                <h3 className=" flex items-center gap-2 text-xl font-bold text-slate-900 ">
-                  <PlusCircle className=" text-indigo-600" />
-                  Add Department
-                </h3>
-
-                <input
-                  type="text"
-                  placeholder="Enter department name"
-                  value={departmentName}
-                  onChange={(e) => setDepartmentName(e.target.value)}
-                  className="w-full rounded-xl p-3 bg-slate-50  border border-slate-200 mt-6 outline-none hover:bg-slate-100 "
-                />
-
-                <button
-                  onClick={handleAddDepartment}
-                  disabled={submitting || !departmentName.trim()}
-                  className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Creating..." : "Create Department"}
-                </button>
+              <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
+                {departments.length} Department
               </div>
             </div>
 
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-x-auto">
-                {loading ? (
-                  <div className="p-8 text-center text-slate-500">
-                    Loading departments...
-                  </div>
-                ) : (
-                  <table className="w-full text-left">
-                    <thead>
-                      <tr className="bg-slate-50">
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
-                          DEPARTMENT NAME
-                        </th>
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase text-right">
-                          ACTIONS
-                        </th>
-                      </tr>
-                    </thead>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1">
+                <div className="bg-white p-4 rounded-[2rem] border border-slate-200 shadow-sm">
+                  <h3 className=" flex items-center gap-2 text-xl font-bold text-slate-900 ">
+                    <PlusCircle className=" text-indigo-600" />
+                    Add Department
+                  </h3>
 
-                    <tbody className="divide-y">
-                      {departments.map((department) => (
-                        <tr key={department._id} className="hover:bg-slate-50">
-                          <td className="p-5 font-semibold text-slate-700">
-                            {editingId === department._id ? (
-                              <input
-                                type="text"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                                className="w-full p-2 border border-slate-200 rounded-lg outline-none"
-                                autoFocus
-                              />
-                            ) : (
-                              department.name
-                            )}
-                          </td>
+                  <input
+                    type="text"
+                    placeholder="Enter department name"
+                    value={departmentName}
+                    onChange={(e) => setDepartmentName(e.target.value)}
+                    className="w-full rounded-xl p-3 bg-slate-50  border border-slate-200 mt-6 outline-none hover:bg-slate-100 "
+                  />
 
-                          <td className="p-5 text-right">
-                            <div className="flex justify-end gap-2">
-                              {editingId === department._id ? (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleEditDepartment(department._id)
-                                    }
-                                    disabled={submitting}
-                                    className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    onClick={cancelEditing}
-                                    className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
-                                  >
-                                    Cancel
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() => startEditing(department)}
-                                    className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg"
-                                  >
-                                    <Edit3 size={18} />
-                                  </button>
+                  <button
+                    onClick={handleAddDepartment}
+                    disabled={submitting || !departmentName.trim()}
+                    className="w-full mt-4 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? "Creating..." : "Create Department"}
+                  </button>
+                </div>
+              </div>
 
-                                  <button
-                                    onClick={() =>
-                                      handleDeleteDepartment(department._id)
-                                    }
-                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                                  >
-                                    <Trash2 size={18} />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-x-auto">
+                  {loading ? (
+                    <div className="p-8 text-center text-slate-500">
+                      Loading departments...
+                    </div>
+                  ) : (
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="bg-slate-50">
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                            DEPARTMENT NAME
+                          </th>
+                          <th className="p-5 text-xs text-slate-500 font-bold uppercase text-right">
+                            ACTIONS
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      </thead>
+
+                      <tbody className="divide-y">
+                        {departments.map((department) => (
+                          <tr
+                            key={department._id}
+                            className="hover:bg-slate-50"
+                          >
+                            <td className="p-5 font-semibold text-slate-700">
+                              {editingId === department._id ? (
+                                <input
+                                  type="text"
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                  className="w-full p-2 border border-slate-200 rounded-lg outline-none"
+                                  autoFocus
+                                />
+                              ) : (
+                                department.name
+                              )}
+                            </td>
+
+                            <td className="p-5 text-right">
+                              <div className="flex justify-end gap-2">
+                                {editingId === department._id ? (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleEditDepartment(department._id)
+                                      }
+                                      disabled={submitting}
+                                      className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="px-3 py-1 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() => startEditing(department)}
+                                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                                    >
+                                      <Edit3 size={18} />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteDepartment(department._id)
+                                      }
+                                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </ProtectedDashboardRoute>
   );
 }

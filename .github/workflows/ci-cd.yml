@@ -1,0 +1,52 @@
+name: MERN CI/CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ Checkout code
+      - name: 📥 Checkout
+        uses: actions/checkout@v3
+
+      # 2️⃣ Setup Node
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      # 3️⃣ Install backend deps
+      - name: 📦 Install Server Dependencies
+        run: |
+          cd server
+          npm install
+
+      # 4️⃣ Run backend tests
+      - name: 🧪 Run Server Tests
+        run: |
+          cd server
+          npm test
+
+      # 5️⃣ Install frontend deps
+      - name: 📦 Install Client Dependencies
+        run: |
+          cd client
+          npm install
+
+      # 6️⃣ Build frontend
+      - name: 🏗️ Build Client
+        run: |
+          cd client
+          npm run build
+
+      # 7️⃣ Deploy Backend (Render)
+      - name: 🚀 Deploy Backend to Render
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+      # 8️⃣ Deploy Frontend (Vercel)
+      - name: 🚀 Deploy Frontend to Vercel
+        run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}

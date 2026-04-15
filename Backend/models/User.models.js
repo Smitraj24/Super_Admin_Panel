@@ -16,8 +16,13 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Role",
       required: true,
+      index: true,
     },
-    department: { type: mongoose.Schema.Types.ObjectId, ref: "Department" },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      index: true,
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     sidebarPermissions: {
       type: [String],
@@ -26,25 +31,32 @@ const userSchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date },
-  },                                                                                                                                                                                                                                
+  },
   { timestamps: true },
 );
 
 userSchema.pre("save", async function () {
+  // Only hash password if modified
   if (!this.isModified("password")) {
-    console.log(" Password not modified, skipping hash");
+    console.log("Password not modified, skipping hash");
     return;
   }
 
-  console.log(" Pre-save hook: Hashing password...");
+  // Skip if already hashed
+  if (this.password && this.password.startsWith("$2")) {
+    console.log("Password already hashed, skipping re-hash");
+    return;
+  }
+
+  console.log("Hashing password...");
+
   try {
     const salt = await bcrypt.genSalt(10);
-    const originalPassword = this.password;
     this.password = await bcrypt.hash(this.password, salt);
-    console.log(" Password hashed successfully");
+    console.log("Password hashed successfully");
   } catch (error) {
-    console.error(" Password hashing error:", error.message);
-    throw error;
+    console.error("Password hashing error:", error.message);
+    throw error; // important
   }
 });
 

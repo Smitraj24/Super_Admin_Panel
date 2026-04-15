@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getProfile,
+  updateProfile,
   deleteUser,
   getUser,
 } from "../controllers/userController.js";
@@ -12,6 +13,7 @@ import { PERMISSIONS } from "../config/permissions.js";
 const router = express.Router();
 
 router.get("/profile", authMiddleware, getProfile);
+router.put("/profile", authMiddleware, updateProfile);
 
 router.get("/users", authMiddleware, getUser);
 

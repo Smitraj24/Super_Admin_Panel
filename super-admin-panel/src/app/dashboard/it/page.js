@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Code2, Server, Database, Shield } from "lucide-react";
 import Calander from "../../../components/Calendar.js";
 import HolidayWidget from "@/components/HolidayWidget.js";
+import AttendanceButtons from "@/components/AttendanceButtons.js";
 
 function ITDashboard() {
   const { user } = useAuth();
@@ -16,12 +17,18 @@ function ITDashboard() {
       <Navbar />
       <div className="lg:ml-64 mt-12">
         <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 gap-3 mb-10">
+            <h1 className=" text-4xl font-bold text-blue-900">
+              Attendance System
+            </h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-blue-900 mb-2">
               My Dashboard - IT Department
             </h1>
             <p className="text-blue-700 text-lg">
-              Welcome, {user?.name}! Here's your personal IT overview.
+              Welcome, {user?.name}! Here your personal IT overview.
             </p>
           </div>
 

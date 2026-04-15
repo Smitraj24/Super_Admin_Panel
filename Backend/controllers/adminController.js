@@ -169,6 +169,13 @@ export const createUser = async (req, res) => {
   try {
     const { name, email, password, department, sidebarPermissions } = req.body;
 
+    // Validate required fields
+    if (!name || !email) {
+      return res.status(400).json({
+        message: "Name and email are required",
+      });
+    }
+
     const role = await Role.findOne({ name: "USER" });
 
     if (!role) {
@@ -199,23 +206,33 @@ export const createUser = async (req, res) => {
       });
     }
 
+    // Ensure password is set (minimum 6 characters as per schema validation)
+    const userPassword = password || "123456";
+    if (userPassword.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
     const user = await User.create({
       name,
       email,
-      password: password || "123456",
-      role: role._id, 
-      department: req.body.department,    
+      password: userPassword, // This will be hashed by pre-save hook
+      role: role._id,
+      department: req.body.department,
       createdBy: req.user._id,
       sidebarPermissions: sidebarPermissions || [],
     });
 
-    const populatedUser = await User.findById(user._id) 
+    // Fetch and return the user with populated fields (exclude password)
+    const populatedUser = await User.findById(user._id)
       .populate("role", "name")
       .populate("department", "name")
       .select("-password");
 
     res.status(201).json(populatedUser);
   } catch (error) {
+    console.error("Create User Error:", error.message);
     res.status(400).json({
       message: error.message,
     });
@@ -420,9 +437,9 @@ export const createAdmin = async (req, res) => {
       }
     }
 
-    const { createUserService } = await import("../services/userService.js");
+    const { createUser } = await import("../services/userService.js");
 
-    const user = await createUserService(
+    const user = await createUser(
       name,
       email,
       password || "123456",

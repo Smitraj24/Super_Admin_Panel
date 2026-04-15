@@ -57,13 +57,13 @@ router.post("/roles", createRole);
 router.put("/roles/:id", updateRole);
 router.delete("/roles/:id", deleteRole);
 
-// User routes - admins can only manage their department users
+
 router.get("/users", getUser);
 router.post("/users", createUser);
 router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
 
-// Admin routes - admins can only manage admins in their department
+
 router.get("/admins", getAdmins);
 router.post("/admins", createAdmin);
 router.put("/admins/:id", updateAdmin);

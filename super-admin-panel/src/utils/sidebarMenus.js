@@ -8,6 +8,7 @@ export const userDeptMenus = {
     "Roles",
     "Help Desk",
     "Network Monitor",
+    "Attedance",
   ],
   ce: [
     "Dashboard",
@@ -17,6 +18,7 @@ export const userDeptMenus = {
     "Roles",
     "Projects",
     "Reports",
+    "Attedance",
   ],
   sales: [
     "Dashboard",
@@ -27,18 +29,10 @@ export const userDeptMenus = {
     "Leads",
     "Targets",
     "Reports",
+    "Attedance",
   ],
   hr: ["Dashboard", "Profile", "Users", "Departments", "Roles"],
 };
-
-// Default menu items for USER role
-export const defaultUserMenu = [
-  "Dashboard",
-  "Profile",
-  "Users",
-  "Departments",
-  "Roles",
-];
 
 // Get available menu items for a specific department and user role
 export const getAvailableMenus = (department, role = "USER") => {
@@ -54,6 +48,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Help Desk",
         "Asset Management",
         "Network Monitor",
+        "Attedance",
       ],
       ce: [
         "Dashboard",
@@ -65,6 +60,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Projects",
         "Lab Equipment",
         "Reports",
+        "Attedance",
       ],
       sales: [
         "Dashboard",
@@ -76,6 +72,7 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Leads",
         "Targets",
         "Reports",
+        "Attedance",
       ],
       hr: [
         "Dashboard",
@@ -85,19 +82,11 @@ export const getAvailableMenus = (department, role = "USER") => {
         "Departments",
         "Roles",
         "Holidays",
+        "Attedance",
       ],
     };
-    return (
-      adminDeptMenus[department?.toLowerCase()] || [
-        "Dashboard",
-        "Profile",
-        "Users",
-        "Departments",
-        "Roles",
-        "Holidays",
-      ]
-    );
+    return adminDeptMenus[department?.toLowerCase()] || [];
   }
 
-  return userDeptMenus[department?.toLowerCase()] || defaultUserMenu;
+  return userDeptMenus[department?.toLowerCase()] || [];
 };

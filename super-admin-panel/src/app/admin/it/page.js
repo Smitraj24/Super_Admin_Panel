@@ -14,6 +14,10 @@ import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useEffect, useState } from "react";
 import { getUsersApi } from "@/services/superAdminApi";
+import AttendanceButtons from "../../../components/AttendanceButtons";
+import BroadcastMessage from "@/components/BroadcastMessage";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES, DEPARTMENTS } from "@/utils/constants";
 
 function ITAdminDashboard() {
   const { user } = useAuth();
@@ -47,19 +51,32 @@ function ITAdminDashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      <Navbar />
-      <Sidebar />
+    <ProtectedDashboardRoute
+      requiredRole={ROLES.ADMIN}
+      requiredDepartment={DEPARTMENTS.IT.name}
+    >
+      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+        <Navbar />
+        <Sidebar />
 
       <div className="lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto p-8">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-blue-900 mb-2">
-              IT Department Admin Dashboard
+          <div className="grid gap-3 mb-10">
+            <h1 className=" text-4xl font-bold text-blue-900">
+              Attendance System
             </h1>
-            <p className="text-blue-700 text-lg">
-              Welcome, {user?.name}! Here's your IT management overview.
-            </p>
+            <AttendanceButtons userId={user?._id} />
+          </div>
+          <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-blue-900 mb-2">
+                IT Department Admin Dashboard
+              </h1>
+              <p className="text-blue-700 text-lg">
+                Welcome, {user?.name}! Here your IT management overview.
+              </p>
+            </div>
+            <BroadcastMessage />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -171,6 +188,7 @@ function ITAdminDashboard() {
         </div>
       </div>
     </main>
+    </ProtectedDashboardRoute>
   );
 }
 

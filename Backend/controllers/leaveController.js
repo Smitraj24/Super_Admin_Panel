@@ -1,11 +1,25 @@
 import Leave from "../models/Leave.js";
+import User from "../models/User.models.js";
 
 export const applyLeave = async (req, res) => {
   try {
-    const { leaveType, fromDate, toDate, reason } = req.body;
+    const { leaveType, fromDate, toDate, reason, isHalfDay } = req.body;
 
     if (!leaveType || !fromDate || !toDate || !reason) {
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    // Validate half-day leave
+    if (isHalfDay) {
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+      
+      // Half-day leave should be for the same day
+      if (from.toDateString() !== to.toDateString()) {
+        return res.status(400).json({ 
+          message: "Half-day leave must be for a single day" 
+        });
+      }
     }
 
     const leave = await Leave.create({
@@ -13,6 +27,7 @@ export const applyLeave = async (req, res) => {
       fromDate,
       toDate,
       reason,
+      isHalfDay: isHalfDay || false,
       user: req.user._id,
       department: req.user.department?._id,
       createdBy: req.user._id,

@@ -25,9 +25,9 @@ export default function Unauthorized() {
       if (department) {
         const deptName = typeof department === "object" ? department.name : department;
         const deptPath = deptName.toLowerCase();
-        router.push(`/admin/${deptPath}/dashboard`);
+        router.push(`/admin/${deptPath}`);
       } else {
-        router.push("/admin/ce/dashboard");
+        router.push("/admin/ce");
       }
     } else if (user?.role?.name === "SUPER_ADMIN") {
       router.push("/superadmin/dashboard");

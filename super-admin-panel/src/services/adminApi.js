@@ -24,3 +24,9 @@ export const updateAdminApi = (id, data) =>
   axiosInstance.put(`/admin/admins/${id}`, data);
 export const deleteAdminApi = (id) =>
   axiosInstance.delete(`/admin/admins/${id}`);
+
+export const getUsersApi = () => axiosInstance.get("/admin/users");
+export const createUserApi = (data) => axiosInstance.post("/admin/users", data);
+export const updateUserApi = (id, data) =>
+  axiosInstance.put(`/admin/users/${id}`, data);
+export const deleteUserApi = (id) => axiosInstance.delete(`/admin/users/${id}`);

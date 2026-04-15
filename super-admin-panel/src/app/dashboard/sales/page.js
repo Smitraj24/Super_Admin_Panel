@@ -3,6 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { TrendingUp, Target, Users, DollarSign } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import AttendanceButtons from "@/components/AttendanceButtons";
 
 function SalesDashboard() {
   const { user } = useAuth();
@@ -14,6 +15,12 @@ function SalesDashboard() {
 
       <div className="lg:ml-64 mt-20">
         <div className="max-w-7xl mx-auto">
+          <div className="grid gap-3 mb-10">
+            <h1 className=" text-4xl font-bold text-blue-900">
+              Attendance System
+            </h1>
+            <AttendanceButtons userId={user?._id} />
+          </div>
           <div className="mb-12">
             <h1 className="text-4xl font-bold text-purple-900 mb-2">
               My Dashboard - Sales Department
