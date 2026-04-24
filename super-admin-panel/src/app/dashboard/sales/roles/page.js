@@ -12,9 +12,10 @@ function SALESRolesPage() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
+        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
         const res = await fetch("http://localhost:5000/api/superadmin/roles", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         const data = await res.json();

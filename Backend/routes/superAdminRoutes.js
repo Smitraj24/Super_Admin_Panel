@@ -20,6 +20,10 @@ import {
   updateRole,
   deleteRole,
 } from "../controllers/roleController.js";
+import {
+  getAllLeavesForSuperAdmin,
+  updateLeaveStatusBySuperAdmin,
+} from "../controllers/leaveController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
 
@@ -50,5 +54,8 @@ router.put("/users/:id", updateUser);
 router.delete("/users/:id", deleteUser);
 
 router.get("/stats", getDashboardStats);
+
+router.get("/leaves", getAllLeavesForSuperAdmin);
+router.put("/leaves/:id", updateLeaveStatusBySuperAdmin);
 
 export default router;

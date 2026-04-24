@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { getMonthlyAttendanceApi, getAttendanceSummary } from "@/services/attandanceApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import { Menu } from "lucide-react";
+import { 
+  Calendar, Filter, RotateCcw, Zap, Target, BarChart3
+} from "lucide-react";
 
 export default function AttendancePageWithSummary() {
   const [attendance, setAttendance] = useState([]);
@@ -15,70 +17,113 @@ export default function AttendancePageWithSummary() {
   const [summary, setSummary] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  
+  // Track the latest request to prevent race conditions
+  const requestIdRef = useRef(0);
+  const abortControllerRef = useRef(null);
 
-  useEffect(() => {
-    fetchCurrentMonth();
-  }, []);
-
-  const fetchCurrentMonth = async () => {
+  const fetchCurrentMonth = useCallback(async () => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const currentRequestId = ++requestIdRef.current;
+    
     setLoading(true);
     try {
       const now = new Date();
-      // Set to 1st day of current month
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      // Set to last day of current month
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0];
 
       const [attendanceRes, summaryRes] = await Promise.all([
         getMonthlyAttendanceApi(firstDay, lastDay),
         getAttendanceSummary(firstDay, lastDay),
       ]);
 
-      setAttendance(attendanceRes.data);
-      setSummary(summaryRes.data);
-      setStartDate(firstDay);
-      setEndDate(lastDay);
+      // Only update state if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setAttendance(attendanceRes.data);
+        setSummary(summaryRes.data);
+        setStartDate(firstDay);
+        setEndDate(lastDay);
+      }
     } catch (err) {
-      console.error(err);
+      // Ignore abort errors
+      if (err.name !== 'AbortError' && currentRequestId === requestIdRef.current) {
+        console.error(err);
+      }
     } finally {
-      setLoading(false);
+      // Only clear loading if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
-  const handleFilter = async () => {
+  useEffect(() => {
+    fetchCurrentMonth();
+    
+    // Cleanup: abort any pending requests when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchCurrentMonth]);
+
+  const handleFilter = useCallback(async () => {
     if (!startDate || !endDate) {
       alert("Select both dates");
       return;
     }
+    
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const currentRequestId = ++requestIdRef.current;
+    
     setLoading(true);
-    setCurrentPage(1); // Reset to first page
+    setCurrentPage(1);
     try {
       const [attendanceRes, summaryRes] = await Promise.all([
         getMonthlyAttendanceApi(startDate, endDate),
         getAttendanceSummary(startDate, endDate),
       ]);
-      setAttendance(attendanceRes.data);
-      setSummary(summaryRes.data);
+      
+      // Only update state if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setAttendance(attendanceRes.data);
+        setSummary(summaryRes.data);
+      }
     } catch (err) {
-      console.error(err);
+      // Ignore abort errors
+      if (err.name !== 'AbortError' && currentRequestId === requestIdRef.current) {
+        console.error(err);
+      }
     } finally {
-      setLoading(false);
+      // Only clear loading if this is still the latest request
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [startDate, endDate]);
 
-  const formatTime = (dateString) => {
+  const formatTime = useCallback((dateString) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
+  }, []);
 
-  const calculateWorkingHours = (checkIn, checkOut, breaks) => {
+  const calculateWorkingHours = useCallback((checkIn, checkOut, breaks) => {
     if (!checkIn || !checkOut) return "-";
     
     let workMinutes = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60);
@@ -95,9 +140,9 @@ export default function AttendancePageWithSummary() {
     const hours = Math.floor(workMinutes / 60);
     const mins = Math.floor(workMinutes % 60);
     return `${hours}h ${mins}m`;
-  };
+  }, []);
 
-  const formatBreakTime = (breaks) => {
+  const formatBreakTime = useCallback((breaks) => {
     if (!breaks?.length) return "0h";
     
     let totalBreakMinutes = 0;
@@ -110,21 +155,27 @@ export default function AttendancePageWithSummary() {
     const hours = Math.floor(totalBreakMinutes / 60);
     const mins = Math.floor(totalBreakMinutes % 60);
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
+  }, []);
 
-  // Pagination calculations
-  const totalPages = Math.ceil(attendance.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentAttendance = attendance.slice(startIndex, endIndex);
+  const { totalPages, startIndex, endIndex, currentAttendance } = useMemo(() => {
+    // Sort attendance in reverse chronological order (newest first)
+    const sortedAttendance = [...attendance].sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    const totalPages = Math.ceil(sortedAttendance.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentAttendance = sortedAttendance.slice(startIndex, endIndex);
+    
+    return { totalPages, startIndex, endIndex, currentAttendance };
+  }, [attendance, currentPage, itemsPerPage]);
 
-  const handlePageChange = (page) => {
+  const handlePageChange = useCallback((page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
-  };
+  }, [totalPages]);
 
-  const getPageNumbers = () => {
+  const getPageNumbers = useMemo(() => {
     const pages = [];
     const maxVisiblePages = 5;
     
@@ -157,16 +208,20 @@ export default function AttendancePageWithSummary() {
     }
     
     return pages;
-  };
+  }, [currentPage, totalPages]);
+
+  // Calculate metrics
+  const attendanceRate = summary ? Math.round((summary.present / summary.totalDays) * 100) : 0;
+  const avgWorkHours = summary ? (summary.totalWorkHours / summary.totalDays).toFixed(1) : 0;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-black/40 md:hidden">
-          <div className="w-64 bg-white h-full shadow-lg p-4">
-            <button onClick={() => setOpen(false)} className="mb-4 text-gray-600">
+        <div className="fixed inset-0 z-50 bg-black/60 md:hidden backdrop-blur-md">
+          <div className="w-64 bg-white h-full shadow-2xl p-4 border-r border-slate-200">
+            <button onClick={() => setOpen(false)} className="mb-4 text-slate-600 hover:text-slate-900 transition-colors">
               Close
             </button>
             <Sidebar />
@@ -174,113 +229,176 @@ export default function AttendancePageWithSummary() {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col pt-4 md:ml-64">
-        <div className="flex items-center justify-between bg-white shadow px-4 py-3">
-          <button className="md:hidden" onClick={() => setOpen(true)}>
-            <Menu />
-          </button>
-          <Navbar />
-        </div>
+      <div className="flex-1 flex flex-col md:ml-64">
+        <Navbar />
+        
+        <div className="p-4 md:p-6 space-y-4 mt-20">
 
-        <div className="p-4 md:p-6">
-          {/* Date Filters */}
-          <div className="flex flex-wrap gap-3 mb-6 items-center">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-gray-300 p-2 rounded focus:outline-none focus:border-blue-500"
-            />
-            <button
-              onClick={handleFilter}
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-              disabled={loading}
-            >
-              Filter
-            </button>
-            <button
-              onClick={fetchCurrentMonth}
-              className="bg-orange-500 text-white px-6 py-2 rounded hover:bg-orange-600"
-              disabled={loading}
-            >
-              Reset
-            </button>
+          {/* Hero Dashboard Header */}
+          <div className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl blur-3xl"></div>
+            
+            <div className="relative bg-white rounded-2xl shadow-lg p-4 border border-slate-200">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl blur-lg opacity-60 animate-pulse"></div>
+                    <div className="relative p-2 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-lg">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                      Attendance Dashboard
+                    </h1>
+                    <p className="text-slate-600 text-sm mt-1">Monitor your work patterns and productivity metrics</p>
+                  </div>
+                </div>
+
+                {summary && (
+                  <div className="flex gap-3">
+                    <div className="bg-gradient-to-br from-cyan-50 to-blue-50 backdrop-blur-sm rounded-xl px-3 py-2 border border-cyan-200 hover:border-cyan-300 transition-all shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <Target className="w-4 h-4 text-cyan-600" />
+                        <div>
+                          <p className="text-xs text-slate-600 uppercase tracking-wider font-semibold">Attendance Rate</p>
+                          <p className="text-lg font-bold text-slate-900">{attendanceRate}%</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 backdrop-blur-sm rounded-xl px-3 py-2 border border-yellow-200 hover:border-yellow-300 transition-all shadow-sm">
+                      <div className="flex items-center space-x-2">
+                        <Zap className="w-4 h-4 text-yellow-600" />
+                        <div>
+                          <p className="text-xs text-slate-600 uppercase tracking-wider font-semibold">Avg Hours/Day</p>
+                          <p className="text-lg font-bold text-slate-900">{avgWorkHours}h</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Date Filter */}
+              <div className="bg-slate-50 backdrop-blur-sm rounded-xl p-4 border border-slate-200">
+                <div className="flex flex-wrap gap-3 items-end">
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="flex items-center space-x-2 text-xs font-semibold text-cyan-700 mb-2">
+                      <Calendar className="w-3 h-3" />
+                      <span>Start Date</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full bg-white border-2 border-slate-300 text-slate-900 text-sm p-2 rounded-lg focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-200 transition-all"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <label className="flex items-center space-x-2 text-xs font-semibold text-purple-700 mb-2">
+                      <Calendar className="w-3 h-3" />
+                      <span>End Date</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full bg-white border-2 border-slate-300 text-slate-900 text-sm p-2 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all"
+                    />
+                  </div>
+                  <button
+                    onClick={handleFilter}
+                    className="bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-sm px-4 py-2 rounded-lg hover:from-cyan-600 hover:to-blue-700 shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transform hover:scale-105 transition-all duration-200 font-semibold flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading}
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span>Apply Filter</span>
+                  </button>
+                  <button
+                    onClick={fetchCurrentMonth}
+                    className="bg-slate-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-slate-700 shadow-lg transform hover:scale-105 transition-all duration-200 font-semibold flex items-center space-x-2 border border-slate-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={loading}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Reset</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Summary Cards */}
+          {/* Stats Cards */}
           {summary && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-pink-400 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Days</div>
-                <div className="text-3xl font-bold">{summary.totalDays}</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* Total Days */}
+              <div className="bg-blue-500 border border-blue-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.totalDays}</div>
+                <div className="text-xs text-blue-100 mt-1">Total Days</div>
               </div>
 
-              <div className="bg-orange-500 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Late</div>
-                <div className="text-3xl font-bold">
-                  {summary.late > 0 ? Math.round((summary.late / summary.totalDays) * 100) : 0}% ({summary.late})
-                </div>
+              {/* Present Days */}
+              <div className="bg-green-500 border border-green-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.present}</div>
+                <div className="text-xs text-green-100 mt-1">Present</div>
               </div>
 
-              <div className="bg-cyan-400 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Absent</div>
-                <div className="text-3xl font-bold">
-                  {summary.absent > 0 ? Math.round((summary.absent / summary.totalDays) * 100) : 0}% ({summary.absent})
-                </div>
+              {/* Absent & Late */}
+              <div className="bg-red-500 border border-red-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.absent} / {summary.late}</div>
+                <div className="text-xs text-red-100 mt-1">Absent / Late</div>
               </div>
 
-              <div className="bg-yellow-400 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Half-day</div>
-                <div className="text-3xl font-bold">{summary.halfDay}</div>
+              {/* Productivity */}
+              <div className="bg-purple-500 border border-purple-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.productivity}%</div>
+                <div className="text-xs text-purple-100 mt-1">Productivity</div>
               </div>
 
-              <div className="bg-green-600 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Total Office</div>
-                <div className="text-2xl font-bold">
-                  {Math.floor(summary.totalOfficeHours)}h {Math.floor((summary.totalOfficeHours % 1) * 60)}m
-                </div>
+              {/* Work Hours */}
+              <div className="bg-indigo-500 border border-indigo-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.totalWorkHours}h</div>
+                <div className="text-xs text-indigo-100 mt-1">Work Hours</div>
               </div>
 
-              <div className="bg-indigo-700 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Total Worked</div>
-                <div className="text-2xl font-bold">
-                  {Math.floor(summary.totalWorkHours)}h {Math.floor((summary.totalWorkHours % 1) * 60)}m
-                </div>
+              {/* Required Hours */}
+              <div className="bg-teal-500 border border-teal-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.totalOfficeHours}h</div>
+                <div className="text-xs text-teal-100 mt-1">Required Hours</div>
               </div>
 
-              <div className="bg-green-500 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Productivity</div>
-                <div className="text-3xl font-bold">{summary.productivity}%</div>
+              {/* Half Days */}
+              <div className="bg-yellow-500 border border-yellow-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.halfDay}</div>
+                <div className="text-xs text-yellow-100 mt-1">Half Days</div>
               </div>
 
-              <div className="bg-green-700 text-white p-6 rounded shadow">
-                <div className="text-sm font-medium mb-1">Leaves</div>
-                <div className="text-3xl font-bold">{summary.leaves}</div>
+              {/* Leaves */}
+              <div className="bg-orange-500 border border-orange-600 p-3 text-center">
+                <div className="text-xl font-semibold text-white">{summary.leaves || 0}</div>
+                <div className="text-xs text-orange-100 mt-1">Leaves</div>
               </div>
             </div>
           )}
 
-          {/* Attendance Table */}
-          <div className="bg-white rounded shadow overflow-hidden">
+          {/* Attendance Records Table */}
+          <div className="bg-white border border-gray-300 overflow-hidden mt-4">
+            <div className="bg-gray-100 px-4 py-3 border-b border-gray-300">
+              <h2 className="font-medium text-gray-900">Attendance Records</h2>
+            </div>
+            
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-300">
                   <tr>
-                    <th className="p-3 text-left text-sm font-semibold">Date</th>
-                    <th className="p-3 text-left text-sm font-semibold">Entry Time</th>
-                    <th className="p-3 text-left text-sm font-semibold">Exit Time</th>
-                    <th className="p-3 text-left text-sm font-semibold">Break Time</th>
-                    <th className="p-3 text-left text-sm font-semibold">Working Hours</th>
-                    <th className="p-3 text-left text-sm font-semibold">Status</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Date</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Check In</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Check Out</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Break Time</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Work Hours</th>
+                    <th className="p-3 text-left font-medium text-gray-700">Status</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-200">
                   {loading ? (
                     <tr>
                       <td colSpan="6" className="text-center p-8 text-gray-500">
@@ -289,32 +407,29 @@ export default function AttendancePageWithSummary() {
                     </tr>
                   ) : currentAttendance.length > 0 ? (
                     currentAttendance.map((item) => (
-                      <tr key={item._id} className="border-t hover:bg-gray-50">
-                        <td className="p-3 text-sm">
-                          {new Date(item.date).toLocaleDateString("en-GB")}
+                      <tr key={item._id} className="hover:bg-gray-50">
+                        <td className="p-3 text-gray-900">
+                          {new Date(item.date).toLocaleDateString("en-GB", { 
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric' 
+                          })}
                         </td>
-                        <td className="p-3 text-sm">{formatTime(item.checkIn)}</td>
-                        <td className="p-3 text-sm">{formatTime(item.checkOut)}</td>
-                        <td className="p-3 text-sm">{formatBreakTime(item.breaks)}</td>
-                        <td className="p-3 text-sm">
+                        <td className="p-3 text-gray-900">{formatTime(item.checkIn)}</td>
+                        <td className="p-3 text-gray-900">{formatTime(item.checkOut)}</td>
+                        <td className="p-3 text-gray-900">{formatBreakTime(item.breaks)}</td>
+                        <td className="p-3 text-gray-900">
                           {calculateWorkingHours(item.checkIn, item.checkOut, item.breaks)}
                         </td>
-                        <td className="p-3 text-xs text-gray-600">
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            item.status === 'CHECKED_OUT' ? 'bg-green-100 text-green-800' :
-                            item.status === 'ON_BREAK' ? 'bg-yellow-100 text-yellow-800' :
-                            item.status === 'BACK_TO_WORK' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {item.status}
-                          </span>
+                        <td className="p-3 text-gray-700">
+                          {item.status.replace(/_/g, ' ')}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
                       <td colSpan="6" className="text-center p-8 text-gray-500">
-                        No data found
+                        No attendance records found
                       </td>
                     </tr>
                   )}
@@ -322,45 +437,48 @@ export default function AttendancePageWithSummary() {
               </table>
             </div>
 
+            {/* Pagination */}
             {attendance.length > 0 && (
-              <div className="border-t p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(endIndex, attendance.length)} of {attendance.length} entries
-                </div>
-                <div className="flex gap-2 flex-wrap justify-center">
-                  <button 
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Prev
-                  </button>
-                  
-                  {getPageNumbers().map((page, index) => (
-                    page === '...' ? (
-                      <span key={`ellipsis-${index}`} className="px-3 py-1">...</span>
-                    ) : (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 rounded ${
-                          currentPage === page
-                            ? 'bg-green-600 text-white'
-                            : 'border hover:bg-gray-100'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    )
-                  ))}
-                  
-                  <button 
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+              <div className="bg-gray-50 border-t border-gray-300 p-3">
+                <div className="flex flex-col md:flex-row justify-between items-center gap-3">
+                  <div className="text-xs text-gray-600">
+                    Showing {startIndex + 1} to {Math.min(endIndex, currentAttendance.length + startIndex)} of {attendance.length} entries
+                  </div>
+                  <div className="flex gap-2 flex-wrap justify-center">
+                    <button 
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 bg-gray-200 border border-gray-300 text-gray-700 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    
+                    {getPageNumbers.map((page, index) => (
+                      page === '...' ? (
+                        <span key={`ellipsis-${index}`} className="px-2 py-1 text-gray-400 text-sm">...</span>
+                      ) : (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-1 text-sm ${
+                            currentPage === page
+                              ? 'bg-gray-700 text-white border border-gray-700'
+                              : 'bg-gray-200 text-gray-700 border border-gray-300'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    ))}
+                    
+                    <button 
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 bg-gray-200 border border-gray-300 text-gray-700 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -370,3 +488,4 @@ export default function AttendancePageWithSummary() {
     </div>
   );
 }
+

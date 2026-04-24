@@ -1,4 +1,4 @@
-"use client";
+  "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -28,11 +28,6 @@ export default function DepartmentProtectedRoute({ children, requiredDepartment 
         ? user?.department?.name 
         : user?.department || "").toLowerCase();
 
-      console.log("DepartmentProtectedRoute - User:", user);
-      console.log("DepartmentProtectedRoute - User Role:", userRole);
-      console.log("DepartmentProtectedRoute - User Dept:", userDept);
-      console.log("DepartmentProtectedRoute - Required Dept:", requiredDepartment);
-
       // Super admin can access any department
       if (userRole === "SUPER_ADMIN") {
         setIsAllowed(true);
@@ -43,6 +38,8 @@ export default function DepartmentProtectedRoute({ children, requiredDepartment 
       // If user has no department, redirect to login to refresh data
       if (!userDept || userDept === "") {
         console.error("User has no department! Redirecting to login...");
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         router.replace("/login");
@@ -51,8 +48,6 @@ export default function DepartmentProtectedRoute({ children, requiredDepartment 
 
       // Check if user's department matches the required department
       if (requiredDepartment && userDept !== requiredDepartment.toLowerCase()) {
-        console.warn(`Department mismatch: User is in ${userDept} but trying to access ${requiredDepartment}`);
-        
         // Redirect to correct department
         if (userRole === "ADMIN") {
           router.replace(`/admin/${userDept}`);

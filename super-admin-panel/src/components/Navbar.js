@@ -1,15 +1,77 @@
 "use client";
 
 import { useAuth } from "../context/AuthContext";
-import { Bell, User, Settings, LogOut, X, Check, Clock, AlertCircle } from "lucide-react";
+import {
+  Bell,
+  User,
+  Settings,
+  LogOut,
+  X,
+  Check,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import {
   getNotificationsApi,
   markAsReadApi,
   markAllAsReadApi,
   deleteNotificationApi,
 } from "@/services/notificationApi";
+
+// Memoized notification item component
+const NotificationItem = memo(
+  ({ notif, onMarkAsRead, onDelete, getTimeAgo, getNotificationIcon }) => (
+    <div
+      className={`px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition ${
+        !notif.read ? "bg-indigo-50/50" : ""
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="flex-shrink-0 mt-1">
+          {getNotificationIcon(notif.type)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h4
+              className={`text-sm font-semibold ${!notif.read ? "text-slate-900" : "text-slate-600"}`}
+            >
+              {notif.title}
+            </h4>
+            {!notif.read && (
+              <span className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1"></span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 mt-1">{notif.message}</p>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-xs text-slate-400">
+              {getTimeAgo(notif.createdAt)}
+            </span>
+            <div className="flex gap-2">
+              {!notif.read && (
+                <button
+                  onClick={() => onMarkAsRead(notif._id)}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Mark read
+                </button>
+              )}
+              <button
+                onClick={() => onDelete(notif._id)}
+                className="text-xs text-rose-600 hover:text-rose-700 font-medium"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ),
+);
+
+NotificationItem.displayName = "NotificationItem";
 
 export default function Navbar() {
   const { user, logout, loading } = useAuth();
@@ -60,7 +122,7 @@ export default function Navbar() {
   // Fetch notifications - useCallback to prevent recreation
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
-    
+
     setLoadingNotifications(true);
     try {
       const res = await getNotificationsApi(20, 0);
@@ -80,13 +142,13 @@ export default function Navbar() {
     }
   }, [user, fetchNotifications]);
 
-  // Auto-refresh notifications every 30 seconds
+  // Auto-refresh notifications every 60 seconds (reduced from 30)
   useEffect(() => {
     if (!user) return;
-    
+
     const interval = setInterval(() => {
       fetchNotifications();
-    }, 30000); // 30 seconds
+    }, 60000); // 60 seconds
 
     return () => clearInterval(interval);
   }, [user, fetchNotifications]);
@@ -94,16 +156,19 @@ export default function Navbar() {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showNotifications && !event.target.closest('.notifications-container')) {
+      if (
+        showNotifications &&
+        !event.target.closest(".notifications-container")
+      ) {
         setShowNotifications(false);
       }
-      if (showProfileMenu && !event.target.closest('.profile-container')) {
+      if (showProfileMenu && !event.target.closest(".profile-container")) {
         setShowProfileMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNotifications, showProfileMenu]);
 
   // Show nothing while loading
@@ -112,7 +177,6 @@ export default function Navbar() {
   }
 
   const getGreeting = () => {
-    if (!time) return "Welcome 👋";
     const hours = time.getHours();
     if (hours < 12) return "Good Morning ☀️";
     if (hours < 18) return "Good Afternoon 🌤️";
@@ -126,59 +190,6 @@ export default function Navbar() {
       router.push(`/${rolePath}/${deptPath}/profile`);
     }
     setShowProfileMenu(false);
-  };
-
-  // Fetch notifications
-  
-
-  const markAsRead = async (id) => {
-    // Optimistic update
-    setNotifications(prev => prev.map(notif => 
-      notif._id === id ? { ...notif, read: true } : notif
-    ));
-    setUnreadCount(prev => Math.max(0, prev - 1));
-
-    try {
-      await markAsReadApi(id);
-    } catch (error) {
-      console.error("Error marking as read:", error);
-      // Revert on error
-      fetchNotifications();
-    }
-  };
-
-  const markAllAsRead = async () => {
-    // Optimistic update
-    const prevNotifications = notifications;
-    const prevUnreadCount = unreadCount;
-    setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
-    setUnreadCount(0);
-
-    try {
-      await markAllAsReadApi();
-    } catch (error) {
-      console.error("Error marking all as read:", error);
-      // Revert on error
-      setNotifications(prevNotifications);
-      setUnreadCount(prevUnreadCount);
-    }
-  };
-
-  const deleteNotification = async (id) => {
-    // Optimistic update
-    const deletedNotif = notifications.find(n => n._id === id);
-    setNotifications(prev => prev.filter(notif => notif._id !== id));
-    if (deletedNotif && !deletedNotif.read) {
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    }
-
-    try {
-      await deleteNotificationApi(id);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-      // Revert on error
-      fetchNotifications();
-    }
   };
 
   const getNotificationIcon = (type) => {
@@ -196,20 +207,73 @@ export default function Navbar() {
 
   const getTimeAgo = (date) => {
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-    
+
     if (seconds < 60) return "Just now";
     if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
     const hours = Math.floor(seconds / 3600);
-    if (seconds < 86400) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (seconds < 86400) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
     const days = Math.floor(seconds / 86400);
-    if (seconds < 604800) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (seconds < 604800) return `${days} day${days > 1 ? "s" : ""} ago`;
     return new Date(date).toLocaleDateString();
   };
+
+  const markAsRead = async (id) => {
+    // Optimistic update
+    setNotifications((prev) =>
+      prev.map((notif) =>
+        notif._id === id ? { ...notif, read: true } : notif,
+      ),
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
+    try {
+      await markAsReadApi(id);
+    } catch (error) {
+      console.error("Error marking as read:", error);
+      // Revert on error
+      fetchNotifications();
+    }
+  };
+
+  const markAllAsRead = async () => {
+    // Optimistic update
+    const prevNotifications = notifications;
+    const prevUnreadCount = unreadCount;
+    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+    setUnreadCount(0);
+
+    try {
+      await markAllAsReadApi();
+    } catch (error) {
+      console.error("Error marking all as read:", error);
+      // Revert on error
+      setNotifications(prevNotifications);
+      setUnreadCount(prevUnreadCount);
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    // Optimistic update
+    const deletedNotif = notifications.find((n) => n._id === id);
+    setNotifications((prev) => prev.filter((notif) => notif._id !== id));
+    if (deletedNotif && !deletedNotif.read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+
+    try {
+      await deleteNotificationApi(id);
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      // Revert on error
+      fetchNotifications();
+    }
+  };
+
 
   return (
     <header className="h-16 fixed top-0 right-0 left-2 md:left-64 bg-white/80 backdrop-blur-md border-b border-slate-200 z-40 flex items-center justify-between px-4 md:px-6">
       {/* Left Side */}
-      <div className=" p-4">
+      <div className="p-4">
         <p className="text-sm text-slate-500">{getGreeting()}</p>
         <p className="text-md font-semibold text-slate-800">
           {time.toLocaleTimeString()}
@@ -220,7 +284,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         {/* Notifications */}
         <div className="relative notifications-container">
-          <button 
+          <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
           >
@@ -234,12 +298,14 @@ export default function Navbar() {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-96 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="absolute right-0 mt-2 w-76 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50">
               {/* Header */}
               <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-lg">Notifications</h3>
-                  <p className="text-xs text-indigo-100">{unreadCount} unread messages</p>
+                  <p className="text-xs text-indigo-100">
+                    {unreadCount} unread messages
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowNotifications(false)}
@@ -275,48 +341,14 @@ export default function Navbar() {
                   </div>
                 ) : (
                   notifications.map((notif) => (
-                    <div
+                    <NotificationItem
                       key={notif._id}
-                      className={`px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition ${
-                        !notif.read ? "bg-indigo-50/50" : ""
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-1">
-                          {getNotificationIcon(notif.type)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className={`text-sm font-semibold ${!notif.read ? "text-slate-900" : "text-slate-600"}`}>
-                              {notif.title}
-                            </h4>
-                            {!notif.read && (
-                              <span className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-1"></span>
-                            )}
-                          </div>
-                          <p className="text-xs text-slate-500 mt-1">{notif.message}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-slate-400">{getTimeAgo(notif.createdAt)}</span>
-                            <div className="flex gap-2">
-                              {!notif.read && (
-                                <button
-                                  onClick={() => markAsRead(notif._id)}
-                                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
-                                >
-                                  Mark read
-                                </button>
-                              )}
-                              <button
-                                onClick={() => deleteNotification(notif._id)}
-                                className="text-xs text-rose-600 hover:text-rose-700 font-medium"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                      notif={notif}
+                      onMarkAsRead={markAsRead}
+                      onDelete={deleteNotification}
+                      getTimeAgo={getTimeAgo}
+                      getNotificationIcon={getNotificationIcon}
+                    />
                   ))
                 )}
               </div>
@@ -329,7 +361,7 @@ export default function Navbar() {
                   </button>
                 </div>
               )}
-            </div>
+            </div> 
           )}
         </div>
 
@@ -396,3 +428,8 @@ export default function Navbar() {
     </header>
   );
 }
+// 
+
+
+
+

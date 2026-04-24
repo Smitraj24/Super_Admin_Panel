@@ -8,6 +8,9 @@ export const createUser = async (
   roleName,
   departmentId,
   createdBy,
+  joiningDate,
+  probationEndDate,
+  leaveBalance,
 ) => {
   const userExists = await User.findOne({ email });
 
@@ -34,6 +37,9 @@ export const createUser = async (
     role: role._id,
     department: departmentId,
     createdBy,
+    joiningDate: joiningDate || new Date(),
+    probationEndDate: probationEndDate,
+    leaveBalance: leaveBalance || { PL: 0, CL: 0, SL: 0, DL: 0 },
   });
 
   // Return user with populated fields and password excluded

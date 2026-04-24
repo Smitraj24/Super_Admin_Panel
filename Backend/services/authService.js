@@ -56,16 +56,10 @@ export const loginUser = async (email, password) => {
     .populate("department");
 
   if (!user) {
-    console.log("User not found");
     throw new Error("Invalid credentials");
   }
 
-  console.log("Entered password:", password);
-  console.log("DB password:", user.password);
-
   const isMatch = await bcrypt.compare(password, user.password);
-
-  console.log("Password Match:", isMatch);
 
   if (!isMatch) {
     throw new Error("Invalid credentials");

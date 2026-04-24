@@ -100,6 +100,7 @@ export const broadcastToAll = async (req, res) => {
     if (userRole !== "SUPER_ADMIN") {
       return res.status(403).json({ message: "Only super admins can broadcast" });
     }
+  
 
     // 4. Import User model
     const User = (await import("../models/User.models.js")).default;

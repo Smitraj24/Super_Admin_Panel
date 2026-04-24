@@ -136,8 +136,8 @@ export default function UsersPage() {
       <div className="min-h-screen bg-[#F8FAFC] ">
         <Sidebar />
         <Navbar />
-        <main className=" md:pl-64 pt-16 ">
-          <div className="p-8">
+        <main className=" md:pl-64 pt-12 ">
+          <div className="p-6">
             <div className="flex flex-col md:flex-row md:justify-between md:items-center py-3 mb-8 gap-3">
               <div>
                 <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -224,93 +224,86 @@ export default function UsersPage() {
                 </form>
               </div>
 
-              <div className="md:col-span-2">
-                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-                    <div className="relative w-full max-w-md">
-                      <Search
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        size={18}
-                      />
-                      <input
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search users..."
-                        className=" w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="bg-slate-50">
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
-                            USER
-                          </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
-                            DEPARTMENT
-                          </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
-                            ROLE
-                          </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
-                            ACTIONS
-                          </th>
+              <div className=" md:col-span-2 ">
+                <div className=" w-full relative mb-4">
+                  <Search
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={18}
+                  />
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search users..."
+                    className="bg-white border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
+                </div>
+                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm h-[540px] overflow-y-auto">
+                  <table className="w-full text-left ">
+                    <thead className=" sticky top-0 bg-slate-50 z-20 ">
+                      <tr className="bg-slate-50">
+                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          USER
+                        </th>
+                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          DEPARTMENT
+                        </th>
+                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          ROLE
+                        </th>
+                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          ACTIONS
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {filteredUsers.map((user) => (
+                        <tr
+                          key={user._id}
+                          className="hover:bg-slate-200 transition"
+                        >
+                          <td className="p-5">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                {user.name?.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-slate-900">{user.name}</p>
+                                <p className="text-xs text-slate-500">
+                                  {user.email}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-5">
+                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase">
+                              {user.department?.name || "Unassigned"}
+                            </span>
+                          </td>
+                          <td className="p-5">
+                            <span className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold uppercase">
+                              {user.role?.name}
+                            </span>
+                          </td>
+                          <td className="p-5">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => startEdit(user)}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
+                              >
+                                <Edit3 size={18} />
+                              </button>
+                              <button
+                                onClick={() => deleteUser(user._id)}
+                                className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y">
-                        {filteredUsers.map((user) => (
-                          <tr
-                            key={user._id}
-                            className="hover:bg-slate-50 transition"
-                          >
-                            <td className="p-5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
-                                  {user.name?.charAt(0)}
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-slate-900">
-                                    {user.name}
-                                  </p>
-                                  <p className="text-xs text-slate-500">
-                                    {user.email}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-5">
-                              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase">
-                                {user.department?.name || "Unassigned"}
-                              </span>
-                            </td>
-                            <td className="p-5">
-                              <span className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-lg text-xs font-bold uppercase">
-                                {user.role?.name}
-                              </span>
-                            </td>
-                            <td className="p-5">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={() => startEdit(user)}
-                                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
-                                >
-                                  <Edit3 size={18} />
-                                </button>
-                                <button
-                                  onClick={() => deleteUser(user._id)}
-                                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

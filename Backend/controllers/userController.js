@@ -38,38 +38,67 @@ export const getUser = async (req, res) => {
 
 export const getProfile = async (req, res) => {
   try {
-    const profile = await getUserProfile(req.user);
+    const profile = await User.findById(req.user._id)
+      .populate("role", "name")
+      .populate("department", "name")
+      .populate("reportTo", "name email")
+      .select("-password");
 
-    res.json(profile);
+    if (!profile) {
+      return res.status(404).json({ 
+        success: false,
+        message: "User not found" 
+      });
+    }
+
+    res.json({
+      success: true,
+      data: profile,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
 export const updateProfile = async (req, res) => {
   try {
-    const { name, email } = req.body;
     const userId = req.user._id;
+    const updateData = { ...req.body };
 
-    // Validate input
-    if (!name || !email) {
-      return res.status(400).json({ message: "Name and email are required" });
+    // Remove fields that shouldn't be updated via profile
+    delete updateData.password;
+    delete updateData.role;
+    delete updateData.createdBy;
+    delete updateData.leaveBalance;
+
+    // Validate required fields
+    if (updateData.name && !updateData.name.trim()) {
+      return res.status(400).json({ message: "Name cannot be empty" });
     }
 
     // Check if email is already taken by another user
-    const existingUser = await User.findOne({ email, _id: { $ne: userId } });
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+    if (updateData.email) {
+      const existingUser = await User.findOne({ 
+        email: updateData.email, 
+        _id: { $ne: userId } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: "Email already in use" });
+      }
     }
 
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { name, email },
+      updateData,
       { new: true, runValidators: true }
     )
       .populate("role", "name")
       .populate("department", "name")
+      .populate("reportTo", "name email")
       .select("-password");
 
     if (!updatedUser) {
@@ -77,12 +106,16 @@ export const updateProfile = async (req, res) => {
     }
 
     res.json({
+      success: true,
       message: "Profile updated successfully",
-      user: updatedUser,
+      data: updatedUser,
     });
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ message: error.message || "Error updating profile" });
+    res.status(500).json({ 
+      success: false,
+      message: error.message || "Error updating profile" 
+    });
   }
 };
 

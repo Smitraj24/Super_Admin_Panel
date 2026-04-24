@@ -17,26 +17,18 @@ export default function Login() {
 
   const getDepartmentPath = (departmentData) => {
     if (!departmentData) {
-      console.log(" No department data provided");
       return null;
     }
 
     const departmentName =
       typeof departmentData === "object" ? departmentData.name : departmentData;
 
-    console.log(" Department name extracted:", departmentName);
-
     if (!departmentName) {
-      console.log(" No department name found");
       return null;
     }
 
     const departmentKey = departmentName.toUpperCase().replace(/\s+/g, "_");
-    console.log(" Department key:", departmentKey);
-    console.log("Available departments:", Object.keys(DEPARTMENTS));
-
     const path = DEPARTMENTS[departmentKey]?.path || null;
-    console.log(" Department path found:", path);
 
     return path;
   };
@@ -48,12 +40,6 @@ export default function Login() {
       setLoading(true);
 
       const res = await loginApi({ email, password });
-
-      console.log(" Login Response:", res.data);
-      console.log(" User Data:", res.data.user);
-      console.log(" Department:", res.data.user.department);
-      console.log(" Role Object:", res.data.user.role);
-      console.log(" Role Name:", res.data.user.role?.name);
 
       if (!res?.data?.user) {
         throw new Error("Invalid response from server");
@@ -67,7 +53,6 @@ export default function Login() {
       const department = res.data.user.department;
 
       if (roleName === "SUPER_ADMIN") {
-        console.log(" Redirecting SUPER_ADMIN to: /superadmin/dashboard");
         router.push("/superadmin/dashboard");
       } else if (roleName === "ADMIN") {
         const departmentName =
@@ -76,32 +61,25 @@ export default function Login() {
           ?.toUpperCase()
           .replace(/\s+/g, "_");
         const adminPath = DEPARTMENTS[departmentKey]?.adminPath || null;
-        console.log(" Admin Department Path:", adminPath);
 
         if (adminPath) {
-          console.log(" Redirecting ADMIN to:", adminPath);
           router.push(adminPath);
         } else {
-          console.log("Admin department not found, redirecting to fallback");
           router.push("/admin/it");
         }
       } else if (roleName === "USER") {
         const departmentPath = getDepartmentPath(department);
-        console.log(" Department Path for USER:", departmentPath);
 
         if (departmentPath) {
-          console.log(" Redirecting USER to:", departmentPath);
           router.push(departmentPath);
         } else {
-          console.log("Department not found, redirecting to fallback");
           router.push("/dashboard/ce");
         }
       } else {
-        console.log(" Unknown role:", roleName, "redirecting to home");
         router.push("/");
       }
     } catch (error) {
-      console.error(" Login error:", error);
+      console.error("Login error:", error);
 
       const message =
         error?.response?.data?.message || "Invalid email or password";

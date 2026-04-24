@@ -34,7 +34,7 @@ function SALESUsersPage() {
     <main>
       <Sidebar />
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100 p-8">
+      <div className="min-h-screen bg-gray-50 p-8 lg:ml-64 pt-20">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl font-bold text-purple-900 mb-8">
             SALES Department Users

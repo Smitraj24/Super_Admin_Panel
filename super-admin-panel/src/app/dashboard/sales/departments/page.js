@@ -12,11 +12,12 @@ function SALESDepartmentsPage() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
+        const token = sessionStorage.getItem("token") || localStorage.getItem("token");
         const res = await fetch(
           "http://localhost:5000/api/superadmin/departments",
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
             },
           },
         );

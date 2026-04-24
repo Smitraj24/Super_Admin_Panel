@@ -31,7 +31,7 @@ function ITUsersPage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8">
+    <main className="min-h-screen bg-gray-50 p-8">
       <Sidebar />
       <Navbar />
       <div className="lg:ml-64 mt-20">

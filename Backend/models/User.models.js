@@ -31,6 +31,26 @@ const userSchema = new mongoose.Schema(
     },
     isActive: { type: Boolean, default: true },
     lastLogin: { type: Date },
+    joiningDate: { type: Date },
+    probationEndDate: { type: Date },
+    leaveBalance: {
+      PL: { type: Number, default: 0 }, // Privilege Leave
+      CL: { type: Number, default: 0 }, // Casual Leave
+      SL: { type: Number, default: 0 }, // Sick Leave
+      DL: { type: Number, default: 0 }, // Duty Leave
+    },
+    // Profile Information
+    personalEmail: { type: String, trim: true, lowercase: true },
+    companyEmail: { type: String, trim: true, lowercase: true },
+    phone: { type: String, trim: true },
+    gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male" },
+    birthday: { type: Date },
+    maritalStatus: { type: String, enum: ["Single", "Married", "Unmarried"], default: "Unmarried" },
+    marriageAnniversary: { type: Date },
+    designation: { type: String, trim: true },
+    batch: { type: String, trim: true },
+    reportTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    profileImage: { type: String },
   },
   { timestamps: true },
 );
@@ -38,25 +58,20 @@ const userSchema = new mongoose.Schema(
 userSchema.pre("save", async function () {
   // Only hash password if modified
   if (!this.isModified("password")) {
-    console.log("Password not modified, skipping hash");
     return;
   }
 
   // Skip if already hashed
   if (this.password && this.password.startsWith("$2")) {
-    console.log("Password already hashed, skipping re-hash");
     return;
   }
-
-  console.log("Hashing password...");
 
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    console.log("Password hashed successfully");
   } catch (error) {
     console.error("Password hashing error:", error.message);
-    throw error; // important
+    throw error;
   }
 });
 

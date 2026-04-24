@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +25,7 @@ import {
   Shield,
   Crown,
 } from "lucide-react";
+import Attendance from "@/app/admin/ce/attendance/page";
 
 // "Dashboard" always resolves to the base path; others append /${toSlug(name)}.
 
@@ -125,22 +126,25 @@ export default function Sidebar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
-  // Show nothing while loading
-  if (loading || !user) {
-    return null;
-  }
+  // Memoize role and department to prevent recalculation
+  const { role, dept } = useMemo(() => {
+    if (!user) return { role: "USER", dept: "ce" };
 
-  const role = (user?.role?.name || user?.role || "USER" || "USER")
-    .toUpperCase()
-    .replace(" ", "_");
+    const role = (user?.role?.name || user?.role || "USER")
+      .toUpperCase()
+      .replace(" ", "_");
 
-  const dept = (
-    (typeof user?.department === "object"
-      ? user?.department?.name
-      : user?.department) || "ce"
-  ).toLowerCase();
+    const dept = (
+      (typeof user?.department === "object"
+        ? user?.department?.name
+        : user?.department) || "ce"
+    ).toLowerCase();
 
-  const menuItems = (() => {
+    return { role, dept };
+  }, [user?.role, user?.department]);
+
+  // Memoize menu items to prevent recalculation on every render
+  const menuItems = useMemo(() => {
     if (role === "SUPER_ADMIN") {
       return [
         {
@@ -157,6 +161,8 @@ export default function Sidebar() {
           icon: Building2,
         },
         { name: "Roles", path: "/superadmin/roles", icon: UserCog },
+        { name: "Attendance", path: "/superadmin/attendance", icon: Calendar },
+        { name: "Leaves", path: "/superadmin/leaves", icon: ClipboardList },
         { name: "Holidays", path: "/superadmin/holidays", icon: Calendar },
         { name: "Audit Logs", path: "/superadmin/audit", icon: History },
       ];
@@ -164,7 +170,7 @@ export default function Sidebar() {
 
     if (role === "ADMIN") {
       const availableMenus = adminDeptMenus[dept];
-      
+
       // If department doesn't have specific menus, return empty array
       if (!availableMenus) {
         return [];
@@ -190,7 +196,7 @@ export default function Sidebar() {
 
     // USER
     const availableMenus = userDeptMenus[dept];
-    
+
     // If department doesn't have specific menus, return empty array
     if (!availableMenus) {
       return [];
@@ -212,31 +218,48 @@ export default function Sidebar() {
           ? `/dashboard/${dept}`
           : `/dashboard/${dept}/${toSlug(name)}`,
     }));
-  })();
+  }, [role, dept, user?.sidebarPermissions]);
 
-  const roleHeader = {
-    SUPER_ADMIN: {
-      title: "Super Admin",
-      color: "#18171cad",
-      secondaryColor: "#18171cad",
-    },
-    ADMIN: {
-      title: "Admin",
-      color: "#2efa65a9",
-      secondaryColor: "#059669",
-    },
-    USER: {
-      title: "User",
-      color: "#4f46e5",
-      secondaryColor: "#4338ca",
-    },
-  };
+  // Memoize header configuration
+  const header = useMemo(() => {
+    const roleHeader = {
+      SUPER_ADMIN: {
+        title: "Super Admin",
+        color: "#18171cad",
+        secondaryColor: "#18171cad",
+      },
+      ADMIN: {
+        title: "Admin",
+        color: "#2efa65a9",
+        secondaryColor: "#059669",
+      },
+      USER: {
+        title: "User",
+        color: "#4f46e5",
+        secondaryColor: "#4338ca",
+      },
+    };
 
-  const header = roleHeader[role] || { 
-    title: "Dashboard", 
-    color: "#4f46e5",
-    secondaryColor: "#4338ca" 
-  };
+    return (
+      roleHeader[role] || {
+        title: "Dashboard",
+        color: "#4f46e5",
+        secondaryColor: "#4338ca",
+      }
+    );
+  }, [role]);
+
+  // Memoize logout handler
+  const handleLogout = useCallback(() => {
+    logout();
+    setOpen(false);
+    router.push("/login");
+  }, [logout, router]);
+
+  // Show nothing while loading
+  if (loading || !user) {
+    return null;
+  }
 
   return (
     <>
@@ -262,8 +285,13 @@ export default function Sidebar() {
           </button>
 
           {/* Dynamic Icon based on role */}
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg" style={{ backgroundColor: header.color }}>
-            {role === "SUPER_ADMIN" && <Crown size={24} className="text-white mt-[-10px]" />}
+          <div
+            className="flex items-center justify-center w-10 h-10 rounded-lg"
+            style={{ backgroundColor: header.color }}
+          >
+            {role === "SUPER_ADMIN" && (
+              <Crown size={24} className="text-white mt-[-10px]" />
+            )}
             {role === "ADMIN" && <Shield size={24} className="text-white" />}
             {role === "USER" && <User size={24} className="text-white" />}
           </div>
@@ -297,11 +325,7 @@ export default function Sidebar() {
 
         <div className="p-4 border-t border-slate-800">
           <button
-            onClick={() => {
-              logout();
-              setOpen(false);
-              router.push("/login");
-            }}
+            onClick={handleLogout}
             className="flex items-center gap-3 w-full px-4 py-3 hover:text-rose-400 transition"
           >
             <LogOut size={20} />
@@ -312,11 +336,3 @@ export default function Sidebar() {
     </>
   );
 }
-
-
-
-
-
-
-  
-

@@ -3,37 +3,79 @@
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
-import { User, Mail, Shield, Settings, X, Save } from "lucide-react";
+import { User, Mail, Shield, Settings, X, Save, Phone, Calendar, Heart, Briefcase, Users } from "lucide-react";
 import { useState, useEffect } from "react";
-import { updateProfile } from "@/services/userApi";
+import { getProfile, updateProfile } from "@/services/userApi";
 
 export default function ProfilePage() {
   const { user, login } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [profileData, setProfileData] = useState(null);
   
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    personalEmail: "",
+    companyEmail: "",
+    phone: "",
+    gender: "Male",
+    birthday: "",
+    maritalStatus: "Unmarried",
+    marriageAnniversary: "",
+    designation: "",
+    batch: "",
+    joiningDate: "",
+    probationEndDate: "",
   });
 
-  // Initialize form data when user loads
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        email: user.email || "",
-      });
-    }
-  }, [user]);
+ useEffect(() => {
+   if (user) {
+     fetchProfile();
+   }
+ }, [user]);
+
+ const fetchProfile = async () => {
+   try {
+     setFetchLoading(true);
+
+     const res = await getProfile();
+
+     const data = res?.data?.data || res?.data;
+
+     setProfileData(data);
+
+     setFormData({
+       name: data?.name || "",
+       email: data?.email || "",
+       personalEmail: data?.personalEmail || "",
+       companyEmail: data?.companyEmail || "",
+       phone: data?.phone || "",
+       gender: data?.gender || "Male",
+       birthday: data?.birthday ? data.birthday.split("T")[0] : "",
+       maritalStatus: data?.maritalStatus || "Unmarried",
+       marriageAnniversary: data?.marriageAnniversary
+         ? data.marriageAnniversary.split("T")[0]
+         : "",
+       designation: data?.designation || "",
+       batch: data?.batch || "",
+       joiningDate: data?.joiningDate ? data.joiningDate.split("T")[0] : "",
+       probationEndDate: data?.probationEndDate
+         ? data.probationEndDate.split("T")[0]
+         : "",
+     });
+   } catch (error) {
+     console.log(error);
+   } finally {
+     setFetchLoading(false);
+   }
+ };
+
 
   const handleEdit = () => {
-    setFormData({
-      name: user?.name || "",
-      email: user?.email || "",
-    });
     setIsEditing(true);
     setMessage("");
   };
@@ -41,6 +83,24 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setIsEditing(false);
     setMessage("");
+    // Reset form data
+    if (profileData) {
+      setFormData({
+        name: profileData.name || "",
+        email: profileData.email || "",
+        personalEmail: profileData.personalEmail || "",
+        companyEmail: profileData.companyEmail || "",
+        phone: profileData.phone || "",
+        gender: profileData.gender || "Male",
+        birthday: profileData.birthday ? new Date(profileData.birthday).toISOString().split('T')[0] : "",
+        maritalStatus: profileData.maritalStatus || "Unmarried",
+        marriageAnniversary: profileData.marriageAnniversary ? new Date(profileData.marriageAnniversary).toISOString().split('T')[0] : "",
+        designation: profileData.designation || "",
+        batch: profileData.batch || "",
+        joiningDate: profileData.joiningDate ? new Date(profileData.joiningDate).toISOString().split('T')[0] : "",
+        probationEndDate: profileData.probationEndDate ? new Date(profileData.probationEndDate).toISOString().split('T')[0] : "",
+      });
+    }
   };
 
   const handleChange = (e) => {
@@ -56,11 +116,46 @@ export default function ProfilePage() {
     setMessage("");
 
     try {
+      console.log("=== SUBMITTING FORM ===");
+      console.log("Form data:", formData);
+      
       const res = await updateProfile(formData);
+      console.log("Update response:", res.data);
+      
+      // Refresh profile data WITHOUT setting fetchLoading
+      const profileRes = await getProfile();
+      console.log("Fresh profile data:", profileRes.data);
+      
+      const freshData = profileRes.data.data || profileRes.data;
+      console.log("Extracted fresh data:", freshData);
+      console.log("Personal Email in fresh data:", freshData?.personalEmail);
+      
+      // Update profileData state
+      setProfileData(freshData);
+      
+      // Update formData state
+      setFormData({
+        name: freshData.name || "",
+        email: freshData.email || "",
+        personalEmail: freshData.personalEmail || "",
+        companyEmail: freshData.companyEmail || "",
+        phone: freshData.phone || "",
+        gender: freshData.gender || "Male",
+        birthday: freshData.birthday ? new Date(freshData.birthday).toISOString().split('T')[0] : "",
+        maritalStatus: freshData.maritalStatus || "Unmarried",
+        marriageAnniversary: freshData.marriageAnniversary ? new Date(freshData.marriageAnniversary).toISOString().split('T')[0] : "",
+        designation: freshData.designation || "",
+        batch: freshData.batch || "",
+        joiningDate: freshData.joiningDate ? new Date(freshData.joiningDate).toISOString().split('T')[0] : "",
+        probationEndDate: freshData.probationEndDate ? new Date(freshData.probationEndDate).toISOString().split('T')[0] : "",
+      });
       
       // Update the user context with new data
-      const updatedUser = { ...user, ...formData };
-      login({ token: localStorage.getItem("token"), user: updatedUser });
+      const currentToken = sessionStorage.getItem("token") || localStorage.getItem("token");
+      login({ token: currentToken, user: freshData });
+      
+      console.log("=== UPDATE COMPLETE ===");
+      console.log("ProfileData state:", freshData);
       
       setMessage("Profile updated successfully!");
       setMessageType("success");
@@ -69,6 +164,7 @@ export default function ProfilePage() {
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error("Update profile error:", error);
+      console.error("Error details:", error.response?.data);
       setMessage(error.response?.data?.message || "Failed to update profile");
       setMessageType("error");
     } finally {
@@ -76,32 +172,55 @@ export default function ProfilePage() {
     }
   };
 
+  const calculateWorkDuration = () => {
+    if (!profileData?.joiningDate) return "N/A";
+    const joining = new Date(profileData.joiningDate);
+    const now = new Date();
+    const diffTime = Math.abs(now - joining);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} Days`;
+  };
+
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Sidebar />
+        <Navbar />
+        <main className="md:pl-64 pt-16 flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-12 w-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading profile...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <Navbar />
 
-      <main className="md:pl-64 pt-16 min-h-100vh flex items-center justify-center">
-        <div className="w-full max-w-2xl p-4 md:p-8">
+      <main className="md:pl-64 pt-16 min-h-screen">
+        <div className="max-w-6xl mx-auto p-4 md:p-8">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
               My Profile
             </h1>
-
             {!isEditing ? (
               <button
                 onClick={handleEdit}
                 type="button"
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition w-full sm:w-auto justify-center"
               >
                 <Settings size={18} />
-                Edit Profile
+                Edit
               </button>
             ) : (
               <button
                 onClick={handleCancel}
                 type="button"
-                className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition w-full sm:w-auto justify-center"
               >
                 <X size={18} />
                 Cancel
@@ -121,139 +240,416 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className=" bg-white p-4 md:p-8 rounded-2xl border border-slate-200 shadow-sm mb-6 overflow-x-auto ">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-indigo-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                <User className="text-indigo-600" size={40} />
-              </div>
-
-              <div className="text-center sm:text-left">
-                <h2 className="text-xl md:text-2xl font-bold text-slate-900">
-                  {user?.name}
-                </h2>
-                <p className="text-slate-500">{user?.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {isEditing ? (
-            <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-auto">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  Edit Information
-                </h3>
-              </div>
-
-              <div className="p-4 md:p-6 space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your full name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400"
-                  >
-                    {loading ? (
-                      <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <>
-                        <Save size={18} />
-                        Save Changes
-                      </>
-                    )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Sidebar - Profile Card */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+                <div className="flex flex-col items-center">
+                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mb-4">
+                    <User className="text-white" size={64} />
+                  </div>
+                  <button className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition mb-6">
+                    Edit
                   </button>
                 </div>
-              </div>
-            </form>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-auto">
-              <div className="p-6 border-b border-slate-200 ">
-                <h3 className="text-lg font-semibold text-slate-900">
-                  My Information
-                </h3>
-              </div>
 
-              <div className="p-4 md:p-6 space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <User className="text-blue-600" size={20} />
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="font-bold text-lg mb-3">Contact</h3>
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Mail size={18} />
+                    <span className="text-sm break-all">{user?.email}</span>
                   </div>
-
-                  <div>
-                    <p className="text-sm text-slate-500">Full Name</p>
-                    <p className="font-semibold text-slate-900">{user?.name}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="text-green-600" size={20} />
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-slate-500">Email Address</p>
-                    <p className="font-semibold text-slate-900">{user?.email}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Shield className="text-purple-600" size={20} />
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-slate-500">Role</p>
-                    <p className="font-semibold text-slate-900">
-                      {user?.role?.name || user?.role || "User"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Shield className="text-orange-600" size={20} />
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-slate-500">Department</p>
-                    <p className="font-semibold text-slate-900">
-                      {typeof user?.department === "object" 
-                        ? user?.department?.name 
-                        : user?.department || "N/A"}
-                    </p>
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Phone size={18} />
+                    <span className="text-sm">{user?.phone || "N/A"}</span>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Right Content - Profile Details */}
+            <div className="lg:col-span-2">
+              {isEditing ? (
+                <form
+                  onSubmit={handleSubmit}
+                  className="bg-white rounded-lg shadow-sm border border-slate-200"
+                >
+                  <div className="p-6 border-b border-slate-200">
+                    <h3 className="text-xl font-bold text-slate-900">
+                      Edit Profile
+                    </h3>
+                  </div>
+
+                  <div className="p-6 space-y-6">
+                    {/* Basic Information */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <User size={20} />
+                        Basic Information
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Full Name
+                          </label>
+                          <input
+                            type="text"
+                            name="name"
+                            value={user.name}
+                            onChange={handleChange}
+                            required
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Personal Email
+                          </label>
+                          <input
+                            type="email"
+                            name="personalEmail"
+                            value={formData.personalEmail}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Company Email
+                          </label>
+                          <input
+                            type="email"
+                            name="companyEmail"
+                            value={formData.companyEmail}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Gender
+                          </label>
+                          <select
+                            name="gender"
+                            value={formData.gender}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          >
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Birthday
+                          </label>
+                          <input
+                            type="date"
+                            name="birthday"
+                            value={formData.birthday}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Marital Status
+                          </label>
+                          <select
+                            name="maritalStatus"
+                            value={formData.maritalStatus}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          >
+                            <option value="Single">Single</option>
+                            <option value="Married">Married</option>
+                            <option value="Unmarried">Unmarried</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Marriage Anniversary
+                          </label>
+                          <input
+                            type="date"
+                            name="marriageAnniversary"
+                            value={formData.marriageAnniversary}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Phone
+                          </label>
+                          <input
+                            type="tel"
+                            name="phone"
+                            value={formData.phone}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Company Information */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Briefcase size={20} />
+                        Company Relation
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Designation
+                          </label>
+                          <input
+                            type="text"
+                            name="designation"
+                            value={formData.designation}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Batch
+                          </label>
+                          <input
+                            type="text"
+                            name="batch"
+                            value={formData.batch}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Joining Date
+                          </label>
+                          <input
+                            type="date"
+                            name="joiningDate"
+                            value={formData.joiningDate}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Probation End Date
+                          </label>
+                          <input
+                            type="date"
+                            name="probationEndDate"
+                            value={formData.probationEndDate}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400"
+                      >
+                        {loading ? (
+                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <>
+                            <Save size={18} />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
+                  <div className="p-6 border-b border-slate-200">
+                    <h3 className="text-xl font-bold text-slate-900">About</h3>
+                  </div>
+
+                  <div className="p-6 space-y-8">
+                    {/* Basic Information */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <User size={20} />
+                        Basic Information
+                      </h4>{" "}
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">FullName</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.name}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Personal Email
+                          </p>
+                          <p className="font-medium text-blue-600">
+                            {profileData?.personalEmail || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Company Email</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.companyEmail || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Gender</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.gender}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Birthday</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.birthday
+                              ? new Date(
+                                  profileData.birthday,
+                                ).toLocaleDateString()
+                              : "0000-00-00"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Marital Status
+                          </p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.maritalStatus}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Marriage Anniversary
+                          </p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.marriageAnniversary
+                              ? new Date(
+                                  profileData.marriageAnniversary,
+                                ).toLocaleDateString()
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Status</p>
+                          <p className="font-medium">
+                            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                              ✓ {profileData?.isActive ? "Active" : "Inactive"}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Company Relation */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Briefcase size={20} />
+                        Company Relation
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Department</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.department?.name || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Designation</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.designation || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Batch</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.batch || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Report To</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.reportTo?.name || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Joining Date</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.joiningDate
+                              ? new Date(
+                                  profileData.joiningDate,
+                                ).toLocaleDateString()
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">
+                            Probation End Date
+                          </p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.probationEndDate
+                              ? new Date(
+                                  profileData.probationEndDate,
+                                ).toLocaleDateString()
+                              : "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Work Duration</p>
+                          <p className="font-medium text-gray-900">
+                            {calculateWorkDuration()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Phone size={20} />
+                        Contact Info
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-500">Phone</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.phone || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>

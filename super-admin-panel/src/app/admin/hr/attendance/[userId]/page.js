@@ -95,15 +95,15 @@ export default function HRAttendance() {
       if (!utcDateString) return "";
       const date = new Date(utcDateString);
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
     // Convert existing breaks to editable format
-    const editableBreaks = (record.breaks || []).map((brk) => ({
+    const editableBreaks = (record.breaks || []).map(brk => ({
       breakIn: getLocalDateTimeString(brk.breakIn),
       breakOut: getLocalDateTimeString(brk.breakOut),
       originalBreakIn: brk.breakIn,
@@ -132,18 +132,17 @@ export default function HRAttendance() {
         if (!utcDateString) return "";
         const date = new Date(utcDateString);
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        const hours = String(date.getHours()).padStart(2, "0");
-        const minutes = String(date.getMinutes()).padStart(2, "0");
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${year}-${month}-${day}T${hours}:${minutes}`;
       };
 
       // Handle check-in update
       if (
         editingRecord.newCheckIn &&
-        editingRecord.newCheckIn !==
-          getLocalDateTimeString(editingRecord.checkIn)
+        editingRecord.newCheckIn !== getLocalDateTimeString(editingRecord.checkIn)
       ) {
         updates.checkIn = new Date(editingRecord.newCheckIn).toISOString();
       }
@@ -151,24 +150,16 @@ export default function HRAttendance() {
       // Handle checkout update
       if (
         editingRecord.newCheckOut &&
-        editingRecord.newCheckOut !==
-          getLocalDateTimeString(editingRecord.checkOut)
+        editingRecord.newCheckOut !== getLocalDateTimeString(editingRecord.checkOut)
       ) {
         updates.checkOut = new Date(editingRecord.newCheckOut).toISOString();
       }
 
       // Handle existing breaks updates
-      if (
-        editingRecord.editableBreaks &&
-        editingRecord.editableBreaks.length > 0
-      ) {
-        const updatedBreaks = editingRecord.editableBreaks.map((brk) => ({
-          breakIn: brk.breakIn
-            ? new Date(brk.breakIn).toISOString()
-            : brk.originalBreakIn,
-          breakOut: brk.breakOut
-            ? new Date(brk.breakOut).toISOString()
-            : brk.originalBreakOut,
+      if (editingRecord.editableBreaks && editingRecord.editableBreaks.length > 0) {
+        const updatedBreaks = editingRecord.editableBreaks.map(brk => ({
+          breakIn: brk.breakIn ? new Date(brk.breakIn).toISOString() : brk.originalBreakIn,
+          breakOut: brk.breakOut ? new Date(brk.breakOut).toISOString() : brk.originalBreakOut,
         }));
         updates.breaks = updatedBreaks;
       }
@@ -181,7 +172,7 @@ export default function HRAttendance() {
         if (editingRecord.newBreakOut) {
           newBreak.breakOut = new Date(editingRecord.newBreakOut).toISOString();
         }
-
+        
         // Add new break to existing breaks
         if (updates.breaks) {
           updates.breaks.push(newBreak);
@@ -215,7 +206,7 @@ export default function HRAttendance() {
       const record = attendance.find((r) => r._id === recordId);
       const breakDate = record.date;
       const breakOutDateTime = `${breakDate}T${breakOutTime}:00`;
-
+      
       // Convert to ISO string to ensure proper timezone handling
       const breakOutISO = new Date(breakOutDateTime).toISOString();
 
@@ -265,20 +256,23 @@ export default function HRAttendance() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-green-50 to-green-100">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-100">
       <Navbar />
       <Sidebar />
 
       <div className="flex flex-1">
-        <div className="flex-1 md:ml-64 p-4 md:p-8 ">
+        <div className="flex-1 md:ml-64 p-4 md:p-8 pt-20">
           {/* MacBook-Style Header */}
           <div className="mb-8">
-            <div className="flex items-center gap-4 mb-3 pt-20">
+            <div className="flex items-center gap-4 mb-3">
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
+                <Users className="text-white" size={32} />
+              </div>
               <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-green-900 to-green-700 bg-clip-text text-transparent">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                   Attendance Management
                 </h1>
-                <p className="text-green-600 mt-1 flex items-center gap-2">
+                <p className="text-gray-600 mt-1 flex items-center gap-2">
                   <Clock size={16} />
                   Monitor and manage employee attendance records
                 </p>
@@ -295,9 +289,7 @@ export default function HRAttendance() {
               <div className="p-2 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg">
                 <Filter className="text-white" size={18} />
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                Filter Attendance
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800">Filter Attendance</h2>
             </div>
             <div className="flex gap-4 items-end flex-wrap">
               <div className="flex-1 min-w-[200px]">
@@ -476,10 +468,7 @@ export default function HRAttendance() {
                                   key={idx}
                                   className="flex items-center gap-2 bg-amber-50 p-2 rounded-lg"
                                 >
-                                  <Coffee
-                                    size={14}
-                                    className="text-amber-600"
-                                  />
+                                  <Coffee size={14} className="text-amber-600" />
                                   <span className="text-gray-700 text-xs">
                                     {formatTime(brk.breakIn)} -{" "}
                                     {brk.breakOut ? (
@@ -508,9 +497,7 @@ export default function HRAttendance() {
                               </div>
                             </div>
                           ) : (
-                            <span className="text-gray-400 text-xs">
-                              No breaks
-                            </span>
+                            <span className="text-gray-400 text-xs">No breaks</span>
                           )}
                         </td>
                         <td className="p-4">
@@ -525,15 +512,9 @@ export default function HRAttendance() {
                                     : "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800"
                             }`}
                           >
-                            {record.status === "CHECKED_OUT" && (
-                              <CheckCircle size={14} />
-                            )}
-                            {record.status === "ON_BREAK" && (
-                              <Coffee size={14} />
-                            )}
-                            {record.status === "BACK_TO_WORK" && (
-                              <PlayCircle size={14} />
-                            )}
+                            {record.status === "CHECKED_OUT" && <CheckCircle size={14} />}
+                            {record.status === "ON_BREAK" && <Coffee size={14} />}
+                            {record.status === "BACK_TO_WORK" && <PlayCircle size={14} />}
                             {record.status}
                           </span>
                         </td>
@@ -556,9 +537,7 @@ export default function HRAttendance() {
                             <Users size={32} className="text-gray-400" />
                           </div>
                           <p className="text-gray-500 font-medium">
-                            {loading
-                              ? "Loading attendance records..."
-                              : "No attendance records found"}
+                            {loading ? "Loading attendance records..." : "No attendance records found"}
                           </p>
                         </div>
                       </td>
@@ -579,22 +558,18 @@ export default function HRAttendance() {
               <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
                 <Edit3 className="text-white" size={20} />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900">
-                Edit Attendance
-              </h3>
+              <h3 className="text-2xl font-bold text-gray-900">Edit Attendance</h3>
             </div>
 
             <div className="space-y-5">
               <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border border-blue-100">
                 <p className="text-sm text-gray-700 flex items-center gap-2 mb-1">
                   <UserCheck size={14} className="text-blue-600" />
-                  <span className="font-semibold">User:</span>{" "}
-                  {editingRecord.userId?.name}
+                  <span className="font-semibold">User:</span> {editingRecord.userId?.name}
                 </p>
                 <p className="text-sm text-gray-700 flex items-center gap-2">
                   <Calendar size={14} className="text-purple-600" />
-                  <span className="font-semibold">Date:</span>{" "}
-                  {formatDate(editingRecord.date)}
+                  <span className="font-semibold">Date:</span> {formatDate(editingRecord.date)}
                 </p>
               </div>
 
@@ -637,67 +612,57 @@ export default function HRAttendance() {
               </div>
 
               {/* Edit Existing Breaks */}
-              {editingRecord.editableBreaks &&
-                editingRecord.editableBreaks.length > 0 && (
-                  <div className="border-t border-gray-200 pt-5">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2 text-gray-800">
-                      <Coffee size={18} className="text-amber-500" />
-                      Edit Existing Breaks
-                    </h4>
-                    <div className="space-y-4">
-                      {editingRecord.editableBreaks.map((brk, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-amber-50 p-3 rounded-xl space-y-3"
-                        >
-                          <p className="text-xs font-semibold text-amber-800">
-                            Break {idx + 1}
-                          </p>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Break In
-                            </label>
-                            <input
-                              type="datetime-local"
-                              value={brk.breakIn}
-                              onChange={(e) => {
-                                const updatedBreaks = [
-                                  ...editingRecord.editableBreaks,
-                                ];
-                                updatedBreaks[idx].breakIn = e.target.value;
-                                setEditingRecord({
-                                  ...editingRecord,
-                                  editableBreaks: updatedBreaks,
-                                });
-                              }}
-                              className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Break Out
-                            </label>
-                            <input
-                              type="datetime-local"
-                              value={brk.breakOut}
-                              onChange={(e) => {
-                                const updatedBreaks = [
-                                  ...editingRecord.editableBreaks,
-                                ];
-                                updatedBreaks[idx].breakOut = e.target.value;
-                                setEditingRecord({
-                                  ...editingRecord,
-                                  editableBreaks: updatedBreaks,
-                                });
-                              }}
-                              className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
-                            />
-                          </div>
+              {editingRecord.editableBreaks && editingRecord.editableBreaks.length > 0 && (
+                <div className="border-t border-gray-200 pt-5">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2 text-gray-800">
+                    <Coffee size={18} className="text-amber-500" />
+                    Edit Existing Breaks
+                  </h4>
+                  <div className="space-y-4">
+                    {editingRecord.editableBreaks.map((brk, idx) => (
+                      <div key={idx} className="bg-amber-50 p-3 rounded-xl space-y-3">
+                        <p className="text-xs font-semibold text-amber-800">Break {idx + 1}</p>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Break In
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={brk.breakIn}
+                            onChange={(e) => {
+                              const updatedBreaks = [...editingRecord.editableBreaks];
+                              updatedBreaks[idx].breakIn = e.target.value;
+                              setEditingRecord({
+                                ...editingRecord,
+                                editableBreaks: updatedBreaks,
+                              });
+                            }}
+                            className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
+                          />
                         </div>
-                      ))}
-                    </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Break Out
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={brk.breakOut}
+                            onChange={(e) => {
+                              const updatedBreaks = [...editingRecord.editableBreaks];
+                              updatedBreaks[idx].breakOut = e.target.value;
+                              setEditingRecord({
+                                ...editingRecord,
+                                editableBreaks: updatedBreaks,
+                              });
+                            }}
+                            className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm"
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
               {/* Add New Break */}
               <div className="border-t border-gray-200 pt-5">

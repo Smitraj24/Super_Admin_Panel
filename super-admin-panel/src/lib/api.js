@@ -6,7 +6,8 @@ const API = axios.create({
 
 API.interceptors.request.use((req) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
+    // Try sessionStorage first (tab-specific), fallback to localStorage
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
     if (token) {
       req.headers.Authorization = `Bearer ${token}`;

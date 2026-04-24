@@ -30,7 +30,7 @@ export default function RolesPage() {
 
   return (
     <ProtectedRoute roles={["USER"]}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-8">
+      <div className="min-h-screen bg-gray-50 p-8">
         <Sidebar />
         <Navbar />
 

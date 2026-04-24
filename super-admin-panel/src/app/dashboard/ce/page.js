@@ -17,7 +17,7 @@ function CEDashboard() {
       requiredRole={ROLES.USER}
       requiredDepartment={DEPARTMENTS.CE.name}
     >
-      <main className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <main className="min-h-screen bg-gray-50">
         <Navbar />
         <Sidebar />
 

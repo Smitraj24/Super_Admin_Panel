@@ -116,11 +116,11 @@ export default function UsersPage() {
         <div className="p-8">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                <Users className="text-indigo-600" size={28} />
+              <h1 className="text-3xl font-bold flex items-center gap-2 text-green-900 font-semibold ">
+                <Users className="text-green-9  00" size={28} />
                 User Directory
               </h1>
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-sm text-green-600">
                 Manage user accounts and departments
               </p>
             </div>
@@ -132,14 +132,14 @@ export default function UsersPage() {
 
           <div className="grid grid-cols-1  md:grid-cols-3 gap-6">
             <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 p-6 shadow-lg h-fit ">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-green-900">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium  mb-1 text-green-600">
                     Full Name *
                   </label>
                   <input
@@ -147,13 +147,13 @@ export default function UsersPage() {
                     value={form.name}
                     onChange={handleChange}
                     placeholder="e.g., John Doe"
-                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-green-600 mb-1">
                     Email Address *
                   </label>
                   <input
@@ -162,14 +162,14 @@ export default function UsersPage() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="e.g., admin@company.com"
-                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                     required
                   />
                 </div>
 
                 {!editingId && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-green-600 mb-1">
                       Password *
                     </label>
                     <input
@@ -178,24 +178,24 @@ export default function UsersPage() {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Enter secure password"
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                       required
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-green-600 mb-1">
                     Department *
                   </label>
                   <select
                     name="department"
                     value={form.department}
                     onChange={handleChange}
-                    className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
                     required
                   >
-                    <option value="">-- Select Department --</option>
+                    <option value=""> -- Select Department --</option>
                     {departments.map((dept) => (
                       <option key={dept._id} value={dept._id}>
                         {dept.name}
@@ -223,7 +223,7 @@ export default function UsersPage() {
                         department: "",
                       });
                     }}
-                    className="w-full text-sm text-gray-500 hover:text-gray-700"
+                    className="w-full text-sm text-green-500 hover:text-green-700"
                   >
                     Cancel
                   </button>
@@ -232,8 +232,8 @@ export default function UsersPage() {
             </div>
 
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-2">
-                <Search size={18} className="text-gray-400" />
+              <div className="bg-white border border-green-200 rounded-2xl p-4 flex items-center gap-2">
+                <Search size={18} className="text-green-400" />
                 <input
                   type="text"
                   placeholder="Search users..."
@@ -243,10 +243,10 @@ export default function UsersPage() {
                 />
               </div>
 
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-green-300 rounded-2xl overflow-hidden">
                 <div className="flex overflow-auto h-[500px]">
                   <table className="w-full text-sm  ">
-                    <thead className="border-b border-slate-300 bg-slate-50 sticky top-0 z-10">
+                    <thead className="border-b border-green-500 bg-green-100 sticky top-0 z-10">
                       <tr>
                         <th className="p-3 text-left">User</th>
 
@@ -267,11 +267,11 @@ export default function UsersPage() {
                         filteredUsers.map((user) => (
                           <tr
                             key={user._id}
-                            className="border-b border-slate-200 hover:bg-gray-50"
+                            className="border-b border-green-200 hover:bg-green-50"
                           >
                             <td className="p-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-semibold">
+                                <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold">
                                   {user.name?.charAt(0).toUpperCase()}
                                 </div>
 
@@ -289,7 +289,7 @@ export default function UsersPage() {
                             </td>
 
                             <td className="p-3 hidden md:table-cell">
-                              <span className="px-2 py-1 bg-slate-100 rounded-full text-xs">
+                              <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
                                 {user.role?.name || "User"}
                               </span>
                             </td>
@@ -299,7 +299,7 @@ export default function UsersPage() {
                               <div className="flex justify-end gap-3">
                                 <button
                                   onClick={() => startEdit(user)}
-                                  className="text-indigo-600 hover:text-indigo-800"
+                                  className="text-green-600 hover:text-green-800"
                                 >
                                   <Edit3 size={16} />
                                 </button>
@@ -318,7 +318,7 @@ export default function UsersPage() {
                         <tr>
                           <td
                             colSpan="4"
-                            className="p-10 text-center text-gray-400"
+                            className="p-10 text-center text-green-400"
                           >
                             No Users Found
                           </td>

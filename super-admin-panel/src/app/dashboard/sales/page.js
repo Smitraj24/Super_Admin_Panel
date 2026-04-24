@@ -9,7 +9,7 @@ function SalesDashboard() {
   const { user } = useAuth();
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100 p-8">
+    <main className="min-h-screen bg-gray-50 p-8">
       <Sidebar />
       <Navbar />
 
