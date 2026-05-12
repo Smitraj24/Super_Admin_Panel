@@ -2,32 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAllUsersAttendanceApi, updateAttendanceApi } from "@/services/attandanceApi";
-import { getAttendanceSummary } from "@/services/attandanceApi";
+import {
+  getAllUsersAttendanceApi,
+  updateAttendanceApi,
+  getAttendanceSummary,
+} from "@/services/attandanceApi";
 import { getUsers } from "@/services/userApi";
 import { getAdminsApi } from "@/services/superAdminApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import { 
-  Calendar, Edit, Download, ArrowLeft, User, 
-  Clock, CheckCircle, XCircle, Coffee, Briefcase, LogIn, LogOut, RefreshCw 
+import {
+  Calendar,
+  Edit,
+  Download,
+  ArrowLeft,
+  User,
+  CheckCircle,
+  XCircle,
+  Briefcase,
 } from "lucide-react";
 
 export default function UserAttendanceDetail() {
-  const params = useParams();
+  const { userId } = useParams();
   const router = useRouter();
-  const userId = params.userId;
 
   const [user, setUser] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [todayAttendance, setTodayAttendance] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [loading, setLoading] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // ✅ Set default month/year
   useEffect(() => {
     const now = new Date();
     setSelectedMonth(String(now.getMonth() + 1).padStart(2, "0"));
@@ -35,87 +43,53 @@ export default function UserAttendanceDetail() {
     fetchUserData();
   }, [userId]);
 
+  // ✅ Fetch attendance when filter changes
   useEffect(() => {
-    if (selectedMonth && selectedYear) {
-      fetchAttendance();
-    }
+    if (selectedMonth && selectedYear) fetchAttendance();
   }, [selectedMonth, selectedYear, userId]);
 
-  // Auto-refresh today's attendance every 30 seconds
-  useEffect(() => {
-    if (!selectedMonth || !selectedYear) return;
-
-    const interval = setInterval(() => {
-      const today = new Date().toISOString().split("T")[0];
-      const year = parseInt(selectedYear);
-      const month = parseInt(selectedMonth);
-      const firstDay = new Date(year, month - 1, 1).toISOString().split("T")[0];
-      const lastDay = new Date(year, month, 0).toISOString().split("T")[0];
-
-      // Only refresh if viewing current month
-      if (today >= firstDay && today <= lastDay) {
-        getAllUsersAttendanceApi(firstDay, lastDay)
-          .then((res) => {
-            const allAttendance = res.data?.data || [];
-            const userAttendance = allAttendance.filter((a) => a.userId?._id === userId);
-            const todayRecord = userAttendance.find((a) => a.date === today);
-            setTodayAttendance(todayRecord || null);
-            
-            // Update the attendance list as well
-            userAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
-            setAttendance(userAttendance);
-          })
-          .catch((error) => {
-            console.error("Error refreshing attendance:", error);
-          });
-      }
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [selectedMonth, selectedYear, userId]);
-
+  // ✅ Get user
   const fetchUserData = async () => {
     try {
-      // Fetch both users and admins
       const [usersRes, adminsRes] = await Promise.all([
         getUsers(),
         getAdminsApi(),
       ]);
-      
+
       const allUsers = [...(usersRes.data || []), ...(adminsRes.data || [])];
-      const foundUser = allUsers.find((u) => u._id === userId);
-      setUser(foundUser);
+      setUser(allUsers.find((u) => u._id === userId));
     } catch (error) {
       console.error("Error fetching user:", error);
     }
   };
 
+  // ✅ Reusable date range
+  const getDateRange = () => {
+    const year = parseInt(selectedYear);
+    const month = parseInt(selectedMonth);
+    return {
+      firstDay: new Date(year, month - 1, 1).toISOString().split("T")[0],
+      lastDay: new Date(year, month, 0).toISOString().split("T")[0],
+    };
+  };
+
+  // ✅ Fetch attendance
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      const year = parseInt(selectedYear);
-      const month = parseInt(selectedMonth);
-      const firstDay = new Date(year, month - 1, 1).toISOString().split("T")[0];
-      const lastDay = new Date(year, month, 0).toISOString().split("T")[0];
-      const today = new Date().toISOString().split("T")[0];
+      const { firstDay, lastDay } = getDateRange();
 
       const [attendanceRes, summaryRes] = await Promise.all([
         getAllUsersAttendanceApi(firstDay, lastDay),
         getAttendanceSummary(firstDay, lastDay),
       ]);
 
-      const allAttendance = attendanceRes.data?.data || [];
-      const userAttendance = allAttendance.filter((a) => a.userId?._id === userId);
-      
-      // Sort by date descending (newest first)
-      userAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
-      
+      const userAttendance = (attendanceRes.data?.data || [])
+        .filter((a) => a.userId?._id === userId)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
       setAttendance(userAttendance);
       setSummary(summaryRes.data);
-
-      // Find today's attendance for live stats
-      const todayRecord = userAttendance.find((a) => a.date === today);
-      setTodayAttendance(todayRecord || null);
     } catch (error) {
       console.error("Error fetching attendance:", error);
     } finally {
@@ -123,105 +97,91 @@ export default function UserAttendanceDetail() {
     }
   };
 
+  // ✅ Edit modal
   const openEditModal = (record) => {
     setEditingRecord({
       ...record,
-      newCheckIn: record.checkIn ? new Date(record.checkIn).toISOString().slice(0, 16) : "",
-      newCheckOut: record.checkOut ? new Date(record.checkOut).toISOString().slice(0, 16) : "",
+      newCheckIn: record.checkIn
+        ? new Date(record.checkIn).toISOString().slice(0, 16)
+        : "",
+      newCheckOut: record.checkOut
+        ? new Date(record.checkOut).toISOString().slice(0, 16)
+        : "",
     });
     setShowEditModal(true);
   };
 
   const handleSaveEdit = async () => {
-    if (!editingRecord) return;
-
     try {
       const updates = {};
-      
-      if (editingRecord.newCheckIn) {
-        updates.checkIn = editingRecord.newCheckIn;
-      }
-      
-      if (editingRecord.newCheckOut) {
+
+      if (editingRecord.newCheckIn) updates.checkIn = editingRecord.newCheckIn;
+      if (editingRecord.newCheckOut)
         updates.checkOut = editingRecord.newCheckOut;
+
+      if (Object.keys(updates).length) {
+        await updateAttendanceApi(editingRecord._id, updates);
+        fetchAttendance();
       }
 
-      if (Object.keys(updates).length > 0) {
-        await updateAttendanceApi(editingRecord._id, updates);
-        alert("Attendance updated successfully");
-        fetchAttendance();
-        setShowEditModal(false);
-        setEditingRecord(null);
-      }
+      setShowEditModal(false);
+      setEditingRecord(null);
     } catch (error) {
-      console.error("Error updating attendance:", error);
-      alert("Failed to update attendance");
+      console.error(error);
     }
   };
 
+  // ✅ CSV export
   const generateReport = () => {
-    const csvContent = [
-      ["Date", "Check In", "Check Out", "Break Time", "Work Hours", "Status"],
-      ...attendance.map((record) => [
-        new Date(record.date).toLocaleDateString(),
-        record.checkIn ? new Date(record.checkIn).toLocaleTimeString() : "-",
-        record.checkOut ? new Date(record.checkOut).toLocaleTimeString() : "-",
-        formatBreakTime(record.breaks),
-        calculateWorkingHours(record.checkIn, record.checkOut, record.breaks),
-        record.status,
+    const csv = [
+      ["Date", "Check In", "Check Out", "Break", "Work", "Status"],
+      ...attendance.map((r) => [
+        new Date(r.date).toLocaleDateString(),
+        formatTime(r.checkIn),
+        formatTime(r.checkOut),
+        formatBreakTime(r.breaks),
+        calculateWorkingHours(r.checkIn, r.checkOut, r.breaks),
+        r.status,
       ]),
     ]
       .map((row) => row.join(","))
       .join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${user?.name}-attendance-${selectedYear}-${selectedMonth}.csv`;
-    a.click();
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `${user?.name}-attendance.csv`;
+    link.click();
   };
 
-  const formatTime = (dateString) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
+  // ✅ Helpers
+  const formatTime = (t) =>
+    t
+      ? new Date(t).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "-";
+
+  const formatBreakTime = (breaks = []) => {
+    let mins = 0;
+    breaks.forEach((b) => {
+      if (b.breakIn && b.breakOut)
+        mins += (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
     });
+    const h = Math.floor(mins / 60);
+    const m = Math.floor(mins % 60);
+    return h ? `${h}h ${m}m` : `${m}m`;
   };
 
-  const formatBreakTime = (breaks) => {
-    if (!breaks?.length) return "0m";
-    
-    let totalBreakMinutes = 0;
-    breaks.forEach((brk) => {
-      if (brk.breakIn && brk.breakOut) {
-        totalBreakMinutes += (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60);
-      }
+  const calculateWorkingHours = (inT, outT, breaks = []) => {
+    if (!inT || !outT) return "-";
+    let mins = (new Date(outT) - new Date(inT)) / 60000;
+    breaks.forEach((b) => {
+      if (b.breakIn && b.breakOut)
+        mins -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
     });
-    
-    const hours = Math.floor(totalBreakMinutes / 60);
-    const mins = Math.floor(totalBreakMinutes % 60);
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const calculateWorkingHours = (checkIn, checkOut, breaks) => {
-    if (!checkIn || !checkOut) return "-";
-    
-    let workMinutes = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60);
-    
-    if (breaks?.length > 0) {
-      breaks.forEach((brk) => {
-        if (brk.breakIn && brk.breakOut) {
-          const breakMinutes = (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60);
-          workMinutes -= breakMinutes;
-        }
-      });
-    }
-    
-    const hours = Math.floor(workMinutes / 60);
-    const mins = Math.floor(workMinutes % 60);
-    return `${hours}h ${mins}m`;
+    return `${Math.floor(mins / 60)}h ${Math.floor(mins % 60)}m`;
   };
 
   const months = [
@@ -239,7 +199,10 @@ export default function UserAttendanceDetail() {
     { value: "12", label: "December" },
   ];
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const years = Array.from(
+    { length: 5 },
+    (_, i) => new Date().getFullYear() - i,
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -263,14 +226,26 @@ export default function UserAttendanceDetail() {
                 <User className="text-indigo-600" size={32} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">{user?.name}</h1>
+                <h1 className="text-3xl font-bold text-slate-900">
+                  {user?.name}
+                </h1>
                 <p className="text-slate-600">{user?.email}</p>
                 <div className="flex gap-3 mt-1">
                   <span className="text-sm text-slate-500">
-                    Department: <span className="font-semibold">{typeof user?.department === "object" ? user?.department?.name : user?.department}</span>
+                    Department:{" "}
+                    <span className="font-semibold">
+                      {typeof user?.department === "object"
+                        ? user?.department?.name
+                        : user?.department}
+                    </span>
                   </span>
                   <span className="text-sm text-slate-500">
-                    Role: <span className="font-semibold">{typeof user?.role === "object" ? user?.role?.name : user?.role}</span>
+                    Role:{" "}
+                    <span className="font-semibold">
+                      {typeof user?.role === "object"
+                        ? user?.role?.name
+                        : user?.role}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -285,12 +260,13 @@ export default function UserAttendanceDetail() {
             </button>
           </div>
         </div>
-
         {/* Month/Year Selector */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Select Month</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Select Month
+              </label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -305,7 +281,9 @@ export default function UserAttendanceDetail() {
             </div>
 
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Select Year</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Select Year
+              </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
@@ -319,110 +297,9 @@ export default function UserAttendanceDetail() {
               </select>
             </div>
           </div>
-        </div>
-
-        {/* Live Today's Attendance Stats */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <Clock className="w-6 h-6" />
-              Today's Live Attendance
-            </h2>
-            <div className="flex items-center gap-3">
-              <span className="text-sm opacity-90">
-                {new Date().toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </span>
-              <button
-                onClick={fetchAttendance}
-                className="bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
-                title="Refresh attendance data"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {todayAttendance ? (
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <div className=" bg-opacity-20 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <LogIn className="w-5 h-5" />
-                  <p className="text-sm font-semibold opacity-90">Check-In</p>
-                </div>
-                <p className="text-2xl font-bold">
-                  {todayAttendance.checkIn
-                    ? new Date(todayAttendance.checkIn).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Not Yet"}
-                </p>
-              </div>
-
-              <div className="bg-opacity-20 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <LogOut className="w-5 h-5" />
-                  <p className="text-sm font-semibold opacity-90">Check-Out</p>
-                </div>
-                <p className="text-2xl font-bold">
-                  {todayAttendance.checkOut
-                    ? new Date(todayAttendance.checkOut).toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Not Yet"}
-                </p>
-              </div>
-
-              <div className="bg-opacity-20 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Coffee className="w-5 h-5" />
-                  <p className="text-sm font-semibold opacity-90">Break Time</p>
-                </div>
-                <p className="text-2xl font-bold">
-                  {formatBreakTime(todayAttendance.breaks)}
-                </p>
-              </div>
-
-              <div className=" bg-opacity-20 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Briefcase className="w-5 h-5" />
-                  <p className="text-sm font-semibold opacity-90">Work Hours</p>
-                </div>
-                <p className="text-2xl font-bold">
-                  {todayAttendance.checkOut
-                    ? calculateWorkingHours(
-                        todayAttendance.checkIn,
-                        todayAttendance.checkOut,
-                        todayAttendance.breaks
-                      )
-                    : "In Progress"}
-                </p>
-              </div>
-
-              <div className=" bg-opacity-20 backdrop-blur-sm rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="w-5 h-5" />
-                  <p className="text-sm font-semibold opacity-90">Status</p>
-                </div>
-                <p className="text-lg font-bold">
-                  {todayAttendance.status.replace(/_/g, " ")}
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <XCircle className="w-12 h-12 mx-auto mb-3 opacity-70" />
-              <p className="text-lg font-semibold">No attendance record for today</p>
-              <p className="text-sm opacity-80 mt-1">User has not checked in yet</p>
-            </div>
-          )}
-        </div>
-
+        </div>.
+        
+        Live Today's Attendance Stats
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -459,31 +336,50 @@ export default function UserAttendanceDetail() {
             </div>
           </div>
         )}
-
         {/* Attendance Table */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900">Attendance Records</h2>
-            <p className="text-sm text-slate-600">{attendance.length} records found</p>
+            <h2 className="text-lg font-bold text-slate-900">
+              Attendance Records
+            </h2>
+            <p className="text-sm text-slate-600">
+              {attendance.length} records found
+            </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-100 border-b">
                 <tr>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Date</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Check In</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Check Out</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Break Time</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Work Hours</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">Actions</th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Date
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Check In
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Check Out
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Break Time
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Work Hours
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Status
+                  </th>
+                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center p-8 text-slate-500">Loading...</td>
+                    <td colSpan="7" className="text-center p-8 text-slate-500">
+                      Loading...
+                    </td>
                   </tr>
                 ) : attendance.length > 0 ? (
                   attendance.map((record) => (
@@ -512,7 +408,11 @@ export default function UserAttendanceDetail() {
                       </td>
                       <td className="p-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-bold">
-                          {calculateWorkingHours(record.checkIn, record.checkOut, record.breaks)}
+                          {calculateWorkingHours(
+                            record.checkIn,
+                            record.checkOut,
+                            record.breaks,
+                          )}
                         </span>
                       </td>
                       <td className="p-4">
@@ -521,8 +421,8 @@ export default function UserAttendanceDetail() {
                             record.status === "CHECKED_OUT"
                               ? "bg-green-100 text-green-800"
                               : record.status === "ON_BREAK"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-blue-100 text-blue-800"
                           }`}
                         >
                           {record.status}
@@ -560,25 +460,41 @@ export default function UserAttendanceDetail() {
 
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-slate-600">Date: {new Date(editingRecord.date).toLocaleDateString()}</p>
+                <p className="text-sm text-slate-600">
+                  Date: {new Date(editingRecord.date).toLocaleDateString()}
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Check In Time</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Check In Time
+                </label>
                 <input
                   type="datetime-local"
                   value={editingRecord.newCheckIn}
-                  onChange={(e) => setEditingRecord({ ...editingRecord, newCheckIn: e.target.value })}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      newCheckIn: e.target.value,
+                    })
+                  }
                   className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Check Out Time</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Check Out Time
+                </label>
                 <input
                   type="datetime-local"
                   value={editingRecord.newCheckOut}
-                  onChange={(e) => setEditingRecord({ ...editingRecord, newCheckOut: e.target.value })}
+                  onChange={(e) =>
+                    setEditingRecord({
+                      ...editingRecord,
+                      newCheckOut: e.target.value,
+                    })
+                  }
                   className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -607,3 +523,7 @@ export default function UserAttendanceDetail() {
     </div>
   );
 }
+
+
+
+

@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import Attendance from "./models/Attendance.js";
+import { equal } from "joi";
 
 dotenv.config();
 
@@ -75,5 +76,7 @@ async function cleanup() {
     process.exit(1);
   }
 }
+
+
 
 cleanup();

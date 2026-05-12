@@ -22,16 +22,40 @@ export const checkIn = async (req, res) => {
       return res.status(400).json({ message: "Already checked in" });
     }
 
+    const now = new Date();
+    
+    // Get current IST time using Asia/Kolkata timezone
+    const istParts = new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(now);
+    
+    const checkInHour = Number(istParts.find((p) => p.type === "hour").value);
+    const checkInMin = Number(istParts.find((p) => p.type === "minute").value);
+
+    // Late threshold = 10:15 AM IST
+    const LATE_THRESHOLD_HOUR = 10;
+    const LATE_THRESHOLD_MIN = 15;
+    const isLate = checkInHour > LATE_THRESHOLD_HOUR || 
+                   (checkInHour === LATE_THRESHOLD_HOUR && checkInMin >= LATE_THRESHOLD_MIN);
+
     const record = await Attendance.create({
       userId: new mongoose.Types.ObjectId(userId),
       date: today,
-      checkIn: new Date(),
-      status: "CHECKED_IN",
+      checkIn: now,
+      status: isLate ? "LATE" : "CHECKED_IN",
+      isLate: isLate,
     });
 
     const populatedRecord = await Attendance.findById(record._id).populate("userId", "email name _id");
 
-    res.json({ message: "Checked in successfully", record: populatedRecord });
+    res.json({ 
+      message: isLate ? "Checked in successfully (Late)" : "Checked in successfully", 
+      record: populatedRecord,
+      isLate: isLate
+    });
   } catch (error) {
     console.error("Check In Error:", error.message);
     if (error.code === 11000) {
@@ -391,19 +415,31 @@ export const getAttendanceSummary = async (req, res) => {
     });
 
     const REQUIRED_DAILY_HOURS = 8.5;
-    const LATE_THRESHOLD_HOUR = 12;
-    const LATE_THRESHOLD_MIN = 30;
     const HALF_DAY_HOURS = 4;
 
     let totalDays = 0;
     let present = 0;
     let absent = 0;
-    let late = 0;
     let halfDay = 0;
     let totalWorkMinutes = 0;
+    let onLeave = 0;
 
     records.forEach((r) => {
       totalDays++;
+
+      // Handle leave statuses - count as absent
+      if (r.status === "ON_LEAVE") {
+        absent++;
+        onLeave++;
+        return;
+      }
+
+      if (r.status === "HALF_DAY_LEAVE") {
+        halfDay++;
+        present++;
+        onLeave++;
+        return;
+      }
 
       if (!r.checkIn) {
         absent++;
@@ -412,18 +448,9 @@ export const getAttendanceSummary = async (req, res) => {
 
       present++;
 
-      const checkInTime = new Date(r.checkIn);
-      const checkInHour = checkInTime.getHours();
-      const checkInMin = checkInTime.getMinutes();
-
-      // Check if late
-      if (checkInHour > LATE_THRESHOLD_HOUR || 
-          (checkInHour === LATE_THRESHOLD_HOUR && checkInMin > LATE_THRESHOLD_MIN)) {
-        late++;
-      }
-
       // Calculate work hours
       if (r.checkOut) {
+        const checkInTime = new Date(r.checkIn);
         const checkOutTime = new Date(r.checkOut);
         let workMinutes = (checkOutTime - checkInTime) / (1000 * 60);
 
@@ -437,7 +464,7 @@ export const getAttendanceSummary = async (req, res) => {
 
         totalWorkMinutes += workMinutes;
 
-        // Check if half day
+        // Check if half day (only for actual work, not leave)
         if (workMinutes / 60 < HALF_DAY_HOURS) {
           halfDay++;
         }
@@ -454,13 +481,12 @@ export const getAttendanceSummary = async (req, res) => {
       totalDays,
       present,
       absent,
-      late,
       halfDay,
       totalOffice: present,
       totalWorkHours: parseFloat(totalWorkHours),
       totalOfficeHours,
       productivity: parseInt(productivity),
-      leaves: totalDays - present,
+      leaves: onLeave,
     });
   } catch (err) {
     console.error("Get Attendance Summary Error:", err.message);

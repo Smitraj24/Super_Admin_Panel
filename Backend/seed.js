@@ -51,7 +51,7 @@ const seedData = async () => {
       }
     }
 
-    // Create test users
+    // 
     const superAdminRole = await Role.findOne({ name: "SUPER_ADMIN" });
     const adminRole = await Role.findOne({ name: "ADMIN" });
     const userRole = await Role.findOne({ name: "USER" });

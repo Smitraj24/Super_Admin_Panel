@@ -32,8 +32,12 @@ const AttendanceSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT"],
+      enum: ["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "ON_LEAVE", "HALF_DAY_LEAVE", "LATE"],
       default: "CHECKED_IN",
+    },
+    isLate: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },

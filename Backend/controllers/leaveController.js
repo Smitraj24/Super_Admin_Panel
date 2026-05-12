@@ -13,11 +13,11 @@ export const applyLeave = async (req, res) => {
     if (isHalfDay) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
-      
+
       // Half-day leave should be for the same day
       if (from.toDateString() !== to.toDateString()) {
-        return res.status(400).json({ 
-          message: "Half-day leave must be for a single day" 
+        return res.status(400).json({
+          message: "Half-day leave must be for a single day",
         });
       }
     }
@@ -31,35 +31,35 @@ export const applyLeave = async (req, res) => {
 
     // Get user with leave balance
     const user = await User.findById(req.user._id);
-    
+
     // Check if user has sufficient leave balance
     if (!user.leaveBalance || user.leaveBalance[leaveType] === undefined) {
-      return res.status(400).json({ 
-        message: `Invalid leave type: ${leaveType}` 
+      return res.status(400).json({
+        message: `Invalid leave type: ${leaveType}`,
       });
     }
 
     if (user.leaveBalance[leaveType] < leaveDays) {
-      return res.status(400).json({ 
-        message: `Insufficient ${leaveType} balance. Available: ${user.leaveBalance[leaveType]}, Required: ${leaveDays}` 
+      return res.status(400).json({
+        message: `Insufficient ${leaveType} balance. Available: ${user.leaveBalance[leaveType]}, Required: ${leaveDays}`,
       });
     }
 
     // Check monthly limit for PL and SL (max 2 per month)
-    if (leaveType === 'PL' || leaveType === 'SL') {
+    if (leaveType === "PL" || leaveType === "SL") {
       const startOfMonth = new Date(from.getFullYear(), from.getMonth(), 1);
       const endOfMonth = new Date(from.getFullYear(), from.getMonth() + 1, 0);
 
       const monthlyLeaveCount = await Leave.countDocuments({
-        user: req.user._id, 
+        user: req.user._id,
         leaveType: leaveType,
-        status: { $in: ['PENDING', 'APPROVED'] },
-        fromDate: { $gte: startOfMonth, $lte: endOfMonth }
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: startOfMonth, $lte: endOfMonth },
       });
 
-      if (monthlyLeaveCount >= 2) {
-        return res.status(400).json({ 
-          message: `Maximum 2 ${leaveType} applications allowed per month. You have already applied ${monthlyLeaveCount} times this month.` 
+      if (monthlyLeaveCount >= 1) {
+        return res.status(400).json({
+          message: `Maximum 1 ${leaveType} applications allowed per month. You have already applied ${monthlyLeaveCount} times this month.`,
         });
       }
     }
@@ -129,7 +129,7 @@ export const updateLeaveStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const leave = await Leave.findById(req.params.id).populate('user');
+    const leave = await Leave.findById(req.params.id).populate("user");
 
     if (!leave) {
       return res.status(404).json({ message: "Leave not found" });
@@ -145,7 +145,7 @@ export const updateLeaveStatus = async (req, res) => {
     }
 
     // If approving leave, deduct from user's balance
-    if (status === 'APPROVED' && leave.status !== 'APPROVED') {
+    if (status === "APPROVED" && leave.status !== "APPROVED") {
       const from = new Date(leave.fromDate);
       const to = new Date(leave.toDate);
       const diffTime = Math.abs(to - from);
@@ -153,10 +153,10 @@ export const updateLeaveStatus = async (req, res) => {
       const leaveDays = leave.isHalfDay ? 0.5 : diffDays;
 
       const user = await User.findById(leave.user._id);
-      
+
       if (user.leaveBalance[leave.leaveType] < leaveDays) {
-        return res.status(400).json({ 
-          message: `Insufficient leave balance for user` 
+        return res.status(400).json({
+          message: `Insufficient leave balance for user`,
         });
       }
 
@@ -165,7 +165,7 @@ export const updateLeaveStatus = async (req, res) => {
     }
 
     // If rejecting previously approved leave, restore balance
-    if (status === 'REJECTED' && leave.status === 'APPROVED') {
+    if (status === "REJECTED" && leave.status === "APPROVED") {
       const from = new Date(leave.fromDate);
       const to = new Date(leave.toDate);
       const diffTime = Math.abs(to - from);
@@ -197,8 +197,8 @@ export const getAllLeavesForSuperAdmin = async (req, res) => {
         select: "name email",
         populate: {
           path: "department",
-          select: "name"
-        }
+          select: "name",
+        },
       })
       .sort({ createdAt: -1 });
 
@@ -215,14 +215,14 @@ export const updateLeaveStatusBySuperAdmin = async (req, res) => {
   try {
     const { status } = req.body;
 
-    const leave = await Leave.findById(req.params.id).populate('user');
+    const leave = await Leave.findById(req.params.id).populate("user");
 
     if (!leave) {
       return res.status(404).json({ message: "Leave not found" });
     }
 
     // If approving leave, deduct from user's balance
-    if (status === 'APPROVED' && leave.status !== 'APPROVED') {
+    if (status === "APPROVED" && leave.status !== "APPROVED") {
       const from = new Date(leave.fromDate);
       const to = new Date(leave.toDate);
       const diffTime = Math.abs(to - from);
@@ -230,10 +230,10 @@ export const updateLeaveStatusBySuperAdmin = async (req, res) => {
       const leaveDays = leave.isHalfDay ? 0.5 : diffDays;
 
       const user = await User.findById(leave.user._id);
-      
+
       if (user.leaveBalance[leave.leaveType] < leaveDays) {
-        return res.status(400).json({ 
-          message: `Insufficient leave balance for user` 
+        return res.status(400).json({
+          message: `Insufficient leave balance for user`,
         });
       }
 
@@ -242,7 +242,7 @@ export const updateLeaveStatusBySuperAdmin = async (req, res) => {
     }
 
     // If rejecting previously approved leave, restore balance
-    if (status === 'REJECTED' && leave.status === 'APPROVED') {
+    if (status === "REJECTED" && leave.status === "APPROVED") {
       const from = new Date(leave.fromDate);
       const to = new Date(leave.toDate);
       const diffTime = Math.abs(to - from);
@@ -268,12 +268,15 @@ export const updateLeaveStatusBySuperAdmin = async (req, res) => {
 
 export const getUserLeaveBalance = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('leaveBalance joiningDate probationEndDate');
-    
+    const user = await User.findById(req.user._id).select(
+      "leaveBalance joiningDate probationEndDate",
+    );
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
+    
     // Get current month's leave counts for PL and SL
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -282,16 +285,16 @@ export const getUserLeaveBalance = async (req, res) => {
     const [plCount, slCount] = await Promise.all([
       Leave.countDocuments({
         user: req.user._id,
-        leaveType: 'PL',
-        status: { $in: ['PENDING', 'APPROVED'] },
-        fromDate: { $gte: startOfMonth, $lte: endOfMonth }
+        leaveType: "PL",
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: startOfMonth, $lte: endOfMonth },
       }),
       Leave.countDocuments({
         user: req.user._id,
-        leaveType: 'SL',
-        status: { $in: ['PENDING', 'APPROVED'] },
-        fromDate: { $gte: startOfMonth, $lte: endOfMonth }
-      })
+        leaveType: "SL",
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: startOfMonth, $lte: endOfMonth },
+      }),
     ]);
 
     res.json({
@@ -302,9 +305,9 @@ export const getUserLeaveBalance = async (req, res) => {
         probationEndDate: user.probationEndDate,
         monthlyUsage: {
           PL: plCount,
-          SL: slCount
-        }
-      }
+          SL: slCount,
+        },
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -321,11 +324,13 @@ export const deleteUserLeave = async (req, res) => {
 
     // Check if the leave belongs to the user
     if (leave.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to delete this leave" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this leave" });
     }
 
     // If leave was approved, restore the balance
-    if (leave.status === 'APPROVED') {
+    if (leave.status === "APPROVED") {
       const from = new Date(leave.fromDate);
       const to = new Date(leave.toDate);
       const diffTime = Math.abs(to - from);
@@ -333,7 +338,11 @@ export const deleteUserLeave = async (req, res) => {
       const leaveDays = leave.isHalfDay ? 0.5 : diffDays;
 
       const user = await User.findById(req.user._id);
-      if (user && user.leaveBalance && user.leaveBalance[leave.leaveType] !== undefined) {
+      if (
+        user &&
+        user.leaveBalance &&
+        user.leaveBalance[leave.leaveType] !== undefined
+      ) {
         user.leaveBalance[leave.leaveType] += leaveDays;
         await user.save();
       }
@@ -343,10 +352,10 @@ export const deleteUserLeave = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Leave deleted successfully"
+      message: "Leave deleted successfully",
     });
   } catch (error) {
-    console.error('Delete leave error:', error);
+    console.error("Delete leave error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -362,13 +371,15 @@ export const updateUserLeave = async (req, res) => {
 
     // Check if the leave belongs to the user
     if (leave.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to update this leave" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this leave" });
     }
 
     // Only allow editing pending leaves
-    if (leave.status !== 'PENDING') {
-      return res.status(400).json({ 
-        message: "Only pending leaves can be edited" 
+    if (leave.status !== "PENDING") {
+      return res.status(400).json({
+        message: "Only pending leaves can be edited",
       });
     }
 
@@ -376,10 +387,10 @@ export const updateUserLeave = async (req, res) => {
     if (isHalfDay) {
       const from = new Date(fromDate);
       const to = new Date(toDate);
-      
+
       if (from.toDateString() !== to.toDateString()) {
-        return res.status(400).json({ 
-          message: "Half-day leave must be for a single day" 
+        return res.status(400).json({
+          message: "Half-day leave must be for a single day",
         });
       }
     }
@@ -393,40 +404,40 @@ export const updateUserLeave = async (req, res) => {
 
     // Get user with leave balance
     const user = await User.findById(req.user._id);
-    
+
     // Check if user has sufficient leave balance
     if (!user.leaveBalance || user.leaveBalance[leaveType] === undefined) {
-      return res.status(400).json({ 
-        message: `Invalid leave type: ${leaveType}` 
+      return res.status(400).json({
+        message: `Invalid leave type: ${leaveType}`,
       });
     }
 
     if (user.leaveBalance[leaveType] < leaveDays) {
-      return res.status(400).json({ 
-        message: `Insufficient ${leaveType} balance. Available: ${user.leaveBalance[leaveType]}, Required: ${leaveDays}` 
+      return res.status(400).json({
+        message: `Insufficient ${leaveType} balance. Available: ${user.leaveBalance[leaveType]}, Required: ${leaveDays}`,
       });
     }
 
-    // Check monthly limit for PL and SL (max 2 per month) - exclude current leave
-    if (leaveType === 'PL' || leaveType === 'SL') {
+    // Check monthly limit for PL and SL (max 1 per month) - exclude current leave
+    if (leaveType === "PL" || leaveType === "SL") {
       const startOfMonth = new Date(from.getFullYear(), from.getMonth(), 1);
       const endOfMonth = new Date(from.getFullYear(), from.getMonth() + 1, 0);
 
       const monthlyLeaveCount = await Leave.countDocuments({
         user: req.user._id,
         leaveType: leaveType,
-        status: { $in: ['PENDING', 'APPROVED'] },
+        status: { $in: ["PENDING", "APPROVED"] },
         fromDate: { $gte: startOfMonth, $lte: endOfMonth },
-        _id: { $ne: req.params.id } // Exclude current leave
+        _id: { $ne: req.params.id }, // Exclude current leave
       });
 
       if (monthlyLeaveCount >= 2) {
-        return res.status(400).json({ 
-          message: `Maximum 2 ${leaveType} applications allowed per month. You have already applied ${monthlyLeaveCount} times this month.` 
+        return res.status(400).json({
+          message: `Maximum 2 ${leaveType} applications allowed per month. You have already applied ${monthlyLeaveCount} times this month.`,
         });
       }
     }
-          
+
     // Update leave
     leave.leaveType = leaveType;
     leave.fromDate = fromDate;
@@ -438,9 +449,17 @@ export const updateUserLeave = async (req, res) => {
     res.json({
       success: true,
       message: "Leave updated successfully",
-      data: leave
+      data: leave,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+
+
+
+
+
+

@@ -49,18 +49,27 @@ export const AuthProvider = ({ children }) => {
   const fetchProfile = useCallback(async () => {
     try {
       const res = await getProfile();
-      if (res.data) {
+      if (res.data && res.data.success && res.data.data) {
+        setUser(res.data.data);
+        storage.setItem("user", JSON.stringify(res.data.data));
+      } else if (res.data) {
+        // Handle old response format without success wrapper
         setUser(res.data);
         storage.setItem("user", JSON.stringify(res.data));
       }
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch profile:", error);
-      // If profile fetch fails (e.g., invalid token), clear auth state
-      storage.removeItem("token");
-      storage.removeItem("user");
-      setToken(null);
-      setUser(null);
+      
+      // Check if it's an authentication error (401)
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        // Clear auth state on authentication errors
+        storage.removeItem("token");
+        storage.removeItem("user");
+        setToken(null);
+        setUser(null);
+      }
+      
       setLoading(false);
     }
   }, []);

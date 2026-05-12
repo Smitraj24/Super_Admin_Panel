@@ -34,18 +34,27 @@ const userSchema = new mongoose.Schema(
     joiningDate: { type: Date },
     probationEndDate: { type: Date },
     leaveBalance: {
-      PL: { type: Number, default: 0 }, // Privilege Leave
-      CL: { type: Number, default: 0 }, // Casual Leave
-      SL: { type: Number, default: 0 }, // Sick Leave
-      DL: { type: Number, default: 0 }, // Duty Leave
+      PL: { type: Number, default: 1 }, // Privilege Leave - 1 per month (auto-refill)
+      CL: { type: Number },
+      SL: { type: Number, default: 1 },
+      DL: { type: Number, default: 0 }, // Duty Leave - Not used
     },
+    lastLeaveRefill: { type: Date, default: Date.now }, // Track last monthly refill
     // Profile Information
     personalEmail: { type: String, trim: true, lowercase: true },
     companyEmail: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },
-    gender: { type: String, enum: ["Male", "Female", "Other"], default: "Male" },
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other"],
+      default: "Male",
+    },
     birthday: { type: Date },
-    maritalStatus: { type: String, enum: ["Single", "Married", "Unmarried"], default: "Unmarried" },
+    maritalStatus: {
+      type: String,
+      enum: ["Single", "Married", "Unmarried"],
+      default: "Unmarried",
+    },
     marriageAnniversary: { type: Date },
     designation: { type: String, trim: true },
     batch: { type: String, trim: true },

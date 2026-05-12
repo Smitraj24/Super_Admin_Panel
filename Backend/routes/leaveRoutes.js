@@ -9,10 +9,12 @@ import {
   updateUserLeave,
 } from "../controllers/leaveController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
+import { autoRefillLeaves } from "../middleware/leaveRefillMiddleware.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
+router.use(autoRefillLeaves); // Auto-refill leaves monthly
 
 router.post("/apply", applyLeave);
 
