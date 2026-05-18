@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { registerApi } from "../../services/authApi";
 import { useRouter } from "next/navigation";
-import { User, Mail, Lock, UserPlus, Shield } from "lucide-react";
+import { User, Mail, Lock, UserPlus, Shield, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("USER");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,13 +136,20 @@ export default function Register() {
                   size={20}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-700 placeholder:text-slate-400"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

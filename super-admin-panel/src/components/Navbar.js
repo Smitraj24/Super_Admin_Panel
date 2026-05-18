@@ -269,7 +269,6 @@ export default function Navbar() {
     }
   };
 
-
   return (
     <header className="h-16 fixed top-0 right-0 left-2 md:left-64 bg-white/80 backdrop-blur-md border-b border-slate-200 z-40 flex items-center justify-between px-4 md:px-6">
       {/* Left Side */}
@@ -298,12 +297,12 @@ export default function Navbar() {
 
           {/* Notifications Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-76 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50">
+            <div className="z-40 absolute -right-[240px] mt-[17px] flex h-[480px] w-[350px] flex-col rounded-2xl border border-gray-400 bg-white p-3 sm:w-[361px] lg:right-0">
               {/* Header */}
               <div className="px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-lg">Notifications</h3>
-                  <p className="text-xs text-indigo-100">
+                  <p className="text-xs text-ind  igo-100">
                     {unreadCount} unread messages
                   </p>
                 </div>
@@ -361,7 +360,7 @@ export default function Navbar() {
                   </button>
                 </div>
               )}
-            </div> 
+            </div>
           )}
         </div>
 
@@ -428,8 +427,4 @@ export default function Navbar() {
     </header>
   );
 }
-// 
-
-
-
-
+//
