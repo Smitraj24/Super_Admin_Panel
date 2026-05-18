@@ -15,6 +15,7 @@ import {
   Heart,
   Briefcase,
   Users,
+  MapPin,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "@/services/userApi";
@@ -42,6 +43,13 @@ export default function ProfilePage() {
     batch: "",
     joiningDate: "",
     probationEndDate: "",
+    address: {
+      street: "",
+      city: "",
+      state: "",
+      country: "",
+      postalCode: "",
+    },
   });
 
   useEffect(() => {
@@ -78,6 +86,13 @@ export default function ProfilePage() {
         probationEndDate: data?.probationEndDate
           ? data.probationEndDate.split("T")[0]
           : "",
+        address: {
+          street: data?.address?.street || "",
+          city: data?.address?.city || "",
+          state: data?.address?.state || "",
+          country: data?.address?.country || "",
+          postalCode: data?.address?.postalCode || "",
+        },
       });
     } catch (error) {
       console.log(error);
@@ -120,15 +135,36 @@ export default function ProfilePage() {
         probationEndDate: profileData.probationEndDate
           ? new Date(profileData.probationEndDate).toISOString().split("T")[0]
           : "",
+        address: {
+          street: profileData?.address?.street || "",
+          city: profileData?.address?.city || "",
+          state: profileData?.address?.state || "",
+          country: profileData?.address?.country || "",
+          postalCode: profileData?.address?.postalCode || "",
+        },
       });
     }
   };
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+    
+    // Handle nested address fields
+    if (name.startsWith("address.")) {
+      const addressField = name.split(".")[1];
+      setFormData({
+        ...formData,
+        address: {
+          ...formData.address,
+          [addressField]: value,
+        },
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -177,6 +213,13 @@ export default function ProfilePage() {
         probationEndDate: freshData.probationEndDate
           ? new Date(freshData.probationEndDate).toISOString().split("T")[0]
           : "",
+        address: {
+          street: freshData?.address?.street || "",
+          city: freshData?.address?.city || "",
+          state: freshData?.address?.state || "",
+          country: freshData?.address?.country || "",
+          postalCode: freshData?.address?.postalCode || "",
+        },
       });
 
       // Update the user context with new data
@@ -492,6 +535,85 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
+                    {/* Address Information */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <Mail size={20} />
+                        Address
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Street Address
+                          </label>
+                          <input
+                            type="text"
+                            name="address.street"
+                            value={formData.address.street}
+                            onChange={handleChange}
+                            placeholder="Enter street address"
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            City
+                          </label>
+                          <input
+                            type="text"
+                            name="address.city"
+                            value={formData.address.city}
+                            onChange={handleChange}
+                            placeholder="Enter city"
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            State
+                          </label>
+                          <input
+                            type="text"
+                            name="address.state"
+                            value={formData.address.state}
+                            onChange={handleChange}
+                            placeholder="Enter state"
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Country
+                          </label>
+                          <input
+                            type="text"
+                            name="address.country"
+                            value={formData.address.country}
+                            onChange={handleChange}
+                            placeholder="Enter country"
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-slate-700 mb-2">
+                            Postal Code
+                          </label>
+                          <input
+                            type="text"
+                            name="address.postalCode"
+                            value={formData.address.postalCode}
+                            onChange={handleChange}
+                            placeholder="Enter postal code"
+                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="flex gap-3 pt-4">
                       <button
                         type="submit"
@@ -670,6 +792,46 @@ export default function ProfilePage() {
                           <p className="text-sm text-gray-500">Email</p>
                           <p className="font-medium text-gray-900">
                             {profileData?.email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div>
+                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <MapPin size={20} />
+                        Address
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <p className="text-sm text-gray-500">Street Address</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.address?.street || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">City</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.address?.city || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">State</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.address?.state || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Country</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.address?.country || "-"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Postal Code</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData?.address?.postalCode || "-"}
                           </p>
                         </div>
                       </div>

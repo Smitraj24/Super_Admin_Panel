@@ -22,9 +22,37 @@ export default function UsersPage() {
     email: "",
     role: "USER",
     department: "",
+    sidebarPermissions: [],
   });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Available sidebar options for users
+  const availableSidebarOptions = [
+    "Dashboard",
+    "Profile",
+    "Users",
+    "Departments",
+    "Roles",
+    "Help Desk",
+    "Network Monitor",
+    "Projects",
+    "Reports",
+    "Leads",
+    "Targets",
+    "Attendance",
+    "Apply Leave",
+    "Holidays",
+  ];
+
+  const handlePermissionToggle = (permission) => {
+    setForm((prev) => ({
+      ...prev,
+      sidebarPermissions: prev.sidebarPermissions.includes(permission)
+        ? prev.sidebarPermissions.filter((p) => p !== permission)
+        : [...prev.sidebarPermissions, permission],
+    }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -70,7 +98,7 @@ export default function UsersPage() {
         setUsers([...users, res.data]);
       }
 
-      setForm({ name: "", email: "", role: "USER", department: "" });
+      setForm({ name: "", email: "", role: "USER", department: "", sidebarPermissions: [] });
     } catch (err) {
       console.error(err.response?.data);
       alert("Operation failed");
@@ -84,6 +112,7 @@ export default function UsersPage() {
       email: user.email,
       role: user.role?.name || "USER",
       department: user.department?._id || "",
+      sidebarPermissions: user.sidebarPermissions || [],
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -131,8 +160,8 @@ export default function UsersPage() {
           </div>
 
           <div className="grid grid-cols-1  md:grid-cols-3 gap-6">
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 p-6 shadow-lg h-fit ">
-              <h3 className="font-semibold mb-4 flex items-center gap-2 text-green-900">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 p-6 shadow-lg max-h-[700px] overflow-y-auto">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-green-900 sticky top-0 bg-white/70 pb-2">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
               </h3>
@@ -204,6 +233,36 @@ export default function UsersPage() {
                   </select>
                 </div>
 
+                {/* Sidebar Permissions */}
+                <div className="border border-green-300 rounded-lg p-4">
+                  <label className="block text-sm font-semibold text-green-700 mb-3">
+                    Sidebar Permissions
+                  </label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {availableSidebarOptions.map((option) => (
+                      <label
+                        key={option}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-green-50 p-2 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.sidebarPermissions.includes(option)}
+                          onChange={() => handlePermissionToggle(option)}
+                          className="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                        />
+                        <span className="text-sm text-green-700">
+                          {option}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">
+                    {form.sidebarPermissions.length === 0
+                      ? "No permissions selected - user will see all options"
+                      : `${form.sidebarPermissions.length} permission(s) selected`}
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium transition"
@@ -221,6 +280,7 @@ export default function UsersPage() {
                         email: "",
                         password: "",
                         department: "",
+                        sidebarPermissions: [],
                       });
                     }}
                     className="w-full text-sm text-green-500 hover:text-green-700"

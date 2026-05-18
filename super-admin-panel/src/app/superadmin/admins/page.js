@@ -40,9 +40,39 @@ export default function AdminsPage() {
     password: "",
     role: "ADMIN",
     department: "",
+    sidebarPermissions: [],
   });
 
   const [editingId, setEditingId] = useState(null);
+
+  // Available sidebar options for admins
+  const availableSidebarOptions = [
+    "Dashboard",
+    "Profile",
+    "Admins",
+    "Users",
+    "Departments",
+    "Roles",
+    "Help Desk",
+    "Asset Management",
+    "Network Monitor",
+    "Projects",
+    "Reports",
+    "Leads",
+    "Targets",
+    "Attendance",
+    "Apply Leave",
+    "Holidays",
+  ];
+
+  const handlePermissionToggle = (permission) => {
+    setForm((prev) => ({
+      ...prev,
+      sidebarPermissions: prev.sidebarPermissions.includes(permission)
+        ? prev.sidebarPermissions.filter((p) => p !== permission)
+        : [...prev.sidebarPermissions, permission],
+    }));
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -95,6 +125,7 @@ export default function AdminsPage() {
         password: "",
         role: "ADMIN",
         department: "",
+        sidebarPermissions: [],
       });
       alert("Admin " + (editingId ? "updated" : "created") + " successfully!");
     } catch (err) {
@@ -120,6 +151,7 @@ export default function AdminsPage() {
       password: "",
       role: admin.role?._id || "ADMIN",
       department: admin.department?._id || "",
+      sidebarPermissions: admin.sidebarPermissions || [],
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -159,8 +191,8 @@ export default function AdminsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-200  p-6 overflow-hidden h-[500px]">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-h-[700px] overflow-y-auto">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-white pb-2">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit Admin" : "Add New Admin"}
                 </h3>
@@ -230,6 +262,36 @@ export default function AdminsPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Sidebar Permissions */}
+                  <div className="border border-slate-300 rounded-lg p-4">
+                    <label className="block text-sm font-semibold text-slate-700 mb-3">
+                      Sidebar Permissions
+                    </label>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {availableSidebarOptions.map((option) => (
+                        <label
+                          key={option}
+                          className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={form.sidebarPermissions.includes(option)}
+                            onChange={() => handlePermissionToggle(option)}
+                            className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                          />
+                          <span className="text-sm text-slate-700">
+                            {option}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {form.sidebarPermissions.length === 0
+                        ? "No permissions selected - admin will see all options"
+                        : `${form.sidebarPermissions.length} permission(s) selected`}
+                    </p>
                   </div>
 
                   <button

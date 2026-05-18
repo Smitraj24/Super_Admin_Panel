@@ -2,6 +2,7 @@ import User from "../models/User.models.js";
 import Role from "../models/Roles.models.js";
 import Department from "../models/Department.models.js";
 import AuditLogs from "../models/AuditLogs.models.js";
+import Leave from "../models/Leave.js";
 import {
   createUserValidation,
   updateUserValidation,
@@ -44,7 +45,8 @@ export const createAdmin = async (req, res) => {
       department,
       joiningDate,
       probationEndDate,
-      leaveBalance 
+      leaveBalance,
+      sidebarPermissions 
     } = req.body;
 
     console.log("👤 Creating admin:", { name, email, department });
@@ -60,6 +62,12 @@ export const createAdmin = async (req, res) => {
       probationEndDate,
       leaveBalance,
     );
+
+    // Update sidebar permissions if provided
+    if (sidebarPermissions) {
+      user.sidebarPermissions = sidebarPermissions;
+      await user.save();
+    }
 
     const createdAdmin = await User.findById(user._id)
       .populate("role", "name")
@@ -86,7 +94,8 @@ export const updateAdmin = async (req, res) => {
       department,
       joiningDate,
       probationEndDate,
-      leaveBalance 
+      leaveBalance,
+      sidebarPermissions 
     } = req.body;
 
     const updateData = { name, email, department };
@@ -94,6 +103,7 @@ export const updateAdmin = async (req, res) => {
     if (joiningDate !== undefined) updateData.joiningDate = joiningDate;
     if (probationEndDate !== undefined) updateData.probationEndDate = probationEndDate;
     if (leaveBalance !== undefined) updateData.leaveBalance = leaveBalance;
+    if (sidebarPermissions !== undefined) updateData.sidebarPermissions = sidebarPermissions;
 
     const admin = await User.findByIdAndUpdate(
       id,
@@ -332,7 +342,8 @@ export const updateUser = async (req, res) => {
       department, 
       joiningDate, 
       probationEndDate, 
-      leaveBalance 
+      leaveBalance,
+      sidebarPermissions 
     } = req.body;
 
     const updateData = { name, email, department };
@@ -340,6 +351,7 @@ export const updateUser = async (req, res) => {
     if (joiningDate !== undefined) updateData.joiningDate = joiningDate;
     if (probationEndDate !== undefined) updateData.probationEndDate = probationEndDate;
     if (leaveBalance !== undefined) updateData.leaveBalance = leaveBalance;
+    if (sidebarPermissions !== undefined) updateData.sidebarPermissions = sidebarPermissions;
 
     const user = await User.findByIdAndUpdate(
       id,
@@ -398,7 +410,12 @@ export const getDashboardStats = async (req, res) => {
       User.countDocuments({ role: adminRole?._id }),
       Department.countDocuments(),
       Role.countDocuments(),
-      AuditLogs.find().limit(10).sort({ createdAt: -1 }),
+      AuditLogs.find()
+        .populate("performedBy", "name email")
+        .populate("targetUser", "name email")
+        .populate("department", "name")
+        .limit(10)
+        .sort({ createdAt: -1 }),
       User.aggregate([{ $group: { _id: "$department", users: { $sum: 1 } } }]),
     ]);
 
@@ -420,6 +437,17 @@ export const getDashboardStats = async (req, res) => {
       };
     });
 
+    // Format recent activity
+    const recentActivity = recentAuditLogs.map((log) => ({
+      id: log._id,
+      text: log.action,
+      performedBy: log.performedBy?.name || "Unknown",
+      targetUser: log.targetUser?.name || null,
+      department: log.department?.name || null,
+      time: log.createdAt,
+      metadata: log.metadata,
+    }));
+
     res.json({
       stats: {
         users: totalUsers,
@@ -429,10 +457,108 @@ export const getDashboardStats = async (req, res) => {
       },
       userGrowth,
       departmentUsage,
-      recentAuditLogs,
+      recentActivity,
     });
   } catch (error) {
     console.error(error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getAllUsersWithLeaves = async (req, res) => {
+  try {
+    const users = await User.find()
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password")
+      .sort({ name: 1 });
+
+    // Get pending leave counts for each user
+    const usersWithPendingCounts = await Promise.all(
+      users.map(async (user) => {
+        const pendingCount = await Leave.countDocuments({
+          user: user._id,
+          status: "PENDING",
+        });
+        
+        return {
+          ...user.toObject(),
+          pendingLeaveCount: pendingCount,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: usersWithPendingCounts,
+    });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getUserLeaveHistory = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { year, month } = req.query;
+
+    const user = await User.findById(userId)
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let query = { user: userId };
+
+    if (year && month) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      query.fromDate = { $gte: startDate, $lte: endDate };
+    } else if (year) {
+      const startDate = new Date(parseInt(year), 0, 1);
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+      query.fromDate = { $gte: startDate, $lte: endDate };
+    }
+
+    const leaves = await User.findById(userId)
+      .populate("role", "name")
+      .populate("department", "name")
+      .select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let leaveQuery = { user: userId };
+
+    if (year && month) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
+      leaveQuery.fromDate = { $gte: startDate, $lte: endDate };
+    } else if (year) {
+      const startDate = new Date(parseInt(year), 0, 1);
+      const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59);
+      leaveQuery.fromDate = { $gte: startDate, $lte: endDate };
+    }
+
+    const leaveRecords = await Leave.find(leaveQuery)
+      .populate("user", "name email")
+      .populate("department", "name")
+      .sort({ fromDate: -1 });
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        leaves: leaveRecords,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching user leave history:", error);
     res.status(500).json({ message: error.message });
   }
 };

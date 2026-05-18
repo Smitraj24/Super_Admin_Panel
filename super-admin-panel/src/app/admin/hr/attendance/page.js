@@ -5,7 +5,6 @@ import { getUsersApi, getAdminsApi } from "@/services/adminApi";
 import { getAllUsersAttendanceApi } from "@/services/attandanceApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
-import AttendancePageWithSummary from "@/components/AttendancePageWithSummary";
 
 import {
   User,
@@ -136,9 +135,10 @@ export default function SuperAdminAttendance() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Sidebar />
+      <Navbar />
       
-      <AttendancePageWithSummary />
-      <div className="md:ml-64  p-6">
+      <div className="md:ml-64 pt-16 p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
             <Users className="text-indigo-600" />

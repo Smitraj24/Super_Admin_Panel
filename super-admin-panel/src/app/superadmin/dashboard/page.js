@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Activity,
   Clock,
+  RefreshCw,
 } from "lucide-react";
 
 import Link from "next/link";
@@ -37,11 +38,13 @@ import { ROLES } from "../../../utils/constants";
 
 export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [data, setData] = useState({
     stats: { users: 0, admins: 0, departments: 0, roles: 0 },
     userGrowth: [],
     departmentUsage: [],
+    recentActivity: [],
   });
 
   const activities = [
@@ -71,6 +74,18 @@ export default function SuperAdminDashboard() {
     },
   ];
 
+  // Helper function to calculate time ago
+  const getTimeAgo = (timestamp) => {
+    const now = new Date();
+    const time = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - time) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -80,16 +95,42 @@ export default function SuperAdminDashboard() {
           stats: res.data.stats || {},
           userGrowth: res.data.userGrowth || [],
           departmentUsage: res.data.departmentUsage || [],
+          recentActivity: res.data.recentActivity || [],
         });
       } catch (error) {
         console.error("Failed to fetch stats", error);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchStats();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const res = await getStatsApi();
+      setData({
+        stats: res.data.stats || {},
+        userGrowth: res.data.userGrowth || [],
+        departmentUsage: res.data.departmentUsage || [],
+        recentActivity: res.data.recentActivity || [],
+      });
+    } catch (error) {
+      console.error("Failed to refresh stats", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   if (loading) return <Loader />;
 
@@ -219,26 +260,62 @@ export default function SuperAdminDashboard() {
             </div>
 
             <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Activity className="text-indigo-600" size={22} />
-                Recent Activity
-              </h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <Activity className="text-indigo-600" size={22} />
+                  Recent Activity
+                </h3>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    Live
+                  </span>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={refreshing}
+                    className="p-2 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+                    title="Refresh activity"
+                  >
+                    <RefreshCw 
+                      size={18} 
+                      className={`text-slate-600 ${refreshing ? 'animate-spin' : ''}`}
+                    />
+                  </button>
+                </div>
+              </div>
 
-              <div className="space-y-6">
-                {activities.map((a) => (
-                  <div key={a.id} className="flex gap-4">
-                    <div className="mt-1 h-3 w-3 rounded-full bg-blue-500"></div>
+              <div className="space-y-6 overflow-y-auto max-h-[400px] pr-2">
+                {data.recentActivity.length > 0 ? (
+                  data.recentActivity.map((activity) => {
+                    const timeAgo = getTimeAgo(activity.time);
+                    return (
+                      <div key={activity.id} className="flex gap-4">
+                        <div className="mt-1 h-3 w-3 rounded-full bg-blue-500"></div>
 
-                    <div>
-                      <p className="text-slate-700 font-medium">{a.text}</p>
-
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <Clock size={12} />
-                        {a.time}
+                        <div className="flex-1">
+                          <p className="text-slate-700 font-medium">
+                            {activity.text}
+                          </p>
+                          {activity.performedBy && (
+                            <p className="text-xs text-slate-500 mt-1">
+                              by {activity.performedBy}
+                              {activity.targetUser && ` → ${activity.targetUser}`}
+                              {activity.department && ` (${activity.department})`}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                            <Clock size={12} />
+                            {timeAgo}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    );
+                  })  
+                ) : (
+                  <div className="text-center py-8 text-slate-400">
+                    No recent activity
                   </div>
-                ))}
+                )}
               </div>
             </div>
           </div>

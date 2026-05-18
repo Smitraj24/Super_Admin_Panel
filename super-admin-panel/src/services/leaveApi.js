@@ -19,3 +19,13 @@ export const getSuperAdminLeavesApi = () =>
   axiosInstance.get("/superadmin/leaves");
 export const updateSuperAdminLeaveStatusApi = (id, status) =>
   axiosInstance.put(`/superadmin/leaves/${id}`, { status });
+export const getAllUsersWithLeavesApi = () =>
+  axiosInstance.get("/superadmin/leaves/users");
+export const getUserLeaveHistoryApi = (userId, year, month) => {
+  let url = `/superadmin/leaves/users/${userId}`;
+  const params = [];
+  if (year) params.push(`year=${year}`);
+  if (month) params.push(`month=${month}`);
+  if (params.length > 0) url += `?${params.join("&")}`;
+  return axiosInstance.get(url);
+};

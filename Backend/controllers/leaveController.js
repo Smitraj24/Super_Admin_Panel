@@ -1,5 +1,8 @@
 import Leave from "../models/Leave.js";
 import User from "../models/User.models.js";
+import Role from "../models/Roles.models.js";
+import Notification from "../models/Notification.js";
+import Department from "../models/Department.models.js";
 
 export const applyLeave = async (req, res) => {
   try {
@@ -74,6 +77,53 @@ export const applyLeave = async (req, res) => {
       department: req.user.department?._id,
       createdBy: req.user._id,
     });
+
+    // Send notifications to Super Admin and HR Admin
+    try {
+      const [superAdminRole, adminRole, hrDepartment] = await Promise.all([
+        Role.findOne({ name: "SUPER_ADMIN" }),
+        Role.findOne({ name: "ADMIN" }),
+        Department.findOne({ name: "HR" }),
+      ]);
+
+      const notificationRecipients = [];
+
+      // Get all Super Admins
+      if (superAdminRole) {
+        const superAdmins = await User.find({ 
+          role: superAdminRole._id,
+        }).select("_id");
+        notificationRecipients.push(...superAdmins.map(sa => sa._id));
+      }
+
+      // Get HR Admins
+      if (adminRole && hrDepartment) {
+        const hrAdmins = await User.find({
+          role: adminRole._id,
+          department: hrDepartment._id,
+        }).select("_id");
+        notificationRecipients.push(...hrAdmins.map(hr => hr._id));
+      }
+
+      // Remove duplicates
+      const uniqueRecipients = [...new Set(notificationRecipients.map(id => id.toString()))];
+
+      // Create notifications
+      if (uniqueRecipients.length > 0) {
+        const notifications = uniqueRecipients.map(recipientId => ({
+          userId: recipientId,
+          type: "info",
+          title: "New Leave Application",
+          message: `${req.user.name} has applied for ${leaveType} leave from ${new Date(fromDate).toLocaleDateString()} to ${new Date(toDate).toLocaleDateString()}`,
+          link: "/superadmin/leaves",
+        }));
+
+        await Notification.insertMany(notifications);
+      }
+    } catch (notifError) {
+      console.error("Error sending notifications:", notifError);
+      // Don't fail the leave application if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -180,6 +230,19 @@ export const updateLeaveStatus = async (req, res) => {
     leave.status = status;
     await leave.save();
 
+    // Send notification to the user about status change
+    try {
+      await Notification.create({
+        userId: leave.user._id,
+        type: status === "APPROVED" ? "success" : "warning",
+        title: `Leave ${status}`,
+        message: `Your ${leave.leaveType} leave request from ${new Date(leave.fromDate).toLocaleDateString()} to ${new Date(leave.toDate).toLocaleDateString()} has been ${status.toLowerCase()} by HR Admin`,
+        link: "/admin/hr/apply-leave",
+      });
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
+
     res.json({
       success: true,
       data: leave,
@@ -256,6 +319,19 @@ export const updateLeaveStatusBySuperAdmin = async (req, res) => {
 
     leave.status = status;
     await leave.save();
+
+    // Send notification to the user about status change
+    try {
+      await Notification.create({
+        userId: leave.user._id,
+        type: status === "APPROVED" ? "success" : "warning",
+        title: `Leave ${status}`,
+        message: `Your ${leave.leaveType} leave request from ${new Date(leave.fromDate).toLocaleDateString()} to ${new Date(leave.toDate).toLocaleDateString()} has been ${status.toLowerCase()} by Super Admin`,
+        link: "/admin/ce/apply-leave",
+      });
+    } catch (notifError) {
+      console.error("Error sending notification:", notifError);
+    }
 
     res.json({
       success: true,

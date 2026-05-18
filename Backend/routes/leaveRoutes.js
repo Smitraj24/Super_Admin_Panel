@@ -10,24 +10,25 @@ import {
 } from "../controllers/leaveController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import { autoRefillLeaves } from "../middleware/leaveRefillMiddleware.js";
+import auditMiddleware from "../middleware/auditMiddleware.js";
 
 const router = express.Router();
 
 router.use(authMiddleware);
 router.use(autoRefillLeaves); // Auto-refill leaves monthly
 
-router.post("/apply", applyLeave);
+router.post("/apply", auditMiddleware("Applied for leave"), applyLeave);
 
 router.get("/user/own", getUserLeaves);
 
 router.get("/user/balance", getUserLeaveBalance);
 
-router.put("/user/:id", updateUserLeave);
+router.put("/user/:id", auditMiddleware("Updated leave application"), updateUserLeave);
 
-router.delete("/user/:id", deleteUserLeave);
+router.delete("/user/:id", auditMiddleware("Deleted leave application"), deleteUserLeave);
 
 router.get("/", getAllLeaves);
 
-router.put("/:id", updateLeaveStatus);
+router.put("/:id", auditMiddleware("Updated leave status"), updateLeaveStatus);
 
 export default router;

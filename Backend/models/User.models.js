@@ -60,6 +60,14 @@ const userSchema = new mongoose.Schema(
     batch: { type: String, trim: true },
     reportTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     profileImage: { type: String },
+    // Address Information
+    address: {
+      street: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      country: { type: String, trim: true },
+      postalCode: { type: String, trim: true },
+    },
   },
   { timestamps: true },
 );

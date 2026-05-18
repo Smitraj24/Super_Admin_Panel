@@ -422,7 +422,7 @@ export const getAdmins = async (req, res) => {
 
 export const createAdmin = async (req, res) => {
   try {
-    const { name, email, password, department } = req.body;
+    const { name, email, password, department, sidebarPermissions } = req.body;
 
     // If regular admin (not HR), they can only create admins in their department
     if (
@@ -448,6 +448,12 @@ export const createAdmin = async (req, res) => {
       req.user._id,
     );
 
+    // Update sidebar permissions if provided
+    if (sidebarPermissions) {
+      user.sidebarPermissions = sidebarPermissions;
+      await user.save();
+    }
+
     const createdAdmin = await User.findById(user._id)
       .populate("role", "name")
       .populate("department", "name")
@@ -465,7 +471,7 @@ export const createAdmin = async (req, res) => {
 export const updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, department } = req.body;
+    const { name, email, department, sidebarPermissions } = req.body;
 
     const admin = await User.findById(id);
 
@@ -488,9 +494,14 @@ export const updateAdmin = async (req, res) => {
       }
     }
 
+    const updateData = { name, email, department };
+    if (sidebarPermissions !== undefined) {
+      updateData.sidebarPermissions = sidebarPermissions;
+    }
+
     const updatedAdmin = await User.findByIdAndUpdate(
       id,
-      { name, email, department },
+      updateData,
       { new: true },
     )
       .populate("role", "name")
