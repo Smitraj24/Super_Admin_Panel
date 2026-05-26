@@ -5,6 +5,7 @@ import Sidebar from "../../../components/Sidebar";
 import Navbar from "../../../components/Navbar";
 import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
 import { ROLES } from "@/utils/constants";
+import ChatWindow from "@/components/ChatWindow";
 import {
   getAdminsApi,
   createAdminApi,
@@ -25,6 +26,7 @@ import {
   Key,
   CheckCircle2,
   XCircle,
+  MessageCircle,
 } from "lucide-react";
 
 export default function AdminsPage() {
@@ -44,6 +46,9 @@ export default function AdminsPage() {
   });
 
   const [editingId, setEditingId] = useState(null);
+
+  // Chat state
+  const [chatUser, setChatUser] = useState(null);
 
   // Available sidebar options for admins
   const availableSidebarOptions = [
@@ -191,7 +196,7 @@ export default function AdminsPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-h-[700px] overflow-y-auto">
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-h-[700px] overflow-y-scroll no-scrollbar">
                 <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-white pb-2">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit Admin" : "Add New Admin"}
@@ -364,6 +369,13 @@ export default function AdminsPage() {
                             <td className="p-5">
                               <div className="flex items-center gap-2">
                                 <button
+                                  onClick={() => setChatUser(admin)}
+                                  className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                  title="Chat with admin"
+                                >
+                                  <MessageCircle size={18} />
+                                </button>
+                                <button
                                   onClick={() => startEdit(admin)}
                                   className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
                                 >
@@ -387,6 +399,11 @@ export default function AdminsPage() {
             </div>
           </div>
         </main>
+
+        {/* Chat Window */}
+        {chatUser && (
+          <ChatWindow user={chatUser} onClose={() => setChatUser(null)} />
+        )}
       </div>
     </ProtectedDashboardRoute>
   );

@@ -5,6 +5,8 @@ export const getAllLeavesApi = () => axiosInstance.get("/leaves/all");
 export const getUserLeavesApi = () => axiosInstance.get("/leaves/user/own");
 export const getUserLeaveBalanceApi = () =>
   axiosInstance.get("/leaves/user/balance");
+export const checkLeaveAvailabilityApi = (year, month) =>
+  axiosInstance.get(`/leaves/user/availability?year=${year}&month=${month}`);
 export const applyLeaveApi = (data) =>
   axiosInstance.post("/leaves/apply", data);
 export const updateLeaveStatusApi = (id, status) =>
@@ -29,3 +31,5 @@ export const getUserLeaveHistoryApi = (userId, year, month) => {
   if (params.length > 0) url += `?${params.join("&")}`;
   return axiosInstance.get(url);
 };
+
+export const getLeaveTypesapi = () => axiosInstance.get('/leaves types')

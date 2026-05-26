@@ -1,7 +1,31 @@
 "use client";
 
-import LeaveManagement from "@/components/LeaveManagement";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import Navbar from "@/components/Navbar";
+import Sidebar from "@/components/Sidebar";
+import {
+  getUserLeavesApi,
+  applyLeaveApi,
+  getUserLeaveBalanceApi,
+  deleteUserLeaveApi,
+  updateUserLeaveApi,
+} from "@/services/leaveApi";
 
 export default function ITAdminLeave() {
-  return <LeaveManagement bgGradient="bg-gray-100" />;
+  // Redirect to HR admin apply-leave page since they share the same functionality
+  if (typeof window !== 'undefined') {
+    window.location.href = '/admin/hr/apply-leave';
+  }
+  
+  return (
+    <main className="flex min-h-screen bg-gray-50">
+      <Sidebar />
+      <Navbar />
+      <div className="lg:ml-64 pt-20 flex-1">
+        <div className="p-6">
+          <p>Redirecting to leave management...</p>
+        </div>
+      </div>
+    </main>
+  );
 }

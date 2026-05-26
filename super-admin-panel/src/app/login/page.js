@@ -54,7 +54,7 @@ export default function Login() {
       const department = res.data.user.department;
 
       if (roleName === "SUPER_ADMIN") {
-        router.push("/superadmin/dashboard");
+        router.replace("/superadmin/dashboard");
       } else if (roleName === "ADMIN") {
         const departmentName =
           typeof department === "object" ? department?.name : department;
@@ -64,20 +64,20 @@ export default function Login() {
         const adminPath = DEPARTMENTS[departmentKey]?.adminPath || null;
 
         if (adminPath) {
-          router.push(adminPath);
+          router.replace(adminPath);
         } else {
-          router.push("/admin/it");
+          router.replace("/admin/it");
         }
       } else if (roleName === "USER") {
         const departmentPath = getDepartmentPath(department);
 
         if (departmentPath) {
-          router.push(departmentPath);
+          router.replace(departmentPath);
         } else {
-          router.push("/dashboard/ce");
+          router.replace("/dashboard/ce");
         }
       } else {
-        router.push("/");
+        router.replace("/");
       }
     } catch (error) {
       console.error("Login error:", error);

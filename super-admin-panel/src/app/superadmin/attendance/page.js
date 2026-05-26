@@ -6,6 +6,7 @@ import { getAdminsApi } from "@/services/superAdminApi";
 import { getAllUsersAttendanceApi } from "@/services/attandanceApi";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import AttendanceStats from "@/components/AttendanceStats";
 import { User, Search, ChevronRight, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -17,6 +18,13 @@ export default function SuperAdminAttendance() {
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [attendanceStats, setAttendanceStats] = useState({});
+  const [attendanceSummary, setAttendanceSummary] = useState({
+    presentToday: 0,
+    totalWorkHours: 0,
+    lateCheckIns: 0,
+    absentToday: 0,
+    onBreak: 0,
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -31,16 +39,14 @@ export default function SuperAdminAttendance() {
         getUsers(),
         getAdminsApi(),
       ]);
-      
       const regularUsers = usersRes.data || [];
       const adminUsers = adminsRes.data || [];
-      
-      // Combine both arrays
       const allUsers = [...regularUsers, ...adminUsers];
+
       setUsers(allUsers);
       setFilteredUsers(allUsers);
 
-      // Fetch current month attendance stats for all users
+      // Fetch current month attendance for all users
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString()
@@ -52,21 +58,61 @@ export default function SuperAdminAttendance() {
       const attendanceRes = await getAllUsersAttendanceApi(firstDay, lastDay);
       const attendanceData = attendanceRes.data?.data || [];
 
-      // Calculate stats per user
-      const stats = {};
+      const todayKey = new Date().toISOString().split("T")[0];
+      const todayRecords = attendanceData.filter((a) => {
+        if (!a?.date) return false;
+        const dateKey = new Date(a.date).toISOString().split("T")[0];
+        return dateKey === todayKey;
+      });
+
+      const lateCount = todayRecords.filter(
+        (a) => a.isLate || a.status === "LATE",
+      ).length;
+      const onBreakCount = todayRecords.filter(
+        (a) => a.status === "ON_BREAK" || a.isOnBreak).length;
+      const presentToday = todayRecords.filter(
+        (a) =>
+          a.status === "CHECKED_IN" ||
+          a.status === "CHECKED_OUT" ||
+          a.status === "BACK_TO_WORK" ||
+          a.status === "LATE" ||
+          a.status === "ON_BREAK",
+      ).length;
+      const absentToday = Math.max(0, allUsers.length - presentToday);
+
+      const totalWorkHours = attendanceData.reduce((acc, record) => {
+        if (!record.checkIn || !record.checkOut) return acc;
+        let mins = (new Date(record.checkOut) - new Date(record.checkIn)) / 60000;
+        (record.breaks || []).forEach((b) => {
+          if (b.breakIn && b.breakOut) {
+            mins -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
+          }
+        });
+        return acc + mins / 60;
+      }, 0);
+
+      const userStats = {};
       allUsers.forEach((user) => {
         const userAttendance = attendanceData.filter(
-          (a) => a.userId?._id === user._id,
+          (a) => a.userId?._id === user._id || a.userId === user._id,
         );
-        stats[user._id] = {
+        userStats[user._id] = {
           totalDays: userAttendance.length,
-          present: userAttendance.filter((a) => a.status === "CHECKED_OUT")
-            .length,
-          pending: userAttendance.filter((a) => a.status !== "CHECKED_OUT")
-            .length,
+          present: userAttendance.filter(
+            (a) => a.status === "CHECKED_OUT",
+          ).length,
+          pending: userAttendance.filter((a) => a.status !== "CHECKED_OUT").length,
         };
       });
-      setAttendanceStats(stats);
+
+      setAttendanceStats(userStats);
+      setAttendanceSummary({
+        presentToday,
+        totalWorkHours: Math.round(totalWorkHours * 10) / 10,
+        lateCheckIns: lateCount,
+        absentToday,
+        onBreak: onBreakCount,
+      });
     } catch (error) {
       console.error("Error fetching users:", error);
     } finally {
@@ -132,11 +178,25 @@ export default function SuperAdminAttendance() {
       <Navbar />
 
       <div className="md:ml-64 pt-20 p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">
+              Attendance System
+            </h1>
+          </div>
+          <div className="text-sm text-indigo-600 font-medium">
+            Tuesday, May 19, 2026 📅
+          </div>
+        </div>
+
+        {/* Attendance Stats Cards */}
+        <AttendanceStats stats={attendanceSummary} />
+
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
             <Users className="text-indigo-600" />
             All Users & Admins Attendance Management
-          </h1>
+          </h2>
           <p className="text-slate-600 mt-2">
             Select a user or admin to view their detailed attendance records
           </p>

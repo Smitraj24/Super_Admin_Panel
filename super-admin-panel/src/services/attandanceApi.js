@@ -17,7 +17,6 @@ export const getMonthlyAttendanceApi = (startDate, endDate) => {
 
 export const getTodayStatusApi = () => API.get("/attendance/status");
 
-// HR Admin APIs
 export const getAllUsersAttendanceApi = (startDate, endDate) => {
   if (startDate && endDate) {
     return API.get(`/attendance/all?startDate=${startDate}&endDate=${endDate}`);

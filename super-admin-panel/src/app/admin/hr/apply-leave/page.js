@@ -19,6 +19,7 @@ export default function HRLeaveDashboard() {
   const [allLeaves, setAllLeaves] = useState([]);
   const [filteredLeaves, setFilteredLeaves] = useState([]);
   const [leaveBalance, setLeaveBalance] = useState(null);
+  const [dlEligibility, setDlEligibility] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,6 +40,7 @@ export default function HRLeaveDashboard() {
       const res = await getUserLeaveBalanceApi();
       console.log("Leave Balance Data:", res.data.data); // Debug log
       setLeaveBalance(res.data.data);
+      setDlEligibility(res.data.data.dlEligibility);
     } catch (err) {
       console.log(err);
     }
@@ -75,19 +77,21 @@ export default function HRLeaveDashboard() {
     if (showLoader) setLoading(false);
   };
 
-  // Calculate monthly usage from leaves data
+  // Calculate monthly usage from leaves data based on selected leave month
   const calculateMonthlyUsage = () => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    // If fromDate is selected, use that month; otherwise use current month
+    const targetDate = form.fromDate ? new Date(form.fromDate) : new Date();
+    const targetMonth = targetDate.getMonth();
+    const targetYear = targetDate.getFullYear();
 
     const plCount = userLeaves.filter((leave) => {
       const leaveDate = new Date(leave.fromDate);
       return (
         leave.leaveType === "PL" &&
         (leave.status === "PENDING" || leave.status === "APPROVED") &&
-        leaveDate.getMonth() === currentMonth &&
-        leaveDate.getFullYear() === currentYear
+        leaveDate.getMonth() === targetMonth &&
+        leaveDate.getFullYear() === targetYear &&
+        (!editingLeave || leave._id !== editingLeave._id) // Exclude current editing leave
       );
     }).length;
 
@@ -96,8 +100,9 @@ export default function HRLeaveDashboard() {
       return (
         leave.leaveType === "SL" &&
         (leave.status === "PENDING" || leave.status === "APPROVED") &&
-        leaveDate.getMonth() === currentMonth &&
-        leaveDate.getFullYear() === currentYear
+        leaveDate.getMonth() === targetMonth &&
+        leaveDate.getFullYear() === targetYear &&
+        (!editingLeave || leave._id !== editingLeave._id) // Exclude current editing leave
       );
     }).length;
 
@@ -200,6 +205,11 @@ export default function HRLeaveDashboard() {
       return;
     }
 
+    if (isLeaveDatePassed(leave.fromDate)) {
+      alert("Cannot edit leave after the leave date has passed");
+      return;
+    }
+
     setEditingLeave(leave);
     setForm({
       leaveType: leave.leaveType,
@@ -224,6 +234,15 @@ export default function HRLeaveDashboard() {
       console.error(err);
       alert(err.response?.data?.message || "Error deleting leave");
     }
+  };
+
+  // Helper function to check if leave date has passed
+  const isLeaveDatePassed = (fromDate) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const leaveDate = new Date(fromDate);
+    leaveDate.setHours(0, 0, 0, 0);
+    return leaveDate < today;
   };
 
   const handleCancelEdit = () => {
@@ -269,7 +288,7 @@ export default function HRLeaveDashboard() {
       <Sidebar />
       <Navbar />
 
-      <div className="lg:ml-64 pt-20 ">
+      <div className="lg:ml-64 pt-14 ">
         <div className="p-6 space-y-6  min-h-screen rounded-tl-3xl">
           <h2 className="text-2xl font-bold">Leave Management</h2>
 
@@ -308,9 +327,13 @@ export default function HRLeaveDashboard() {
                       {leaveBalance.leaveBalance.PL}
                     </h3>
                     <p className="text-xs opacity-75 mt-1">
-                      {monthlyUsage.PL >= 1
-                        ? "   Monthly limit reached"
-                        : `✓ ${monthlyUsage.PL}/1 used this month`}
+                      {(() => {
+                        const targetDate = form.fromDate ? new Date(form.fromDate) : new Date();
+                        const monthName = targetDate.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+                        return monthlyUsage.PL >= 1
+                          ? `Limit reached for ${monthName}`
+                          : `✓ ${monthlyUsage.PL}/1 used in ${monthName}`;
+                      })()}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-lg shadow-lg">
@@ -326,9 +349,13 @@ export default function HRLeaveDashboard() {
                       {leaveBalance.leaveBalance.SL}
                     </h3>
                     <p className="text-xs opacity-75 mt-1">
-                      {monthlyUsage.SL >= 1
-                        ? " Monthly limit reached"
-                        : `✓ ${monthlyUsage.SL}/1 used this month`}
+                      {(() => {
+                        const targetDate = form.fromDate ? new Date(form.fromDate) : new Date();
+                        const monthName = targetDate.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+                        return monthlyUsage.SL >= 1
+                          ? `Limit reached for ${monthName}`
+                          : `✓ ${monthlyUsage.SL}/1 used in ${monthName}`;
+                      })()}
                     </p>
                   </div>
                   <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-lg shadow-lg">
@@ -336,7 +363,11 @@ export default function HRLeaveDashboard() {
                     <h3 className="text-3xl font-bold">
                       {leaveBalance.leaveBalance.DL}
                     </h3>
-                    <p className="text-xs opacity-75 mt-1">Available</p>
+                    <p className="text-xs opacity-75 mt-1">
+                      {dlEligibility?.eligible 
+                        ? "✓ Eligible (No PL/CL last month)" 
+                        : "✗ Not eligible (PL/CL taken)"}
+                    </p>
                   </div>
                 </div>
               )}
@@ -363,20 +394,54 @@ export default function HRLeaveDashboard() {
                   {/* Warning Messages */}
                   {monthlyUsage.PL >= 1 && monthlyUsage.SL >= 1 && (
                     <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                      You have reached the monthly limit for both PL and SL
-                      leaves. Only CL and DL are available.
+                      ⚠️ Monthly limit reached for both PL and SL for{" "}
+                      {form.fromDate
+                        ? new Date(form.fromDate).toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : new Date().toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })}
+                      . Only CL and DL are available.
                     </div>
                   )}
                   {monthlyUsage.PL >= 1 && monthlyUsage.SL < 1 && (
                     <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                      You have reached the monthly limit for PL leaves (
-                      {monthlyUsage.PL}/1 used).
+                      ⚠️ Monthly limit reached for PL for{" "}
+                      {form.fromDate
+                        ? new Date(form.fromDate).toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : new Date().toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })}{" "}
+                      ({monthlyUsage.PL}/1 used).
                     </div>
                   )}
                   {monthlyUsage.SL >= 1 && monthlyUsage.PL < 1 && (
                     <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-                      You have reached the monthly limit for SL leaves (
-                      {monthlyUsage.SL}/1 used).
+                      ⚠️ Monthly limit reached for SL for{" "}
+                      {form.fromDate
+                        ? new Date(form.fromDate).toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : new Date().toLocaleDateString("en-US", {
+                            month: "long",
+                            year: "numeric",
+                          })}{" "}
+                      ({monthlyUsage.SL}/1 used).
+                    </div>
+                  )}
+
+                  {/* DL Eligibility Warning */}
+                  {dlEligibility && !dlEligibility.eligible && (
+                    <div className="mb-4 p-3 bg-orange-100 border border-orange-400 text-orange-700 rounded">
+                      ⚠️ DL (Duty Leave) is not available. {dlEligibility.reason}. DL is only available when no PL or CL is taken in the previous month.
                     </div>
                   )}
 
@@ -397,8 +462,8 @@ export default function HRLeaveDashboard() {
                             Privilege Leave (PL) - Balance:{" "}
                             {leaveBalance?.leaveBalance.PL || 0}
                             {monthlyUsage.PL >= 1
-                              ? " (Monthly limit reached)"
-                              : ` (${monthlyUsage.PL}/1 this month)`}
+                              ? ` (Limit reached for ${form.fromDate ? new Date(form.fromDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })})`
+                              : ` (${monthlyUsage.PL}/1 for ${form.fromDate ? new Date(form.fromDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })})`}
                           </option>
                           <option value="CL">
                             Casual Leave (CL) - Balance:{" "}
@@ -408,12 +473,15 @@ export default function HRLeaveDashboard() {
                             Sick Leave (SL) - Balance:{" "}
                             {leaveBalance?.leaveBalance.SL || 0}
                             {monthlyUsage.SL >= 1
-                              ? " (Monthly limit reached)"
-                              : ` (${monthlyUsage.SL}/1 this month)`}
+                              ? ` (Limit reached for ${form.fromDate ? new Date(form.fromDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })})`
+                              : ` (${monthlyUsage.SL}/1 for ${form.fromDate ? new Date(form.fromDate).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-US", { month: "short", year: "numeric" })})`}
                           </option>
-                          <option value="DL">
+                          <option value="DL" disabled={dlEligibility && !dlEligibility.eligible}>
                             Duty Leave (DL) - Balance:{" "}
                             {leaveBalance?.leaveBalance.DL || 0}
+                            {dlEligibility?.eligible 
+                              ? " (Eligible)" 
+                              : " (Not eligible - PL/CL taken last month)"}
                           </option>
                         </select>
                       </div>
@@ -531,7 +599,7 @@ export default function HRLeaveDashboard() {
                             </td>
                             <td className="p-4">
                               <div className="flex gap-2">
-                                {leave.status === "PENDING" && (
+                                {leave.status === "PENDING" && !isLeaveDatePassed(leave.fromDate) && (
                                   <button
                                     onClick={() => handleEdit(leave)}
                                     className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
@@ -539,12 +607,19 @@ export default function HRLeaveDashboard() {
                                     Edit
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => handleDelete(leave._id)}
-                                  className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
-                                >
-                                  Delete
-                                </button>
+                                {!isLeaveDatePassed(leave.fromDate) && (
+                                  <button
+                                    onClick={() => handleDelete(leave._id)}
+                                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                                {isLeaveDatePassed(leave.fromDate) && (
+                                  <span className="text-sm text-gray-500 italic">
+                                    Past leave
+                                  </span>
+                                )}
                               </div>
                             </td>
                           </tr>

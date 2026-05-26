@@ -501,3 +501,231 @@ export const getAttendanceSummary = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// Get dashboard statistics
+export const getDashboardStats = async (req, res) => {
+  try {
+    const today = getToday();
+    const userId = req.user._id;
+    
+    // Get week start date (Sunday)
+    const weekStart = new Date();
+    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const weekStartStr = weekStart.toISOString().split("T")[0];
+    
+    // Get ALL user's attendance records (not just this week)
+    const allUserRecords = await Attendance.find({
+      userId
+    }).sort({ date: -1 });
+    
+    // Get user's attendance records for the week (for work hours calculation)
+    const userWeekRecords = await Attendance.find({
+      userId,
+      date: { $gte: weekStartStr, $lte: today }
+    });
+    
+    // Calculate user's overall stats (all time)
+    let totalPresentDays = 0;
+    let totalLateDays = 0;
+    let totalAbsentDays = 0;
+    
+    allUserRecords.forEach(r => {
+      if (["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "LATE"].includes(r.status)) {
+        totalPresentDays++;
+      }
+      
+      if (r.isLate) {
+        totalLateDays++;
+      }
+    });
+    
+    // Calculate weekly work hours
+    let weekWorkMinutes = 0;
+    
+    userWeekRecords.forEach(r => {
+      // Calculate work hours
+      if (r.checkIn && r.checkOut) {
+        let minutes = (new Date(r.checkOut) - new Date(r.checkIn)) / (1000 * 60);
+        r.breaks?.forEach(brk => {
+          if (brk.breakIn && brk.breakOut) {
+            minutes -= (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60);
+          }
+        });
+        weekWorkMinutes += minutes;
+      }
+    });
+    
+    // Get current user's today record
+    const userRecord = await Attendance.findOne({ 
+      userId, 
+      date: today 
+    });
+    
+    // Calculate work hours and break time for current user
+    let totalWorkMinutes = 0;
+    let totalBreakMinutes = 0;
+    let checkInTime = "---";
+    let checkOutTime = "---";
+    let breaks = [];
+    let isOnBreak = false;
+    
+    if (userRecord) {
+      if (userRecord.checkIn) {
+        checkInTime = new Date(userRecord.checkIn).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+      
+      if (userRecord.checkOut) {
+        checkOutTime = new Date(userRecord.checkOut).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        
+        const workTime = new Date(userRecord.checkOut) - new Date(userRecord.checkIn);
+        totalWorkMinutes = workTime / (1000 * 60);
+      } else if (userRecord.checkIn) {
+        // Calculate current work time if not checked out
+        const workTime = new Date() - new Date(userRecord.checkIn);
+        totalWorkMinutes = workTime / (1000 * 60);
+      }
+      
+      // Check if currently on break
+      isOnBreak = userRecord.status === "ON_BREAK";
+      
+      // Calculate break time and format breaks
+      userRecord.breaks?.forEach((brk, index) => {
+        const breakStart = brk.breakIn 
+          ? new Date(brk.breakIn).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : null;
+        
+        const breakEnd = brk.breakOut
+          ? new Date(brk.breakOut).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : null;
+        
+        let breakDuration = 0;
+        if (brk.breakIn && brk.breakOut) {
+          const breakTime = new Date(brk.breakOut) - new Date(brk.breakIn);
+          breakDuration = breakTime / (1000 * 60);
+          totalBreakMinutes += breakDuration;
+        } else if (brk.breakIn) {
+          // Active break
+          const breakTime = new Date() - new Date(brk.breakIn);
+          breakDuration = breakTime / (1000 * 60);
+          totalBreakMinutes += breakDuration;
+        }
+        
+        breaks.push({
+          index: index + 1,
+          breakStart,
+          breakEnd: breakEnd || "Ongoing",
+          duration: breakDuration > 0 
+            ? `${Math.floor(breakDuration / 60)}h ${Math.floor(breakDuration % 60)}m`
+            : "0m",
+          isActive: brk.breakIn && !brk.breakOut,
+        });
+      });
+      
+      totalWorkMinutes -= totalBreakMinutes;
+    }
+    
+    const workingHours = totalWorkMinutes > 0 
+      ? `${Math.floor(totalWorkMinutes / 60)}h ${Math.floor(totalWorkMinutes % 60)}m`
+      : "---";
+    
+    const totalBreakTime = totalBreakMinutes > 0
+      ? `${Math.floor(totalBreakMinutes / 60)}:${String(Math.floor(totalBreakMinutes % 60)).padStart(2, "0")}`
+      : "0:00";
+    
+    const goalProgress = Math.min(100, Math.round((totalWorkMinutes / (8 * 60)) * 100));
+    
+    const totalWorkHours = (weekWorkMinutes / 60).toFixed(1);
+    
+    // User-specific stats
+    const onBreakCount = isOnBreak ? 1 : 0;
+    
+    res.json({
+      // User-specific stats (all time)
+      presentToday: totalPresentDays, // Total present days (all time)
+      totalWorkHours: parseFloat(totalWorkHours), // Total work hours this week
+      lateCheckIns: totalLateDays, // Late check-ins (all time)
+      absentToday: totalAbsentDays, // Absent days (all time)
+      onBreak: onBreakCount, // Currently on break (0 or 1)
+      
+      // Today's specific data
+      checkInTime,
+      checkOutTime,
+      totalBreakTime,
+      workingHours,
+      goalProgress,
+      userStatus: userRecord?.status || "NOT_CHECKED_IN",
+      breaks, // Include break details
+    });
+  } catch (error) {
+    console.error("Get Dashboard Stats Error:", error.message);
+    res.status(500).json({ message: error.message || "Error fetching dashboard stats" });
+  }
+};
+
+// Get weekly attendance statistics
+export const getWeeklyStats = async (req, res) => {
+  try {
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay()); // Start of week (Sunday)
+    
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weeklyAttendance = [];
+    const weeklyWorkHours = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dateStr = date.toISOString().split("T")[0];
+      
+      const dayRecords = await Attendance.find({ date: dateStr });
+      
+      const presentCount = dayRecords.filter(r => 
+        ["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "LATE"].includes(r.status)
+      ).length;
+      
+      let totalMinutes = 0;
+      dayRecords.forEach(r => {
+        if (r.checkIn && r.checkOut) {
+          let minutes = (new Date(r.checkOut) - new Date(r.checkIn)) / (1000 * 60);
+          r.breaks?.forEach(brk => {
+            if (brk.breakIn && brk.breakOut) {
+              minutes -= (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60);
+            }
+          });
+          totalMinutes += minutes;
+        }
+      });
+      
+      weeklyAttendance.push({
+        day: days[i],
+        present: presentCount,
+      });
+      
+      weeklyWorkHours.push({
+        day: days[i],
+        hours: parseFloat((totalMinutes / 60).toFixed(1)),
+      });
+    }
+    
+    res.json({
+      weeklyAttendance,
+      weeklyWorkHours,
+    });
+  } catch (error) {
+    console.error("Get Weekly Stats Error:", error.message);
+    res.status(500).json({ message: error.message || "Error fetching weekly stats" });
+  }
+};

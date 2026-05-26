@@ -80,14 +80,18 @@ export default function HolidayPage() {
         <Sidebar />
         <Navbar />
 
-        <main className="md:pl-64 pt-16 p-8">
-          <h1 className="text-3xl font-bold mb-6">Holiday Management</h1>
+        <main className="md:ml-64 pt-20 p-8">
+          <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Holiday Management
+          </h1>
 
           <form
             onSubmit={handleSubmit}
-            className="bg-white p-6 rounded-xl mb-8"
+            className="bg-white p-6 rounded-xl mb-8 border border-slate-200"
           >
-            <h2 className="text-xl font-semibold mb-4">Add New Holiday</h2>
+            <h2 className="text-xl font-semibold mb-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Add New Holiday
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <input
                 placeholder="Holiday Title"
@@ -192,9 +196,9 @@ export default function HolidayPage() {
             </form>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b">
+              <thead className="bg-slate-100 border-b">
                 <tr>
                   <th className="p-4 font-bold text-slate-700">TITLE</th>
                   <th className="p-4 font-bold text-slate-700">DATE</th>

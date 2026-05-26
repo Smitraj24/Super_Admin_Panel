@@ -1,146 +1,105 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { getProfile } from "@/services/userApi";
 
 const AuthContext = createContext();
 
-// Helper to get storage key with tab identifier
-const getTabId = () => {
-  // Check if we already have a tab ID in sessionStorage
-  let tabId = sessionStorage.getItem("tabId");
-  if (!tabId) {
-    // Generate a unique tab ID for this tab
-    tabId = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    sessionStorage.setItem("tabId", tabId);
-  }
-  return tabId;
-};
+// ─── Storage helpers ──────────────────────────────────────────────────────────
 
-// Storage wrapper that uses sessionStorage for tab-specific data
 const storage = {
-  getItem: (key) => {
-    // Try sessionStorage first (tab-specific)
-    const sessionValue = sessionStorage.getItem(key);
-    if (sessionValue) return sessionValue;
-    
-    // Fallback to localStorage for backward compatibility
-    return localStorage.getItem(key);
-  },
-  
+  getItem: (key) => sessionStorage.getItem(key) ?? localStorage.getItem(key),
   setItem: (key, value) => {
-    // Store in sessionStorage (tab-specific)
     sessionStorage.setItem(key, value);
-    // Also store in localStorage for persistence across refreshes
     localStorage.setItem(key, value);
   },
-  
   removeItem: (key) => {
     sessionStorage.removeItem(key);
     localStorage.removeItem(key);
-  }
+  },
 };
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export const AuthProvider = ({ children }) => {
+  // Always start with null/loading=true so server and client initial render match
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const backgroundRefreshDone = useRef(false);
 
+  // Background profile refresh — keeps data fresh without blocking UI
   const fetchProfile = useCallback(async () => {
     try {
       const res = await getProfile();
-      if (res.data && res.data.success && res.data.data) {
-        setUser(res.data.data);
-        storage.setItem("user", JSON.stringify(res.data.data));
-      } else if (res.data) {
-        // Handle old response format without success wrapper
-        setUser(res.data);
-        storage.setItem("user", JSON.stringify(res.data));
+      const fresh =
+        res.data?.success && res.data?.data ? res.data.data : res.data;
+      if (fresh) {
+        setUser(fresh);
+        storage.setItem("user", JSON.stringify(fresh));
       }
-      setLoading(false);
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
-      
-      // Check if it's an authentication error (401)
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        // Clear auth state on authentication errors
+    } catch (err) {
+      if (err.response?.status === 401 || err.response?.status === 403) {
         storage.removeItem("token");
         storage.removeItem("user");
         setToken(null);
         setUser(null);
       }
-      
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const storedToken = storage.getItem("token");
-    const storedUser = storage.getItem("user");
+    // Read storage only on the client after mount — avoids SSR/client mismatch
+    try {
+      const storedToken = storage.getItem("token");
+      const raw = storage.getItem("user");
+      const storedUser = raw ? JSON.parse(raw) : null;
+      setToken(storedToken);
+      setUser(storedUser);
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-        setLoading(false); // Set loading false immediately with cached data
-        
-        // Fetch fresh data in background without blocking UI
+      if (storedToken && !backgroundRefreshDone.current) {
+        backgroundRefreshDone.current = true;
         fetchProfile();
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        setLoading(false);
       }
-    } else {
+    } catch {
+      // ignore parse errors
+    } finally {
       setLoading(false);
     }
 
-    // Listen for storage changes from other tabs (localStorage only)
-    const handleStorageChange = (e) => {
-      // Only handle changes to our auth keys from localStorage
-      if (e.key === "token" || e.key === "user") {
-        // Check if current tab still has its own session data
-        const sessionToken = sessionStorage.getItem("token");
-        const sessionUser = sessionStorage.getItem("user");
-        
-        // If this tab has its own session data, don't sync from other tabs
-        if (sessionToken && sessionUser) {
-          return; // Keep this tab's own user data
-        }
-
-        // Otherwise, sync from localStorage (for tabs without session data)
-        const newToken = localStorage.getItem("token");
-        const newUser = localStorage.getItem("user");
-
-        if (!newToken || !newUser) {
-          setToken(null);
-          setUser(null);
-          return;
-        }
-
-        try {
-          const parsedUser = JSON.parse(newUser);
-          setToken(newToken);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("Failed to parse user from storage event:", error);
-        }
+    // Cross-tab sync via localStorage events
+    const handleStorage = (e) => {
+      if (e.key !== "token" && e.key !== "user") return;
+      // Skip if this tab has its own session data
+      if (sessionStorage.getItem("token")) return;
+      const newToken = localStorage.getItem("token");
+      const newUser = localStorage.getItem("user");
+      if (!newToken || !newUser) {
+        setToken(null);
+        setUser(null);
+        return;
       }
+      try {
+        setToken(newToken);
+        setUser(JSON.parse(newUser));
+      } catch {}
     };
 
-    // Add event listener for cross-tab communication
-    window.addEventListener("storage", handleStorageChange);
-
-    // Cleanup listener on unmount
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [fetchProfile]);
 
   const login = useCallback((data) => {
     storage.setItem("token", data.token);
     storage.setItem("user", JSON.stringify(data.user));
-
     setToken(data.token);
     setUser(data.user);
   }, []);
@@ -148,56 +107,34 @@ export const AuthProvider = ({ children }) => {
   const logout = useCallback(() => {
     storage.removeItem("token");
     storage.removeItem("user");
-
     setToken(null);
     setUser(null);
   }, []);
 
   const getDepartment = useCallback(() => {
-    if (user?.department) {
-      if (typeof user.department === "object" && user.department.name) {
-        return user.department.name;
-      }
-      return user.department;
-    }
-    return null;
+    if (!user?.department) return null;
+    return typeof user.department === "object"
+      ? user.department.name
+      : user.department;
   }, [user]);
 
   const getRole = useCallback(() => {
-    if (user?.role) {
-      if (typeof user.role === "object" && user.role.name) {
-        return user.role.name;
-      }
-      return user.role;
-    }
-    return null;
+    if (!user?.role) return null;
+    return typeof user.role === "object" ? user.role.name : user.role;
   }, [user]);
 
   const isAuthenticated = useCallback(() => !!token && !!user, [token, user]);
 
-  // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    user,
-    token,
-    loading,
-    login,
-    logout,
-    isAuthenticated,
-    getDepartment,
-    getRole,
-  }), [user, token, loading, login, logout, isAuthenticated, getDepartment, getRole]);
+  const value = useMemo(
+    () => ({ user, token, loading, login, logout, isAuthenticated, getDepartment, getRole }),
+    [user, token, loading, login, logout, isAuthenticated, getDepartment, getRole],
+  );
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );  
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
 };

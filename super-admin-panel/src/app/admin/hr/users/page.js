@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import API from "@/lib/api";
+import ChatWindow from "@/components/ChatWindow";
 import {
   Users,
   UserPlus,
@@ -11,6 +12,7 @@ import {
   Trash2,
   Search,
   UserCircle,
+  MessageCircle,
 } from "lucide-react";
 
 export default function UsersPage() {
@@ -26,6 +28,9 @@ export default function UsersPage() {
   });
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Chat state
+  const [chatUser, setChatUser] = useState(null);
 
   // Available sidebar options for users
   const availableSidebarOptions = [
@@ -358,6 +363,14 @@ export default function UsersPage() {
                             <td className="p-3 text-right">
                               <div className="flex justify-end gap-3">
                                 <button
+                                  onClick={() => setChatUser(user)}
+                                  className="text-green-600 hover:text-green-800"
+                                  title="Chat with user"
+                                >
+                                  <MessageCircle size={16} />
+                                </button>
+
+                                <button
                                   onClick={() => startEdit(user)}
                                   className="text-green-600 hover:text-green-800"
                                 >
@@ -392,6 +405,11 @@ export default function UsersPage() {
           </div>
         </div>
       </main>
+
+      {/* Chat Window */}
+      {chatUser && (
+        <ChatWindow user={chatUser} onClose={() => setChatUser(null)} />
+      )}
     </div>
   );
 }

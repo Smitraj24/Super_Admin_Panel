@@ -1,42 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
+import SuperAdminDashboard from "@/components/SuperAdminDashboard";
+import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
+import { ROLES } from "@/utils/constants";
 
-import {
-  Users,
-  ShieldCheck,
-  Building2,
-  UserCog,
-  TrendingUp,
-  Activity,
-  Clock,
-  RefreshCw,
-} from "lucide-react";
+export default function SuperAdminDashboardPage() {
+  return (
+    <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
+      <SuperAdminDashboard />
+    </ProtectedDashboardRoute>
+  );
+}
 
-import Link from "next/link";
-import Calendar from "../../../components/Calendar";
-import HolidayWidget from "../../../components/HolidayWidget";
-import Sidebar from "../../../components/Sidebar";
-import Navbar from "../../../components/Navbar";
-import SuperAdminBroadcast from "../../../components/SuperAdminBroadcast";
-import { Breadcrumb } from "../../../components/Breadcrumb";
-import { getStatsApi } from "../../../services/superAdminApi";
-import Loader from "../../../components/Loader";
-import { ProtectedDashboardRoute } from "../../../components/ProtectedDashboardRoute";
-import { ROLES } from "../../../utils/constants";
-
-export default function SuperAdminDashboard() {
+/* OLD CODE - KEEPING FOR REFERENCE
+export default function SuperAdminDashboardOld() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -81,8 +58,10 @@ export default function SuperAdminDashboard() {
     const diffInSeconds = Math.floor((now - time) / 1000);
 
     if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mins ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 3600)
+      return `${Math.floor(diffInSeconds / 60)} mins ago`;
+    if (diffInSeconds < 86400)
+      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
@@ -276,9 +255,9 @@ export default function SuperAdminDashboard() {
                     className="p-2 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
                     title="Refresh activity"
                   >
-                    <RefreshCw 
-                      size={18} 
-                      className={`text-slate-600 ${refreshing ? 'animate-spin' : ''}`}
+                    <RefreshCw
+                      size={18}
+                      className={`text-slate-600 ${refreshing ? "animate-spin" : ""}`}
                     />
                   </button>
                 </div>
@@ -299,8 +278,10 @@ export default function SuperAdminDashboard() {
                           {activity.performedBy && (
                             <p className="text-xs text-slate-500 mt-1">
                               by {activity.performedBy}
-                              {activity.targetUser && ` → ${activity.targetUser}`}
-                              {activity.department && ` (${activity.department})`}
+                              {activity.targetUser &&
+                                ` → ${activity.targetUser}`}
+                              {activity.department &&
+                                ` (${activity.department})`}
                             </p>
                           )}
                           <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
@@ -310,7 +291,7 @@ export default function SuperAdminDashboard() {
                         </div>
                       </div>
                     );
-                  })  
+                  })
                 ) : (
                   <div className="text-center py-8 text-slate-400">
                     No recent activity
@@ -324,3 +305,4 @@ export default function SuperAdminDashboard() {
     </ProtectedDashboardRoute>
   );
 }
+*/

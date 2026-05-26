@@ -25,9 +25,52 @@ export const applyLeave = async (req, res) => {
       }
     }
 
-    // Calculate leave days
     const from = new Date(fromDate);
     const to = new Date(toDate);
+
+    // Check DL eligibility if applying for DL
+    if (leaveType === "DL") {
+      const previousMonthStart = new Date(from.getFullYear(), from.getMonth() - 1, 1);
+      const previousMonthEnd = new Date(from.getFullYear(), from.getMonth(), 0);
+
+      const previousMonthLeaves = await Leave.countDocuments({
+        user: req.user._id,
+        leaveType: { $in: ["PL", "CL"] },
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: previousMonthStart, $lte: previousMonthEnd },
+      });
+
+      if (previousMonthLeaves > 0) {
+        return res.status(400).json({
+          message: `DL (Duty Leave) is not available. You took PL or CL in the previous month (${previousMonthStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })}). DL is only available when no PL or CL is taken in the previous month.`,
+        });
+      }
+    }
+
+    // Check for overlapping leaves for the same user
+    const overlappingLeaves = await Leave.find({
+      user: req.user._id,
+      status: { $in: ["PENDING", "APPROVED"] },
+      $or: [
+        // New leave starts during existing leave
+        { fromDate: { $lte: to }, toDate: { $gte: from } },
+        // New leave ends during existing leave
+        { fromDate: { $lte: to }, toDate: { $gte: from } },
+        // New leave completely contains existing leave
+        { fromDate: { $gte: from }, toDate: { $lte: to } },
+        // Existing leave completely contains new leave
+        { fromDate: { $lte: from }, toDate: { $gte: to } },
+      ],
+    });
+
+    if (overlappingLeaves.length > 0) {
+      const existingLeave = overlappingLeaves[0];
+      return res.status(400).json({
+        message: `You already have a ${existingLeave.leaveType} leave from ${new Date(existingLeave.fromDate).toLocaleDateString()} to ${new Date(existingLeave.toDate).toLocaleDateString()}. Cannot apply for overlapping dates.`,
+      });
+    }
+
+    // Calculate leave days
     const diffTime = Math.abs(to - from);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     const leaveDays = isHalfDay ? 0.5 : diffDays;
@@ -373,6 +416,20 @@ export const getUserLeaveBalance = async (req, res) => {
       }),
     ]);
 
+    // Check DL eligibility based on previous month's PL/CL usage
+    const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const previousMonthLeaves = await Leave.countDocuments({
+      user: req.user._id,
+      leaveType: { $in: ["PL", "CL"] },
+      status: { $in: ["PENDING", "APPROVED"] },
+      fromDate: { $gte: previousMonthStart, $lte: previousMonthEnd },
+    });
+
+    // DL is eligible only if NO PL or CL was taken in previous month
+    const isDLEligible = previousMonthLeaves === 0;
+
     res.json({
       success: true,
       data: {
@@ -382,6 +439,107 @@ export const getUserLeaveBalance = async (req, res) => {
         monthlyUsage: {
           PL: plCount,
           SL: slCount,
+        },
+        dlEligibility: {
+          eligible: isDLEligible,
+          reason: isDLEligible 
+            ? "No PL or CL taken in previous month" 
+            : "PL or CL was taken in previous month",
+          previousMonthLeaves: previousMonthLeaves,
+        },
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const checkLeaveAvailability = async (req, res) => {
+  try {
+    const { year, month } = req.query;
+
+    if (!year || !month) {
+      return res.status(400).json({ 
+        message: "Year and month are required" 
+      });
+    }
+
+    const targetYear = parseInt(year);
+    const targetMonth = parseInt(month) - 1; // JavaScript months are 0-indexed
+
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
+    const endOfMonth = new Date(targetYear, targetMonth + 1, 0);
+
+    // Get leave counts for the specified month
+    const [plCount, slCount] = await Promise.all([
+      Leave.countDocuments({
+        user: req.user._id,
+        leaveType: "PL",
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: startOfMonth, $lte: endOfMonth },
+      }),
+      Leave.countDocuments({
+        user: req.user._id,
+        leaveType: "SL",
+        status: { $in: ["PENDING", "APPROVED"] },
+        fromDate: { $gte: startOfMonth, $lte: endOfMonth },
+      }),
+    ]);
+
+    // Check DL eligibility based on previous month's PL/CL usage
+    const previousMonthStart = new Date(targetYear, targetMonth - 1, 1);
+    const previousMonthEnd = new Date(targetYear, targetMonth, 0);
+
+    const previousMonthLeaves = await Leave.countDocuments({
+      user: req.user._id,
+      leaveType: { $in: ["PL", "CL"] },
+      status: { $in: ["PENDING", "APPROVED"] },
+      fromDate: { $gte: previousMonthStart, $lte: previousMonthEnd },
+    });
+
+    // DL is eligible only if NO PL or CL was taken in previous month
+    const isDLEligible = previousMonthLeaves === 0;
+
+    // Get user's leave balance
+    const user = await User.findById(req.user._id).select("leaveBalance");
+
+    res.json({
+      success: true,
+      data: {
+        year: targetYear,
+        month: targetMonth + 1,
+        monthName: new Date(targetYear, targetMonth).toLocaleDateString("en-US", { 
+          month: "long", 
+          year: "numeric" 
+        }),
+        availability: {
+          PL: {
+            used: plCount,
+            limit: 1,
+            available: plCount < 1,
+            balance: user.leaveBalance.PL,
+          },
+          CL: {
+            used: 0,
+            limit: null,
+            available: true,
+            balance: user.leaveBalance.CL,
+          },
+          SL: {
+            used: slCount,
+            limit: 1,
+            available: slCount < 1,
+            balance: user.leaveBalance.SL,
+          },
+          DL: {
+            used: 0,
+            limit: null,
+            available: isDLEligible,
+            balance: user.leaveBalance.DL,
+            eligibilityReason: isDLEligible 
+              ? "No PL or CL taken in previous month" 
+              : "PL or CL was taken in previous month",
+          },
         },
       },
     });
@@ -403,6 +561,19 @@ export const deleteUserLeave = async (req, res) => {
       return res
         .status(403)
         .json({ message: "Not authorized to delete this leave" });
+    }
+
+    // Check if leave date has passed - prevent deletion
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    
+    const leaveFromDate = new Date(leave.fromDate);
+    leaveFromDate.setHours(0, 0, 0, 0);
+
+    if (leaveFromDate < today) {
+      return res.status(400).json({
+        message: "Cannot delete leave after the leave date has passed",
+      });
     }
 
     // If leave was approved, restore the balance
@@ -459,6 +630,19 @@ export const updateUserLeave = async (req, res) => {
       });
     }
 
+    // Check if leave date has passed - prevent editing
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    
+    const leaveFromDate = new Date(leave.fromDate);
+    leaveFromDate.setHours(0, 0, 0, 0);
+
+    if (leaveFromDate < today) {
+      return res.status(400).json({
+        message: "Cannot edit leave after the leave date has passed",
+      });
+    }
+
     // Validate half-day leave
     if (isHalfDay) {
       const from = new Date(fromDate);
@@ -471,9 +655,34 @@ export const updateUserLeave = async (req, res) => {
       }
     }
 
-    // Calculate new leave days
     const from = new Date(fromDate);
     const to = new Date(toDate);
+
+    // Check for overlapping leaves for the same user (excluding current leave)
+    const overlappingLeaves = await Leave.find({
+      user: req.user._id,
+      _id: { $ne: req.params.id }, // Exclude current leave
+      status: { $in: ["PENDING", "APPROVED"] },
+      $or: [
+        // New leave starts during existing leave
+        { fromDate: { $lte: to }, toDate: { $gte: from } },
+        // New leave ends during existing leave
+        { fromDate: { $lte: to }, toDate: { $gte: from } },
+        // New leave completely contains existing leave
+        { fromDate: { $gte: from }, toDate: { $lte: to } },
+        // Existing leave completely contains new leave
+        { fromDate: { $lte: from }, toDate: { $gte: to } },
+      ],
+    });
+
+    if (overlappingLeaves.length > 0) {
+      const existingLeave = overlappingLeaves[0];
+      return res.status(400).json({
+        message: `You already have a ${existingLeave.leaveType} leave from ${new Date(existingLeave.fromDate).toLocaleDateString()} to ${new Date(existingLeave.toDate).toLocaleDateString()}. Cannot apply for overlapping dates.`,
+      });
+    }
+
+    // Calculate new leave days
     const diffTime = Math.abs(to - from);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     const leaveDays = isHalfDay ? 0.5 : diffDays;

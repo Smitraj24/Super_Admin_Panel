@@ -1,24 +1,5 @@
-import axios from "axios";
-import { API_BASE } from "./constants";
-
-const axiosInstance = axios.create({
-  baseURL: API_BASE,
-});
-
-axiosInstance.interceptors.request.use(
-  (config) => {
-    if (typeof window !== "undefined") {
-      // Try sessionStorage first (tab-specific), fallback to localStorage
-      const token = sessionStorage.getItem("token") || localStorage.getItem("token");
-
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error),
-);
-
-export default axiosInstance;
+/**
+ * Re-exports the single shared axios instance.
+ * Kept for backward compatibility with services that import from here.
+ */
+export { default } from "@/lib/api";

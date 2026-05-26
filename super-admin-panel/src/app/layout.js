@@ -1,11 +1,16 @@
 import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
+import { SidebarProvider } from "../context/SidebarContext";
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata = {
   title: "Super Admin Panel",
   description:
     "Manage users, departments, attendance, leave requests, and notifications with a secure admin dashboard built for modern HR and operations teams.",
-  viewport: { width: "device-width", initialScale: 1 },
   metadataBase: new URL("https://super-admin-panel-gray.vercel.app/login"),
   robots: {
     index: true,
@@ -65,7 +70,9 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body suppressHydrationWarning>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SidebarProvider>{children}</SidebarProvider>
+        </AuthProvider>
       </body>
     </html>
   );

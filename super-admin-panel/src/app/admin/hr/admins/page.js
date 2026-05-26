@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
+import ChatWindow from "@/components/ChatWindow";
 import {
   getAdminsApi,
   createAdminApi,
@@ -22,6 +23,7 @@ import {
   Key,
   CheckCircle2,
   XCircle,
+  MessageCircle,
 } from "lucide-react";
 
 export default function AdminsPage() {
@@ -40,6 +42,9 @@ export default function AdminsPage() {
   });
 
   const [editingId, setEditingId] = useState(null);
+
+  // Chat state
+  const [chatUser, setChatUser] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -330,6 +335,14 @@ export default function AdminsPage() {
                               <td className="p-3 text-right">
                                 <div className="flex justify-end gap-3">
                                   <button
+                                    onClick={() => setChatUser(admin)}
+                                    className="text-blue-600 hover:text-blue-800 transition"
+                                    title="Chat with Admin"
+                                  >
+                                    <MessageCircle size={16} />
+                                  </button>
+
+                                  <button
                                     onClick={() => startEdit(admin)}
                                     className="text-green-600 hover:text-green-800 transition"
                                     title="Edit Admin"
@@ -367,6 +380,11 @@ export default function AdminsPage() {
           )}
         </div>
       </main>
+
+      {/* Chat Window */}
+      {chatUser && (
+        <ChatWindow user={chatUser} onClose={() => setChatUser(null)} />
+      )}
     </div>
   );
 }

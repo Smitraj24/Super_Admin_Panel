@@ -11,6 +11,8 @@ import {
   updateAttendanceRecord,
   completeBreakOut,
   getAttendanceSummary,
+  getDashboardStats,
+  getWeeklyStats,
 } from "../controllers/attendanceController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
@@ -27,6 +29,8 @@ router.post("/break-out", breakOut);
 router.post("/check-out", checkOut);
 router.get("/status", getTodayStatus);
 router.get("/monthly", getAttendanceByDateRange);
+router.get("/dashboard-stats", getDashboardStats);
+router.get("/weekly-stats", getWeeklyStats);
 
 // HR Admin routes
 router.get(

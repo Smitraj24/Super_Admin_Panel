@@ -6,6 +6,7 @@ import Navbar from "../../../components/Navbar";
 import API from "@/lib/api";
 import { ProtectedDashboardRoute } from "@/components/ProtectedDashboardRoute";
 import { ROLES } from "@/utils/constants";
+import ChatWindow from "@/components/ChatWindow";
 import {
   Users,
   UserPlus,
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
+  MessageCircle,
 } from "lucide-react";
 
 export default function UsersPage() {
@@ -39,6 +41,9 @@ export default function UsersPage() {
   });
 
   const [editingId, setEditingId] = useState(null);
+
+  // Chat state
+  const [chatUser, setChatUser] = useState(null);
 
   // Available sidebar options for users
   const availableSidebarOptions = [
@@ -77,7 +82,8 @@ export default function UsersPage() {
       setUsers(usersRes.data.users || usersRes.data);
       setDepartments(deptsRes.data);
     } catch (err) {
-      console.error("Fetch Error:", err.response?.data);
+      console.error("Fetch Error:", err);
+      console.error("Error details:", err.response?.data || err.message);
     } finally {
       setLoading(false);
     }
@@ -187,7 +193,7 @@ export default function UsersPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm max-h-[700px] overflow-y-auto p-6 ">
+              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm max-h-[700px]overflow-y-scroll no-scrollbar p-6 ">
                 <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-white pb-2">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit User" : "Add User"}
@@ -348,6 +354,13 @@ export default function UsersPage() {
                           <td className="p-5">
                             <div className="flex items-center gap-2">
                               <button
+                                onClick={() => setChatUser(user)}
+                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
+                                title="Chat with user"
+                              >
+                                <MessageCircle size={18} />
+                              </button>
+                              <button
                                 onClick={() => startEdit(user)}
                                 className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg"
                               >
@@ -370,6 +383,11 @@ export default function UsersPage() {
             </div>
           </div>
         </main>
+
+        {/* Chat Window */}
+        {chatUser && (
+          <ChatWindow user={chatUser} onClose={() => setChatUser(null)} />
+        )}
       </div>
     </ProtectedDashboardRoute>
   );
