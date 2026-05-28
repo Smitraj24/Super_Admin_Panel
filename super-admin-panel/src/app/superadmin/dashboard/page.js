@@ -146,7 +146,7 @@ export default function SuperAdminDashboardOld() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
 
@@ -160,8 +160,8 @@ export default function SuperAdminDashboardOld() {
             />
             <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <p className="text-slate-500 font-medium mb-1">Overview</p>
-                <h1 className="text-3xl font-bold text-slate-900">
+                <p className="text-[var(--text-secondary)] font-medium mb-1">Overview</p>
+                <h1 className="text-3xl font-bold text-[var(--text-primary)]">
                   Platform Dashboard
                 </h1>
               </div>
@@ -171,7 +171,7 @@ export default function SuperAdminDashboardOld() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
               {statCards.map((card, i) => (
                 <Link key={i} href={card.link}>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm cursor-pointer hover:shadow-md transition">
+                  <div className="bg-[var(--bg-surface)] p-6 rounded-3xl border border-[var(--border)] shadow-sm cursor-pointer hover:shadow-md transition">
                     <div className="flex justify-between items-start mb-4">
                       <div className="p-3 bg-indigo-100 text-indigo-600 rounded-2xl">
                         <card.icon size={24} />
@@ -183,8 +183,8 @@ export default function SuperAdminDashboardOld() {
                       </span>
                     </div>
 
-                    <p className="text-slate-500 text-sm mb-1">{card.title}</p>
-                    <h2 className="text-3xl font-bold text-slate-900">
+                    <p className="text-[var(--text-secondary)] text-sm mb-1">{card.title}</p>
+                    <h2 className="text-3xl font-bold text-[var(--text-primary)]">
                       {card.value}
                     </h2>
                   </div>
@@ -198,7 +198,7 @@ export default function SuperAdminDashboardOld() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="bg-[var(--bg-surface)] p-8 rounded-2xl border border-[var(--border)] shadow-sm">
                 <h3 className="text-xl font-bold mb-6">User Growth</h3>
 
                 <div className="h-[300px]">
@@ -220,7 +220,7 @@ export default function SuperAdminDashboardOld() {
                 </div>
               </div>
 
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="bg-[var(--bg-surface)] p-8 rounded-2xl border border-[var(--border)] shadow-sm">
                 <h3 className="text-xl font-bold mb-6">Department Usage</h3>
 
                 <div className="h-[300px]">
@@ -238,26 +238,26 @@ export default function SuperAdminDashboardOld() {
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-[var(--bg-surface)] p-8 rounded-2xl border border-[var(--border)] shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold flex items-center gap-2">
                   <Activity className="text-indigo-600" size={22} />
                   Recent Activity
                 </h3>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                  <span className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     Live
                   </span>
                   <button
                     onClick={handleRefresh}
                     disabled={refreshing}
-                    className="p-2 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
+                    className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition disabled:opacity-50"
                     title="Refresh activity"
                   >
                     <RefreshCw
                       size={18}
-                      className={`text-slate-600 ${refreshing ? "animate-spin" : ""}`}
+                      className={`text-[var(--text-secondary)] ${refreshing ? "animate-spin" : ""}`}
                     />
                   </button>
                 </div>
@@ -272,11 +272,11 @@ export default function SuperAdminDashboardOld() {
                         <div className="mt-1 h-3 w-3 rounded-full bg-blue-500"></div>
 
                         <div className="flex-1">
-                          <p className="text-slate-700 font-medium">
+                          <p className="text-[var(--text-primary)] font-medium">
                             {activity.text}
                           </p>
                           {activity.performedBy && (
-                            <p className="text-xs text-slate-500 mt-1">
+                            <p className="text-xs text-[var(--text-secondary)] mt-1">
                               by {activity.performedBy}
                               {activity.targetUser &&
                                 ` → ${activity.targetUser}`}
@@ -306,3 +306,4 @@ export default function SuperAdminDashboardOld() {
   );
 }
 */
+

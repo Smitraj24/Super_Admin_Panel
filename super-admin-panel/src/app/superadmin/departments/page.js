@@ -93,7 +93,7 @@ export default function DepartmentsPage() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
 
@@ -101,24 +101,24 @@ export default function DepartmentsPage() {
           <div className="p-8">
             <div className="flex justify-between items-center mb-10">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 flex  gap-3">
+                <h1 className="text-3xl font-bold text-[var(--text-primary)] flex  gap-3">
                   <Building2 className="text-indigo-600" size={30} />
                   Departments Management
                 </h1>
-                <p className="mt-2 text-slate-500">
+                <p className="mt-2 text-[var(--text-secondary)]">
                   Manage your organization's departments
                 </p>
               </div>
 
-              <div className="bg-white border border-slate-200 px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
+              <div className="bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-2 rounded-xl shadow-sm text-sm font-bold text-indigo-600">
                 {departments.length} Department
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1">
-                <div className="bg-white p-4 rounded-[2rem] border border-slate-200 shadow-sm">
-                  <h3 className=" flex items-center gap-2 text-xl font-bold text-slate-900 ">
+                <div className="bg-[var(--bg-surface)] p-4 rounded-[2rem] border border-[var(--border)] shadow-sm">
+                  <h3 className=" flex items-center gap-2 text-xl font-bold text-[var(--text-primary)] ">
                     <PlusCircle className=" text-indigo-600" />
                     Add Department
                   </h3>
@@ -128,7 +128,7 @@ export default function DepartmentsPage() {
                     placeholder="Enter department name"
                     value={departmentName}
                     onChange={(e) => setDepartmentName(e.target.value)}
-                    className="w-full rounded-xl p-3 bg-slate-50  border border-slate-200 mt-6 outline-none hover:bg-slate-100 "
+                    className="w-full rounded-xl p-3 bg-[var(--bg-elevated)]  border border-[var(--border)] mt-6 outline-none hover:bg-[var(--bg-elevated)] "
                   />
 
                   <button
@@ -142,19 +142,19 @@ export default function DepartmentsPage() {
               </div>
 
               <div className="lg:col-span-2">
-                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-x-auto">
+                <div className="bg-[var(--bg-surface)] rounded-[2rem] border border-[var(--border)] shadow-sm overflow-x-auto">
                   {loading ? (
-                    <div className="p-8 text-center text-slate-500">
+                    <div className="p-8 text-center text-[var(--text-secondary)]">
                       Loading departments...
                     </div>
                   ) : (
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="bg-slate-50">
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                        <tr className="bg-[var(--bg-elevated)]">
+                          <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                             DEPARTMENT NAME
                           </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase text-right">
+                          <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase text-right">
                             ACTIONS
                           </th>
                         </tr>
@@ -164,15 +164,15 @@ export default function DepartmentsPage() {
                         {departments.map((department) => (
                           <tr
                             key={department._id}
-                            className="hover:bg-slate-50"
+                            className="hover:bg-[var(--bg-elevated)]"
                           >
-                            <td className="p-5 font-semibold text-slate-700">
+                            <td className="p-5 font-semibold text-[var(--text-primary)]">
                               {editingId === department._id ? (
                                 <input
                                   type="text"
                                   value={editName}
                                   onChange={(e) => setEditName(e.target.value)}
-                                  className="w-full p-2 border border-slate-200 rounded-lg outline-none"
+                                  className="w-full p-2 border border-[var(--border)] rounded-lg outline-none"
                                   autoFocus
                                 />
                               ) : (
@@ -234,3 +234,4 @@ export default function DepartmentsPage() {
     </ProtectedDashboardRoute>
   );
 }
+

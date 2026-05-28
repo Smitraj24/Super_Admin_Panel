@@ -170,7 +170,7 @@ export default function UsersPage() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC] ">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
         <main className=" md:pl-64 pt-12 ">
@@ -186,15 +186,15 @@ export default function UsersPage() {
                 </p>
               </div>
 
-              <div className="bg-white rounded-lg border  p-2 flex items-center gap-4  ">
+              <div className="bg-[var(--bg-surface)] rounded-lg border  p-2 flex items-center gap-4  ">
                 <UserCircle size={16} />
                 {users.length} Users
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm max-h-[700px]overflow-y-scroll no-scrollbar p-6 ">
-                <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-white pb-2">
+              <div className="bg-[var(--bg-surface)] rounded-[2rem] border border-[var(--border)] shadow-sm max-h-[700px]overflow-y-scroll no-scrollbar p-6 ">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-[var(--bg-surface)] pb-2">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit User" : "Add User"}
                 </h3>
@@ -205,7 +205,7 @@ export default function UsersPage() {
                     value={form.name}
                     onChange={handleChange}
                     placeholder="Full Name"
-                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    className=" w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                     required
                   />
 
@@ -215,7 +215,7 @@ export default function UsersPage() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="Email"
-                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    className=" w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                     required
                   />
 
@@ -226,12 +226,12 @@ export default function UsersPage() {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Password (optional)"
-                      className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                      className=" w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-[var(--text-secondary)]"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -241,7 +241,7 @@ export default function UsersPage() {
                     name="department"
                     value={form.department}
                     onChange={handleChange}
-                    className=" w-full bg-white border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
+                    className=" w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 placeholder:text-slate-400"
                     required
                   >
                     <option value="">Select Department</option>
@@ -253,15 +253,15 @@ export default function UsersPage() {
                   </select>
 
                   {/* Sidebar Permissions */}
-                  <div className="border border-slate-300 rounded-lg p-4">
-                    <label className="block text-sm font-semibold text-slate-700 mb-3">
+                  <div className="border border-[var(--border-strong)] rounded-lg p-4">
+                    <label className="block text-sm font-semibold text-[var(--text-primary)] mb-3">
                       Sidebar Permissions
                     </label>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {availableSidebarOptions.map((option) => (
                         <label
                           key={option}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded"
+                          className="flex items-center gap-2 cursor-pointer hover:bg-[var(--bg-elevated)] p-2 rounded"
                         >
                           <input
                             type="checkbox"
@@ -269,13 +269,13 @@ export default function UsersPage() {
                             onChange={() => handlePermissionToggle(option)}
                             className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                           />
-                          <span className="text-sm text-slate-700">
+                          <span className="text-sm text-[var(--text-primary)]">
                             {option}
                           </span>
                         </label>
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-xs text-[var(--text-secondary)] mt-2">
                       {form.sidebarPermissions.length === 0
                         ? "No permissions selected - user will see all options"
                         : `${form.sidebarPermissions.length} permission(s) selected`}
@@ -301,23 +301,23 @@ export default function UsersPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search users..."
-                    className="bg-white border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                    className="bg-[var(--bg-surface)] border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
                   />
                 </div>
-                <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm  overflow-y-auto">
+                <div className="bg-[var(--bg-surface)] rounded-[2rem] border border-[var(--border)] shadow-sm  overflow-y-auto">
                   <table className="w-full text-left ">
-                    <thead className=" sticky top-0 bg-slate-50 z-20 ">
-                      <tr className="bg-slate-50">
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                    <thead className=" sticky top-0 bg-[var(--bg-elevated)] z-20 ">
+                      <tr className="bg-[var(--bg-elevated)]">
+                        <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                           USER
                         </th>
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                        <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                           DEPARTMENT
                         </th>
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                        <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                           ROLE
                         </th>
-                        <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                        <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                           ACTIONS
                         </th>
                       </tr>
@@ -334,15 +334,15 @@ export default function UsersPage() {
                                 {user.name?.charAt(0)}
                               </div>
                               <div>
-                                <p className="text-slate-900">{user.name}</p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-[var(--text-primary)]">{user.name}</p>
+                                <p className="text-xs text-[var(--text-secondary)]">
                                   {user.email}
                                 </p>
                               </div>
                             </div>
                           </td>
                           <td className="p-5">
-                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase">
+                            <span className="px-3 py-1 bg-[var(--bg-elevated)] text-[var(--text-secondary)] rounded-lg text-xs font-bold uppercase">
                               {user.department?.name || "Unassigned"}
                             </span>
                           </td>
@@ -392,3 +392,4 @@ export default function UsersPage() {
     </ProtectedDashboardRoute>
   );
 }
+

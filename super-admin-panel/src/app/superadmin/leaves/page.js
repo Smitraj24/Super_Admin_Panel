@@ -188,7 +188,7 @@ export default function SuperAdminLeaves() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
       <Navbar />
 
@@ -197,17 +197,17 @@ export default function SuperAdminLeaves() {
           <>
             {/* User List View */}
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-[var(--text-primary)] flex items-center gap-3">
                 <Calendar className="text-indigo-600" />
                 Leave Management - All Users
               </h1>
-              <p className="text-slate-600 mt-2">Select a user to view their leave history</p>
+              <p className="text-[var(--text-secondary)] mt-2">Select a user to view their leave history</p>
             </div>
 
             {/* User Filters */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6 mb-6">
               <div className="mb-4">
-                <div className="flex items-center gap-2 text-sm text-slate-600">
+                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <BellDot className="text-orange-500" size={20} />
                   <span className="font-semibold">
                     Total Pending Leaves: {Object.values(userPendingLeaves).reduce((sum, count) => sum + count, 0)}
@@ -217,7 +217,7 @@ export default function SuperAdminLeaves() {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Search User</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Search User</label>
                   <div className="relative">
                     <Search className="absolute left-3 top-2.5 text-slate-400" size={18} />
                     <input
@@ -225,17 +225,17 @@ export default function SuperAdminLeaves() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search by name or email"
-                      className="w-full border-2 border-slate-300 p-2 pl-10 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full border-2 border-[var(--border-strong)] p-2 pl-10 rounded-lg focus:outline-none focus:border-indigo-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Filter by Role</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Filter by Role</label>
                   <select
                     value={roleFilter}
                     onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                    className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">All Roles</option>
                     {uniqueRoles.map((role) => (
@@ -247,11 +247,11 @@ export default function SuperAdminLeaves() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Filter by Department</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Filter by Department</label>
                   <select
                     value={departmentFilter}
                     onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                    className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">All Departments</option>
                     {uniqueDepartments.map((dept) => (
@@ -276,39 +276,39 @@ export default function SuperAdminLeaves() {
             </div>
 
             {/* Users Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-100 border-b">
+                  <thead className="bg-[var(--bg-elevated)] border-b">
                     <tr>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Name</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Email</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Role</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Department</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Leave Balance</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Notifications</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Actions</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Name</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Email</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Role</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Department</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Leave Balance</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Notifications</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="7" className="text-center p-8 text-slate-500">Loading...</td>
+                        <td colSpan="7" className="text-center p-8 text-[var(--text-secondary)]">Loading...</td>
                       </tr>
                     ) : filteredUsers.length > 0 ? (
                       filteredUsers.map((user) => {
                         const pendingCount = userPendingLeaves[user._id] || 0;
                         return (
-                          <tr key={user._id} className="border-b hover:bg-slate-50">
+                          <tr key={user._id} className="border-b hover:bg-[var(--bg-elevated)]">
                             <td className="p-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                                   <UserIcon className="text-indigo-600" size={20} />
                                 </div>
-                                <div className="font-semibold text-slate-900">{user.name}</div>
+                                <div className="font-semibold text-[var(--text-primary)]">{user.name}</div>
                               </div>
                             </td>
-                            <td className="p-4 text-sm text-slate-700">{user.email}</td>
+                            <td className="p-4 text-sm text-[var(--text-primary)]">{user.email}</td>
                             <td className="p-4">
                               <span className={`px-3 py-1 text-xs rounded-full font-semibold ${
                                 user.role?.name === "SUPER_ADMIN" 
@@ -320,8 +320,8 @@ export default function SuperAdminLeaves() {
                                 {user.role?.name}
                               </span>
                             </td>
-                            <td className="p-4 text-sm text-slate-700">{user.department?.name || "N/A"}</td>
-                            <td className="p-4 text-sm text-slate-700">
+                            <td className="p-4 text-sm text-[var(--text-primary)]">{user.department?.name || "N/A"}</td>
+                            <td className="p-4 text-sm text-[var(--text-primary)]">
                               {user.leaveBalance ? (
                                 <div className="flex gap-2">
                                   <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded">
@@ -373,7 +373,7 @@ export default function SuperAdminLeaves() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="7" className="text-center p-8 text-slate-500">No users found</td>
+                        <td colSpan="7" className="text-center p-8 text-[var(--text-secondary)]">No users found</td>
                       </tr>
                     )}
                   </tbody>
@@ -393,14 +393,14 @@ export default function SuperAdminLeaves() {
                 Back to User List
               </button>
               
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
                     <UserIcon className="text-indigo-600" size={28} />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-slate-900">{selectedUser.name}</h1>
-                    <p className="text-slate-600">{selectedUser.email}</p>
+                    <h1 className="text-2xl font-bold text-[var(--text-primary)]">{selectedUser.name}</h1>
+                    <p className="text-[var(--text-secondary)]">{selectedUser.email}</p>
                     <div className="flex gap-2 mt-2">
                       <span className={`px-3 py-1 text-xs rounded-full font-semibold ${
                         selectedUser.role?.name === "SUPER_ADMIN" 
@@ -444,33 +444,33 @@ export default function SuperAdminLeaves() {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <p className="text-sm text-slate-600">Total Leaves</p>
-                <p className="text-2xl font-bold text-slate-900">{leaveStats.total}</p>
+              <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+                <p className="text-sm text-[var(--text-secondary)]">Total Leaves</p>
+                <p className="text-2xl font-bold text-[var(--text-primary)]">{leaveStats.total}</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <p className="text-sm text-slate-600">Pending</p>
+              <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+                <p className="text-sm text-[var(--text-secondary)]">Pending</p>
                 <p className="text-2xl font-bold text-yellow-600">{leaveStats.pending}</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <p className="text-sm text-slate-600">Approved</p>
+              <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+                <p className="text-sm text-[var(--text-secondary)]">Approved</p>
                 <p className="text-2xl font-bold text-green-600">{leaveStats.approved}</p>
               </div>
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-                <p className="text-sm text-slate-600">Rejected</p>
+              <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+                <p className="text-sm text-[var(--text-secondary)]">Rejected</p>
                 <p className="text-2xl font-bold text-red-600">{leaveStats.rejected}</p>
               </div>
             </div>
 
             {/* Leave Filters */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Year</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Year</label>
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                    className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                    className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                   >
                     {years.map((year) => (
                       <option key={year} value={year}>
@@ -481,11 +481,11 @@ export default function SuperAdminLeaves() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Month</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Month</label>
                   <select
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                    className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                    className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                   >
                     {months.map((month) => (
                       <option key={month.value} value={month.value}>
@@ -496,11 +496,11 @@ export default function SuperAdminLeaves() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                  <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">Status</label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                    className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                   >
                     <option value="">All Status</option>
                     <option value="PENDING">Pending</option>
@@ -522,30 +522,30 @@ export default function SuperAdminLeaves() {
             </div>
 
             {/* Leaves Table */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-100 border-b">
+                  <thead className="bg-[var(--bg-elevated)] border-b">
                     <tr>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Leave Type</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Duration</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">From Date</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">To Date</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Reason</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Status</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Applied On</th>
-                      <th className="p-4 text-left text-sm font-semibold text-slate-700">Actions</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Leave Type</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Duration</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">From Date</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">To Date</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Reason</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Status</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Applied On</th>
+                      <th className="p-4 text-left text-sm font-semibold text-[var(--text-primary)]">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="8" className="text-center p-8 text-slate-500">Loading...</td>
+                        <td colSpan="8" className="text-center p-8 text-[var(--text-secondary)]">Loading...</td>
                       </tr>
                     ) : filteredLeaves.length > 0 ? (
                       filteredLeaves.map((leave) => (
-                        <tr key={leave._id} className="border-b hover:bg-slate-50">
-                          <td className="p-4 text-sm font-semibold text-slate-700">{leave.leaveType}</td>
+                        <tr key={leave._id} className="border-b hover:bg-[var(--bg-elevated)]">
+                          <td className="p-4 text-sm font-semibold text-[var(--text-primary)]">{leave.leaveType}</td>
                           <td className="p-4">
                             {leave.isHalfDay ? (
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-semibold">
@@ -557,9 +557,9 @@ export default function SuperAdminLeaves() {
                               </span>
                             )}
                           </td>
-                          <td className="p-4 text-sm text-slate-700">{new Date(leave.fromDate).toLocaleDateString()}</td>
-                          <td className="p-4 text-sm text-slate-700">{new Date(leave.toDate).toLocaleDateString()}</td>
-                          <td className="p-4 text-sm text-slate-600 max-w-xs truncate">{leave.reason}</td>
+                          <td className="p-4 text-sm text-[var(--text-primary)]">{new Date(leave.fromDate).toLocaleDateString()}</td>
+                          <td className="p-4 text-sm text-[var(--text-primary)]">{new Date(leave.toDate).toLocaleDateString()}</td>
+                          <td className="p-4 text-sm text-[var(--text-secondary)] max-w-xs truncate">{leave.reason}</td>
                           <td className="p-4">
                             <span
                               className={`px-3 py-1 text-xs rounded-full font-semibold ${
@@ -573,7 +573,7 @@ export default function SuperAdminLeaves() {
                               {leave.status}
                             </span>
                           </td>
-                          <td className="p-4 text-sm text-slate-700">{new Date(leave.createdAt).toLocaleDateString()}</td>
+                          <td className="p-4 text-sm text-[var(--text-primary)]">{new Date(leave.createdAt).toLocaleDateString()}</td>
                           <td className="p-4">
                             {leave.status === "PENDING" && (
                               <div className="flex gap-2">
@@ -598,7 +598,7 @@ export default function SuperAdminLeaves() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="8" className="text-center p-8 text-slate-500">
+                        <td colSpan="8" className="text-center p-8 text-[var(--text-secondary)]">
                           No leave records found for {months.find(m => m.value === selectedMonth)?.label} {selectedYear}
                         </td>
                       </tr>
@@ -613,3 +613,4 @@ export default function SuperAdminLeaves() {
     </div>
   );
 }
+

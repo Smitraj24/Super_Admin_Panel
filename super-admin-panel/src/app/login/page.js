@@ -5,7 +5,7 @@ import { loginApi } from "../../services/authApi";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { ROLES, DEPARTMENTS } from "../../utils/constants";
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Sparkles } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
@@ -17,117 +17,101 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const getDepartmentPath = (departmentData) => {
-    if (!departmentData) {
-      return null;
-    }
-
-    const departmentName =
-      typeof departmentData === "object" ? departmentData.name : departmentData;
-
-    if (!departmentName) {
-      return null;
-    }
-
+    if (!departmentData) return null;
+    const departmentName = typeof departmentData === "object" ? departmentData.name : departmentData;
+    if (!departmentName) return null;
     const departmentKey = departmentName.toUpperCase().replace(/\s+/g, "_");
-    const path = DEPARTMENTS[departmentKey]?.path || null;
-
-    return path;
+    return DEPARTMENTS[departmentKey]?.path || null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       setLoading(true);
-
       const res = await loginApi({ email, password });
-
-      if (!res?.data?.user) {
-        throw new Error("Invalid response from server");
-      }
-
+      if (!res?.data?.user) throw new Error("Invalid response from server");
       login(res.data);
 
       const roleObj = res.data.user.role;
       const roleName = typeof roleObj === "object" ? roleObj?.name : roleObj;
-
       const department = res.data.user.department;
 
       if (roleName === "SUPER_ADMIN") {
         router.replace("/superadmin/dashboard");
       } else if (roleName === "ADMIN") {
-        const departmentName =
-          typeof department === "object" ? department?.name : department;
-        const departmentKey = departmentName
-          ?.toUpperCase()
-          .replace(/\s+/g, "_");
+        const departmentName = typeof department === "object" ? department?.name : department;
+        const departmentKey = departmentName?.toUpperCase().replace(/\s+/g, "_");
         const adminPath = DEPARTMENTS[departmentKey]?.adminPath || null;
-
-        if (adminPath) {
-          router.replace(adminPath);
-        } else {
-          router.replace("/admin/it");
-        }
+        router.replace(adminPath || "/admin/it");
       } else if (roleName === "USER") {
         const departmentPath = getDepartmentPath(department);
-
-        if (departmentPath) {
-          router.replace(departmentPath);
-        } else {
-          router.replace("/dashboard/ce");
-        }
+        router.replace(departmentPath || "/dashboard/ce");
       } else {
         router.replace("/");
       }
     } catch (error) {
       console.error("Login error:", error);
-
-      const message =
-        error?.response?.data?.message || "Invalid email or password";
-
-      alert(message);
+      alert(error?.response?.data?.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4">
-      <div className="max-w-[1000px] w-full bg-white rounded-[2.5rem] shadow-2xl shadow-indigo-100/50 flex overflow-hidden border border-slate-100">
-        <div className="hidden lg:flex w-1/2 relative">
-          <img
-            src="/images/login.jpg"
-            alt="Login"
-            className="object-cover w-full h-full"
-          />
+    <div className="min-h-screen flex items-center justify-center bg-[var(--bg-base)] p-4 relative overflow-hidden">
+      {/* Background blobs — navy with purple/teal glow */}
+      <div className="absolute top-[-15%] left-[-5%] w-[500px] h-[500px] bg-[#7c6fff]/8 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-5%] w-[500px] h-[500px] bg-[#00d4aa]/6 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[#7c6fff]/4 rounded-full blur-3xl pointer-events-none" />
+
+      <div className="relative w-full max-w-[960px] flex overflow-hidden rounded-3xl border border-[var(--border)] animate-scale-in"
+        style={{ boxShadow: "var(--shadow-lg)" }}
+      >
+        {/* Left panel */}
+        <div className="hidden lg:flex w-1/2 relative bg-gradient-to-br from-[#7c6fff] via-[#4f46e5] to-[#00d4aa] overflow-hidden">
+          <img src="/images/login.jpg" alt="Login" className="object-cover w-full h-full opacity-30 mix-blend-overlay" />
+          <div className="absolute inset-0 flex flex-col justify-between p-10">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                <Sparkles size={16} className="text-white" />
+              </div>
+              <span className="text-white font-semibold text-sm">HRMS Platform</span>
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white leading-tight mb-3">
+                Manage your team<br />with confidence
+              </h1>
+              <p className="text-indigo-200 text-sm leading-relaxed">
+                A unified platform for HR, attendance, leaves, and team management — all in one place.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="flex-1 p-8 lg:p-16 flex flex-col justify-center">
-          <div className="mb-10 text-center lg:text-left">
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
-              Welcome Back
-            </h2>
-            <p className="text-slate-500 font-medium">
-              Please enter your details to sign in.
-            </p>
+        {/* Right panel */}
+        <div className="flex-1 bg-[var(--bg-surface)] p-8 lg:p-12 flex flex-col justify-center">
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-6 lg:hidden">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <Sparkles size={14} className="text-white" />
+              </div>
+              <span className="text-[var(--text-primary)] font-semibold text-sm">HRMS Platform</span>
+            </div>
+            <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-1.5">Welcome back</h2>
+            <p className="text-[var(--text-muted)] text-sm">Sign in to your account to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                 Email Address
               </label>
-
               <div className="relative">
-                <Mail
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={20}
-                />
-
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
                 <input
                   type="email"
                   placeholder="name@company.com"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="input-base w-full pl-10 pr-4 py-3 rounded-xl text-sm"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -135,21 +119,16 @@ export default function Login() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">
+            <div className="space-y-1.5">
+              <label className="text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
                 Password
               </label>
-
               <div className="relative">
-                <Lock
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={20}
-                />
-
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={16} />
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="input-base w-full pl-10 pr-11 py-3 rounded-xl text-sm"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -157,9 +136,9 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -167,23 +146,24 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-3"
+              className="w-full bg-gradient-to-r from-[#7c6fff] to-[#00d4aa] hover:from-[#6b5fff] hover:to-[#00bfa0]
+                text-white py-3 rounded-xl font-semibold text-sm transition-all duration-200
+                flex items-center justify-center gap-2 shadow-lg shadow-[#7c6fff]/25
+                hover:shadow-[#7c6fff]/40 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0"
             >
               {loading ? (
-                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <>
-                  Sign In <ArrowRight size={20} />
-                </>
+                <>Sign In <ArrowRight size={16} /></>
               )}
             </button>
           </form>
 
-          <p className="mt-8 text-center text-slate-500">
-            Don't have an account?{" "}
+          <p className="mt-6 text-center text-[13px] text-[var(--text-muted)]">
+            Don&apos;t have an account?{" "}
             <button
               onClick={() => router.push("/register")}
-              className="text-indigo-600 font-bold hover:underline"
+              className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
             >
               Register Now
             </button>

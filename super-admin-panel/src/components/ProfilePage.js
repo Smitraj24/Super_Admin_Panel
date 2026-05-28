@@ -3,6 +3,7 @@
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
+import { useRouter } from 'next/router';
 import {
   User,
   Mail,
@@ -16,6 +17,8 @@ import {
   Briefcase,
   Users,
   MapPin,
+  Palette,
+  Folder
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { getProfile, updateProfile } from "@/services/userApi";
@@ -26,6 +29,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState('profile');
   const [messageType, setMessageType] = useState("");
   const [profileData, setProfileData] = useState(null);
 
@@ -124,8 +128,8 @@ export default function ProfilePage() {
         maritalStatus: profileData.maritalStatus || "Unmarried",
         marriageAnniversary: profileData.marriageAnniversary
           ? new Date(profileData.marriageAnniversary)
-              .toISOString()
-              .split("T")[0]
+            .toISOString()
+            .split("T")[0]
           : "",
         designation: profileData.designation || "",
         batch: profileData.batch || "",
@@ -276,575 +280,623 @@ export default function ProfilePage() {
 
       <main className="md:pl-64 pt-16 min-h-screen">
         <div className="max-w-6xl mx-auto p-4 md:p-8">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
-              My Profile
-            </h1>
+
+          <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 rounded-2xl px-4 sm:px-10 py-6 sm:py-8 min-h-[180px] mb-6 shadow-sm bg-gradient-to-t from-white via-gray-50 to-gray-200">
+
+            {/* EDIT BUTTON (TOP RIGHT) */}
+            <div className="absolute top-4 right-4">
+              {!isEditing ? (
+                <button
+                  onClick={handleEdit}
+                  type="button"
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                >
+                  <Settings size={18} />
+                  Edit
+                </button>
+              ) : (
+                <button
+                  onClick={handleCancel}
+                  type="button"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                >
+                  <X size={18} />
+                  Cancel
+                </button>
+              )}
+            </div>
+
+            {/* Profile Image */}
+            <div className="w-[90px] h-[90px] sm:w-[120px] sm:h-[120px] rounded-xl overflow-hidden border-4 border-white shadow-md flex-shrink-0">
+              <img
+                src="https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* User Info */}
+            <div className="flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
+
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+                {user.name}
+              </h1>
+
+              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-6 items-center sm:items-start">
+
+                <div className="flex gap-2 items-center">
+                  <Palette size={18} />
+                  <p className="font-medium text-gray-500 text-sm sm:text-base">
+                    {formData.designation}
+                  </p>
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  <MapPin size={18} />
+                  <p className="font-medium text-gray-500 text-sm sm:text-base">
+                    {formData.address.street}
+                  </p>
+                </div>
+
+                <div className="flex gap-2 items-center">
+                  <Calendar size={18} />
+                  <p className="font-medium text-gray-500 text-sm sm:text-base">
+                    {formData.joiningDate}
+                  </p>
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
+
+          <div className="flex flex-col sm:flex-row gap-2 h-[44px] mb-10">
+
+            {/* PROFILE */}
+            <div
+              className={`flex items-center p-4 rounded-lg cursor-pointer transition
+              ${activeTab === "profile"
+                  ? "bg-violet-500 text-white"
+                  : "hover:bg-violet-100"
+                }`}
+              onClick={() => setActiveTab("profile")}
+            >
+              <User
+                size={24}
+                className={`mr-3 ${activeTab === "profile" ? "text-white" : "text-indigo-600"
+                  }`}
+              />
+              <span className="text-lg font-medium">Profile</span>
+            </div>
+
+            {/* TEAMS */}
+            <div
+              className={`flex items-center p-4 rounded-lg cursor-pointer transition
+               ${activeTab === "teams"
+                  ? "bg-violet-500 text-white"
+                  : "hover:bg-violet-100"
+                }`}
+              onClick={() => setActiveTab("teams")}
+            >
+              <Users
+                size={24}
+                className={`mr-3 ${activeTab === "teams" ? "text-white" : "text-indigo-600"
+                  }`}
+              />
+              <span className="text-lg font-medium">Teams</span>
+            </div>
+
+            {/* PROJECTS */}
+            <div
+              className={`flex items-center p-4 rounded-lg cursor-pointer transition
+             ${activeTab === "projects"
+                  ? "bg-violet-500 text-white"
+                  : "hover:bg-violet-100"
+                }`}
+              onClick={() => setActiveTab("projects")}
+            >
+              <Folder
+                size={24}
+                className={`mr-3 ${activeTab === "projects" ? "text-white" : "text-indigo-600"
+                  }`}
+              />
+              <span className="text-lg font-medium">Projects</span>
+            </div>
+
+          </div>
+
+
+          {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+            {activeTab === 'profile' && (
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
+                My Profile
+              </h1>
+            )}
+            {activeTab === 'teams' && (
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
+                Teams Overview
+              </h1>
+            )}
+            {activeTab === 'projects' && (
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
+                Projects Overview
+              </h1>
+            )}
+          </div> */}
 
           {message && (
             <div
-              className={`mb-6 p-4 rounded-lg font-semibold ${
-                messageType === "success"
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
+              className={`mb-6 p-4 rounded-lg font-semibold ${messageType === "success"
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+                }`}
             >
               {message}
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Sidebar - Profile Card */}
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                <div className="flex flex-col items-center">
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mb-4">
-                    <User className="text-white" size={64} />
-                  </div>
-                  <h1 className="font-bold">{user.name}</h1>
-                </div>
-
-                <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-bold text-lg mb-3">Contact</h3>
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <Mail size={18} />
-                    <span className="text-sm break-all">{user?.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-700 mb-5">
-                    <Phone size={18} />
-                    <span className="text-sm">{user?.phone || "N/A"}</span>
-                  </div>
-                </div>
-
-                {!isEditing ? (
-                  <button
-                    onClick={handleEdit}
-                    type="button"
-                    className="flex  items-center gap-2 px-4 p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition w-full sm:w-auto justify-center"
-                  >
-                    <Settings size={18} />
-                    Edit
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleCancel}
-                    type="button"
-                    className="flex items-center gap-2 px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition w-full sm:w-auto justify-center"
-                  >
-                    <X size={18} />
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             {/* Right Content - Profile Details */}
             <div className="lg:col-span-2">
-              {isEditing ? (
-                <form
-                  onSubmit={handleSubmit}
-                  className="bg-white rounded-lg shadow-sm border border-slate-200"
-                >
-                  <div className="p-6 border-b border-slate-200">
-                    <h3 className="text-xl font-bold text-slate-900">
-                      Edit Profile
-                    </h3>
-                  </div>
+              {activeTab === 'profile' && (
+                isEditing ? (
+                  <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-slate-200">
+                    <div className="p-6 border-b border-slate-200">
+                      <h3 className="text-xl font-bold text-slate-900">Edit Profile</h3>
+                    </div>
 
-                  <div className="p-6 space-y-6">
-                    {/* Basic Information */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <User size={20} />
-                        Basic Information
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Full Name
-                          </label>
-                          <input
-                            type="text"
-                            name="name"
-                            value={user.name}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Personal Email
-                          </label>
-                          <input
-                            type="email"
-                            name="personalEmail"
-                            value={formData.personalEmail}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Company Email
-                          </label>
-                          <input
-                            type="email"
-                            name="companyEmail"
-                            value={formData.companyEmail}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Gender
-                          </label>
-                          <select
-                            name="gender"
-                            value={formData.gender}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          >
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Birthday
-                          </label>
-                          <input
-                            type="date"
-                            name="birthday"
-                            value={formData.birthday}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Marital Status
-                          </label>
-                          <select
-                            name="maritalStatus"
-                            value={formData.maritalStatus}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          >
-                            <option value="Single">Single</option>
-                            <option value="Married">Married</option>
-                            <option value="Unmarried">Unmarried</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Marriage Anniversary
-                          </label>
-                          <input
-                            type="date"
-                            name="marriageAnniversary"
-                            value={formData.marriageAnniversary}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Phone
-                          </label>
-                          <input
-                            type="tel"
-                            name="phone"
-                            value={formData.phone}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
+                    <div className="p-6 space-y-6">
+                      {/* Basic Information */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <User size={20} />
+                          Basic Information
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
+                            <input
+                              type="text"
+                              name="name"
+                              value={user.name}
+                              onChange={handleChange}
+                              required
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Personal Email</label>
+                            <input
+                              type="email"
+                              name="personalEmail"
+                              value={formData.personalEmail}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Company Email</label>
+                            <input
+                              type="email"
+                              name="companyEmail"
+                              value={formData.companyEmail}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Gender</label>
+                            <select
+                              name="gender"
+                              value={formData.gender}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Birthday</label>
+                            <input
+                              type="date"
+                              name="birthday"
+                              value={formData.birthday}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Marital Status</label>
+                            <select
+                              name="maritalStatus"
+                              value={formData.maritalStatus}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                              <option value="Single">Single</option>
+                              <option value="Married">Married</option>
+                              <option value="Unmarried">Unmarried</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Marriage Anniversary</label>
+                            <input
+                              type="date"
+                              name="marriageAnniversary"
+                              value={formData.marriageAnniversary}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Phone</label>
+                            <input
+                              type="tel"
+                              name="phone"
+                              value={formData.phone}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Company Information */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Briefcase size={20} />
-                        Company Relation
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Designation
-                          </label>
-                          <input
-                            type="text"
-                            name="designation"
-                            value={formData.designation}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Batch
-                          </label>
-                          <input
-                            type="text"
-                            name="batch"
-                            value={formData.batch}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Joining Date
-                          </label>
-                          <input
-                            type="date"
-                            name="joiningDate"
-                            value={formData.joiningDate}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Probation End Date
-                          </label>
-                          <input
-                            type="date"
-                            name="probationEndDate"
-                            value={formData.probationEndDate}
-                            onChange={handleChange}
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
+                      {/* Company Information */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Briefcase size={20} />
+                          Company Relation
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Designation</label>
+                            <input
+                              type="text"
+                              name="designation"
+                              value={formData.designation}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Batch</label>
+                            <input
+                              type="text"
+                              name="batch"
+                              value={formData.batch}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Joining Date</label>
+                            <input
+                              type="date"
+                              name="joiningDate"
+                              value={formData.joiningDate}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Probation End Date</label>
+                            <input
+                              type="date"
+                              name="probationEndDate"
+                              value={formData.probationEndDate}
+                              onChange={handleChange}
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Address Information */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Mail size={20} />
-                        Address
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Street Address
-                          </label>
-                          <input
-                            type="text"
-                            name="address.street"
-                            value={formData.address.street}
-                            onChange={handleChange}
-                            placeholder="Enter street address"
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            City
-                          </label>
-                          <input
-                            type="text"
-                            name="address.city"
-                            value={formData.address.city}
-                            onChange={handleChange}
-                            placeholder="Enter city"
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            State
-                          </label>
-                          <input
-                            type="text"
-                            name="address.state"
-                            value={formData.address.state}
-                            onChange={handleChange}
-                            placeholder="Enter state"
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Country
-                          </label>
-                          <input
-                            type="text"
-                            name="address.country"
-                            value={formData.address.country}
-                            onChange={handleChange}
-                            placeholder="Enter country"
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-slate-700 mb-2">
-                            Postal Code
-                          </label>
-                          <input
-                            type="text"
-                            name="address.postalCode"
-                            value={formData.address.postalCode}
-                            onChange={handleChange}
-                            placeholder="Enter postal code"
-                            className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                          />
+                      {/* Address Information */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Mail size={20} />
+                          Address
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Street Address</label>
+                            <input
+                              type="text"
+                              name="address.street"
+                              value={formData.address.street}
+                              onChange={handleChange}
+                              placeholder="Enter street address"
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">City</label>
+                            <input
+                              type="text"
+                              name="address.city"
+                              value={formData.address.city}
+                              onChange={handleChange}
+                              placeholder="Enter city"
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">State</label>
+                            <input
+                              type="text"
+                              name="address.state"
+                              value={formData.address.state}
+                              onChange={handleChange}
+                              placeholder="Enter state"
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Country</label>
+                            <input
+                              type="text"
+                              name="address.country"
+                              value={formData.address.country}
+                              onChange={handleChange}
+                              placeholder="Enter country"
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">Postal Code</label>
+                            <input
+                              type="text"
+                              name="address.postalCode"
+                              value={formData.address.postalCode}
+                              onChange={handleChange}
+                              placeholder="Enter postal code"
+                              className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            />
+                          </div>
                         </div>
                       </div>
+
+                      <div className="flex gap-3 pt-4">
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400"
+                        >
+                          {loading ? (
+                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <>
+                              <Save size={18} />
+                              Save Changes
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="bg-white rounded-lg shadow-sm border border-slate-200">
+                    <div className="p-6 border-b border-slate-200">
+                      <h3 className="text-xl font-bold text-slate-900">About</h3>
                     </div>
 
-                    <div className="flex gap-3 pt-4">
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400"
-                      >
-                        {loading ? (
-                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <>
-                            <Save size={18} />
-                            Save Changes
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-                  <div className="p-6 border-b border-slate-200">
-                    <h3 className="text-xl font-bold text-slate-900">About</h3>
-                  </div>
-
-                  <div className="p-6 space-y-8">
-                    {/* Basic Information */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <User size={20} />
-                        Basic Information
-                      </h4>{" "}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">FullName</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.name}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Personal Email
-                          </p>
-                          <p className="font-medium text-blue-600">
-                            {profileData?.personalEmail || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Company Email</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.companyEmail || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Gender</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.gender}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Birthday</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.birthday
-                              ? new Date(
+                    <div className="p-6 space-y-8">
+                      {/* Basic Information */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <User size={20} />
+                          Basic Information
+                        </h4>{" "}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">FullName</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.name}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Personal Email</p>
+                            <p className="font-medium text-blue-600">
+                              {profileData?.personalEmail || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Company Email</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.companyEmail || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Gender</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.gender}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Birthday</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.birthday
+                                ? new Date(
                                   profileData.birthday,
                                 ).toLocaleDateString()
-                              : "0000-00-00"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Marital Status
-                          </p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.maritalStatus}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Marriage Anniversary
-                          </p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.marriageAnniversary
-                              ? new Date(
+                                : "0000-00-00"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Marital Status</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.maritalStatus}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Marriage Anniversary</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.marriageAnniversary
+                                ? new Date(
                                   profileData.marriageAnniversary,
                                 ).toLocaleDateString()
-                              : "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Status</p>
-                          <p className="font-medium">
-                            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                              ✓ {profileData?.isActive ? "Active" : "Inactive"}
-                            </span>
-                          </p>
+                                : "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Status</p>
+                            <p className="font-medium">
+                              <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                                ✓ {profileData?.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Company Relation */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Briefcase size={20} />
-                        Company Relation
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Department</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.department?.name || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Designation</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.designation || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Batch</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.batch || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Report To</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.reportTo?.name || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Joining Date</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.joiningDate
-                              ? new Date(
+                      {/* Company Relation */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Briefcase size={20} />
+                          Company Relation
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Department</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.department?.name || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Designation</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.designation || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Batch</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.batch || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Report To</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.reportTo?.name || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Joining Date</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.joiningDate
+                                ? new Date(
                                   profileData.joiningDate,
                                 ).toLocaleDateString()
-                              : "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">
-                            Probation End Date
-                          </p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.probationEndDate
-                              ? new Date(
+                                : "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Probation End Date</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.probationEndDate
+                                ? new Date(
                                   profileData.probationEndDate,
                                 ).toLocaleDateString()
-                              : "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Work Duration</p>
-                          <p className="font-medium text-gray-900">
-                            {calculateWorkDuration()}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <Phone size={20} />
-                        Contact Info
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-500">Phone</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.phone || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Email</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.email}
-                          </p>
+                                : "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Work Duration</p>
+                            <p className="font-medium text-gray-900">
+                              {calculateWorkDuration()}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Address */}
-                    <div>
-                      <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <MapPin size={20} />
-                        Address
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                          <p className="text-sm text-gray-500">
-                            Street Address
-                          </p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.address?.street || "-"}
-                          </p>
+                      {/* Contact Info */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <Phone size={20} />
+                          Contact Info
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-500">Phone</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.phone || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Email</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.email}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">City</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.address?.city || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">State</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.address?.state || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Country</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.address?.country || "-"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Postal Code</p>
-                          <p className="font-medium text-gray-900">
-                            {profileData?.address?.postalCode || "-"}
-                          </p>
+                      </div>
+
+                      {/* Address */}
+                      <div>
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                          <MapPin size={20} />
+                          Address
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="md:col-span-2">
+                            <p className="text-sm text-gray-500">Street Address</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.address?.street || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">City</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.address?.city || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">State</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.address?.state || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Country</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.address?.country || "-"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Postal Code</p>
+                            <p className="font-medium text-gray-900">
+                              {profileData?.address?.postalCode || "-"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                )
+              )}
+              {activeTab === 'teams' && (
+                <div className="p-6">
+                  <h3 className="text-xl font-bold">Teams Overview</h3>
+                  <p>Teams content placeholder.</p>
+                </div>
+              )}
+              {activeTab === 'projects' && (
+                <div className="p-6">
+                  <h3 className="text-xl font-bold">Projects Overview</h3>
+                  <p>Projects content placeholder.</p>
                 </div>
               )}
             </div>
+
+
           </div>
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   );
 }
 

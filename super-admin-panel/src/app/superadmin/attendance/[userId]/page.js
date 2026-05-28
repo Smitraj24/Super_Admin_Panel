@@ -158,9 +158,9 @@ export default function UserAttendanceDetail() {
   const formatTime = (t) =>
     t
       ? new Date(t).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+        hour: "2-digit",
+        minute: "2-digit",
+      })
       : "-";
 
   const formatBreakTime = (breaks = []) => {
@@ -205,7 +205,7 @@ export default function UserAttendanceDetail() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
       <Navbar />
 
@@ -226,12 +226,12 @@ export default function UserAttendanceDetail() {
                 <User className="text-indigo-600" size={32} />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-slate-900">
+                <h1 className="text-3xl font-bold text-[var(--text-primary)]">
                   {user?.name}
                 </h1>
-                <p className="text-slate-600">{user?.email}</p>
+                <p className="text-[var(--text-secondary)]">{user?.email}</p>
                 <div className="flex gap-3 mt-1">
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-[var(--text-secondary)]">
                     Department:{" "}
                     <span className="font-semibold">
                       {typeof user?.department === "object"
@@ -239,7 +239,7 @@ export default function UserAttendanceDetail() {
                         : user?.department}
                     </span>
                   </span>
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-[var(--text-secondary)]">
                     Role:{" "}
                     <span className="font-semibold">
                       {typeof user?.role === "object"
@@ -261,16 +261,16 @@ export default function UserAttendanceDetail() {
           </div>
         </div>
         {/* Month/Year Selector */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6 mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                 Select Month
               </label>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
               >
                 {months.map((month) => (
                   <option key={month.value} value={month.value}>
@@ -281,13 +281,13 @@ export default function UserAttendanceDetail() {
             </div>
 
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                 Select Year
               </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
               >
                 {years.map((year) => (
                   <option key={year} value={year}>
@@ -298,150 +298,122 @@ export default function UserAttendanceDetail() {
             </div>
           </div>
         </div>.
-        
-        Live Today's Attendance Stats
-        {/* Summary Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl p-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <p className="text-2xl font-bold">{summary.totalDays}</p>
-              <p className="text-sm opacity-90">Total Days</p>
-            </div>
 
-            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl p-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-              <p className="text-2xl font-bold">{summary.present}</p>
-              <p className="text-sm opacity-90">Present Days</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-orange-600 to-red-600 rounded-xl p-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <XCircle className="w-6 h-6" />
-              </div>
-              <p className="text-2xl font-bold">{summary.absent}</p>
-              <p className="text-sm opacity-90">Absent Days</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-4 text-white">
-              <div className="flex items-center justify-between mb-2">
-                <Briefcase className="w-6 h-6" />
-              </div>
-              <p className="text-2xl font-bold">{summary.totalWorkHours}h</p>
-              <p className="text-sm opacity-90">Total Work Hours</p>
-            </div>
-          </div>
-        )}
         {/* Attendance Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="p-4 border-b border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900">
-              Attendance Records
-            </h2>
-            <p className="text-sm text-slate-600">
-              {attendance.length} records found
-            </p>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-sm overflow-hidden">
+
+          {/* HEADER */}
+          <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
+                Attendance Records
+              </h2>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">
+                {attendance.length} records found
+              </p>
+            </div>
           </div>
 
+          {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-100 border-b">
+            <table className="w-full text-sm">
+
+              <thead className="bg-[var(--bg-elevated)] text-[var(--text-secondary)]">
                 <tr>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Date
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Check In
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Check Out
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Break Time
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Work Hours
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Status
-                  </th>
-                  <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                    Actions
-                  </th>
+                  {["Date", "Check In", "Check Out", "Break", "Hours", "Status", "Actions"].map((h) => (
+                    <th key={h} className="px-6 py-4 text-left font-medium whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody>
+
+              <tbody className="divide-y divide-[var(--border)]">
+
                 {loading ? (
                   <tr>
-                    <td colSpan="7" className="text-center p-8 text-slate-500">
-                      Loading...
+                    <td colSpan="7" className="text-center py-10 text-[var(--text-secondary)]">
+                      Loading attendance records...
                     </td>
                   </tr>
                 ) : attendance.length > 0 ? (
                   attendance.map((record) => (
-                    <tr key={record._id} className="border-b hover:bg-slate-50">
-                      <td className="p-4 text-sm font-semibold text-slate-900">
+                    <tr
+                      key={record._id}
+                      className="hover:bg-[var(--bg-elevated)] transition"
+                    >
+
+                      {/* DATE */}
+                      <td className="px-6 py-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
                         {new Date(record.date).toLocaleDateString("en-GB", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
                         })}
                       </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm font-semibold">
+
+                      {/* CHECK IN */}
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-md bg-green-50 text-green-700 border border-green-100 text-xs font-medium">
                           {formatTime(record.checkIn)}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm font-semibold">
+
+                      {/* CHECK OUT */}
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 border border-red-100 text-xs font-medium">
                           {formatTime(record.checkOut)}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-sm font-semibold">
+
+                      {/* BREAK */}
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 border border-orange-100 text-xs font-medium">
                           {formatBreakTime(record.breaks)}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-sm font-bold">
+
+                      {/* HOURS */}
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold">
                           {calculateWorkingHours(
                             record.checkIn,
                             record.checkOut,
-                            record.breaks,
+                            record.breaks
                           )}
                         </span>
                       </td>
-                      <td className="p-4">
+
+                      {/* STATUS */}
+                      <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1 text-xs rounded-full font-semibold ${
-                            record.status === "CHECKED_OUT"
-                              ? "bg-green-100 text-green-800"
-                              : record.status === "ON_BREAK"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-blue-100 text-blue-800"
-                          }`}
+                          className={`px-3 py-1 text-xs rounded-full font-medium ${record.status === "CHECKED_OUT"
+                            ? "bg-green-100 text-green-700"
+                            : record.status === "ON_BREAK"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-blue-100 text-blue-700"
+                            }`}
                         >
                           {record.status}
                         </span>
                       </td>
-                      <td className="p-4">
+
+                      {/* ACTION */}
+                      <td className="px-6 py-4">
                         <button
                           onClick={() => openEditModal(record)}
-                          className="flex items-center gap-1 bg-indigo-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-indigo-700"
+                          className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
                         >
                           <Edit size={14} />
                           Edit
                         </button>
                       </td>
+
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="text-center p-8 text-slate-500">
+                    <td colSpan="7" className="text-center py-10 text-[var(--text-secondary)]">
                       No attendance records found for this month
                     </td>
                   </tr>
@@ -455,18 +427,18 @@ export default function UserAttendanceDetail() {
       {/* Edit Modal */}
       {showEditModal && editingRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 w-full max-w-md">
             <h3 className="text-xl font-bold mb-4">Edit Attendance Record</h3>
 
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-[var(--text-secondary)]">
                   Date: {new Date(editingRecord.date).toLocaleDateString()}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                   Check In Time
                 </label>
                 <input
@@ -478,12 +450,12 @@ export default function UserAttendanceDetail() {
                       newCheckIn: e.target.value,
                     })
                   }
-                  className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                   Check Out Time
                 </label>
                 <input
@@ -495,7 +467,7 @@ export default function UserAttendanceDetail() {
                       newCheckOut: e.target.value,
                     })
                   }
-                  className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -512,7 +484,7 @@ export default function UserAttendanceDetail() {
                   setShowEditModal(false);
                   setEditingRecord(null);
                 }}
-                className="flex-1 bg-slate-300 text-slate-700 px-4 py-2 rounded-lg hover:bg-slate-400"
+                className="flex-1 bg-slate-300 text-[var(--text-primary)] px-4 py-2 rounded-lg hover:bg-slate-400"
               >
                 Cancel
               </button>

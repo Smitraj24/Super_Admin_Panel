@@ -137,7 +137,7 @@ export default function SuperAdminAttendance() {
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
       <Navbar />
-      
+
       <div className="md:ml-64 pt-16 p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
@@ -337,7 +337,7 @@ export default function SuperAdminAttendance() {
             <div className="col-span-full text-center p-8 text-slate-500">
               No users found
             </div>
-            
+
           )}
         </div>
       </div>

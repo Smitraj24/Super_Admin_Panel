@@ -172,7 +172,7 @@ export default function AdminsPage() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
 
@@ -189,15 +189,15 @@ export default function AdminsPage() {
                 </p>
               </div>
 
-              <div className="bg-white border rounded-lg px-4 py-2 flex items-center gap-2">
+              <div className="bg-[var(--bg-surface)] border rounded-lg px-4 py-2 flex items-center gap-2">
                 <Users size={16} />
                 {admins.length} Admins
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 max-h-[700px] overflow-y-scroll no-scrollbar">
-                <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-white pb-2">
+              <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] p-6 max-h-[700px] overflow-y-scroll no-scrollbar">
+                <h3 className="font-semibold mb-4 flex items-center gap-2 sticky top-0 bg-[var(--bg-surface)] pb-2">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit Admin" : "Add New Admin"}
                 </h3>
@@ -212,7 +212,7 @@ export default function AdminsPage() {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="e.g., John Doe"
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="w-full border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       required
                     />
                   </div>
@@ -227,7 +227,7 @@ export default function AdminsPage() {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="e.g., admin@company.com"
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="w-full border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       required
                     />
                   </div>
@@ -243,7 +243,7 @@ export default function AdminsPage() {
                         value={form.password}
                         onChange={handleChange}
                         placeholder="Enter secure password"
-                        className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                        className="w-full border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         required
                       />
                     </div>
@@ -257,7 +257,7 @@ export default function AdminsPage() {
                       name="department"
                       value={form.department}
                       onChange={handleChange}
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      className="w-full border border-[var(--border-strong)] rounded-lg p-3 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                       required
                     >
                       <option value="">-- Select Department --</option>
@@ -270,15 +270,15 @@ export default function AdminsPage() {
                   </div>
 
                   {/* Sidebar Permissions */}
-                  <div className="border border-slate-300 rounded-lg p-4">
-                    <label className="block text-sm font-semibold text-slate-700 mb-3">
+                  <div className="border border-[var(--border-strong)] rounded-lg p-4">
+                    <label className="block text-sm font-semibold text-[var(--text-primary)] mb-3">
                       Sidebar Permissions
                     </label>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {availableSidebarOptions.map((option) => (
                         <label
                           key={option}
-                          className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded"
+                          className="flex items-center gap-2 cursor-pointer hover:bg-[var(--bg-elevated)] p-2 rounded"
                         >
                           <input
                             type="checkbox"
@@ -286,13 +286,13 @@ export default function AdminsPage() {
                             onChange={() => handlePermissionToggle(option)}
                             className="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
                           />
-                          <span className="text-sm text-slate-700">
+                          <span className="text-sm text-[var(--text-primary)]">
                             {option}
                           </span>
                         </label>
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">
+                    <p className="text-xs text-[var(--text-secondary)] mt-2">
                       {form.sidebarPermissions.length === 0
                         ? "No permissions selected - admin will see all options"
                         : `${form.sidebarPermissions.length} permission(s) selected`}
@@ -309,7 +309,7 @@ export default function AdminsPage() {
               </div>
 
               <div className="md:col-span-2">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden">
                   <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                     <div className="relative w-full max-w-md">
                       <Search
@@ -320,7 +320,7 @@ export default function AdminsPage() {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search admins..."
-                        className="w-full bg-slate-50 border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        className="w-full bg-[var(--bg-elevated)] border-none rounded-xl pl-10 pr-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/20"
                       />
                     </div>
                   </div>
@@ -328,14 +328,14 @@ export default function AdminsPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead>
-                        <tr className="bg-slate-50">
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                        <tr className="bg-[var(--bg-elevated)]">
+                          <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                             ADMIN
                           </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                             DEPARTMENT
                           </th>
-                          <th className="p-5 text-xs text-slate-500 font-bold uppercase">
+                          <th className="p-5 text-xs text-[var(--text-secondary)] font-bold uppercase">
                             ACTIONS
                           </th>
                         </tr>
@@ -344,7 +344,7 @@ export default function AdminsPage() {
                         {filteredAdmins.map((admin) => (
                           <tr
                             key={admin._id}
-                            className="hover:bg-slate-50 transition"
+                            className="hover:bg-[var(--bg-elevated)] transition"
                           >
                             <td className="p-5">
                               <div className="flex items-center gap-3">
@@ -352,17 +352,17 @@ export default function AdminsPage() {
                                   {admin.name?.charAt(0)}
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-slate-900">
+                                  <p className="font-semibold text-[var(--text-primary)]">
                                     {admin.name}
                                   </p>
-                                  <p className="text-xs text-slate-500">
+                                  <p className="text-xs text-[var(--text-secondary)]">
                                     {admin.email}
                                   </p>
                                 </div>
                               </div>
                             </td>
                             <td className="p-5">
-                              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold uppercase">
+                              <span className="px-3 py-1 bg-[var(--bg-elevated)] text-[var(--text-secondary)] rounded-lg text-xs font-bold uppercase">
                                 {admin.department?.name || "Unassigned"}
                               </span>
                             </td>
@@ -408,3 +408,4 @@ export default function AdminsPage() {
     </ProtectedDashboardRoute>
   );
 }
+

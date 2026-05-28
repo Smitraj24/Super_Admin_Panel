@@ -69,7 +69,8 @@ export default function SuperAdminAttendance() {
         (a) => a.isLate || a.status === "LATE",
       ).length;
       const onBreakCount = todayRecords.filter(
-        (a) => a.status === "ON_BREAK" || a.isOnBreak).length;
+        (a) => a.status === "ON_BREAK" || a.isOnBreak,
+      ).length;
       const presentToday = todayRecords.filter(
         (a) =>
           a.status === "CHECKED_IN" ||
@@ -82,7 +83,8 @@ export default function SuperAdminAttendance() {
 
       const totalWorkHours = attendanceData.reduce((acc, record) => {
         if (!record.checkIn || !record.checkOut) return acc;
-        let mins = (new Date(record.checkOut) - new Date(record.checkIn)) / 60000;
+        let mins =
+          (new Date(record.checkOut) - new Date(record.checkIn)) / 60000;
         (record.breaks || []).forEach((b) => {
           if (b.breakIn && b.breakOut) {
             mins -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
@@ -98,10 +100,10 @@ export default function SuperAdminAttendance() {
         );
         userStats[user._id] = {
           totalDays: userAttendance.length,
-          present: userAttendance.filter(
-            (a) => a.status === "CHECKED_OUT",
-          ).length,
-          pending: userAttendance.filter((a) => a.status !== "CHECKED_OUT").length,
+          present: userAttendance.filter((a) => a.status === "CHECKED_OUT")
+            .length,
+          pending: userAttendance.filter((a) => a.status !== "CHECKED_OUT")
+            .length,
         };
       });
 
@@ -143,9 +145,8 @@ export default function SuperAdminAttendance() {
     if (roleFilter) {
       filtered = filtered.filter(
         (user) =>
-          (typeof user.role === "object"
-            ? user.role?.name
-            : user.role) === roleFilter,
+          (typeof user.role === "object" ? user.role?.name : user.role) ===
+          roleFilter,
       );
     }
 
@@ -162,9 +163,7 @@ export default function SuperAdminAttendance() {
 
   const uniqueRoles = Array.from(
     new Set(
-      users.map((u) =>
-        typeof u.role === "object" ? u.role?.name : u.role,
-      ),
+      users.map((u) => (typeof u.role === "object" ? u.role?.name : u.role)),
     ),
   ).filter(Boolean);
 
@@ -173,14 +172,14 @@ export default function SuperAdminAttendance() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-base)]">
       <Sidebar />
       <Navbar />
 
       <div className="md:ml-64 pt-20 p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-[var(--text-primary)]">
               Attendance System
             </h1>
           </div>
@@ -193,35 +192,35 @@ export default function SuperAdminAttendance() {
         <AttendanceStats stats={attendanceSummary} />
 
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] flex items-center gap-3">
             <Users className="text-indigo-600" />
             All Users & Admins Attendance Management
           </h2>
-          <p className="text-slate-600 mt-2">
+          <p className="text-[var(--text-secondary)] mt-2">
             Select a user or admin to view their detailed attendance records
           </p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <p className="text-sm text-slate-600">Total Users & Admins</p>
-            <p className="text-2xl font-bold text-slate-900">{users.length}</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+            <p className="text-sm text-[var(--text-secondary)]">Total Users & Admins</p>
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{users.length}</p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <p className="text-sm text-slate-600">Departments</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+            <p className="text-sm text-[var(--text-secondary)]">Departments</p>
             <p className="text-2xl font-bold text-indigo-600">
               {uniqueDepartments.length}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <p className="text-sm text-slate-600">Roles</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+            <p className="text-sm text-[var(--text-secondary)]">Roles</p>
             <p className="text-2xl font-bold text-purple-600">
               {uniqueRoles.length}
             </p>
           </div>
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-            <p className="text-sm text-slate-600">Active This Month</p>
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm border border-[var(--border)] p-4">
+            <p className="text-sm text-[var(--text-secondary)]">Active This Month</p>
             <p className="text-2xl font-bold text-green-600">
               {
                 Object.values(attendanceStats).filter((s) => s.totalDays > 0)
@@ -232,10 +231,10 @@ export default function SuperAdminAttendance() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                 Search User
               </label>
               <div className="relative">
@@ -248,19 +247,19 @@ export default function SuperAdminAttendance() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search by name or email"
-                  className="w-full border-2 border-slate-300 p-2 pl-10 rounded-lg focus:outline-none focus:border-indigo-500"
+                  className="w-full border-2 border-[var(--border-strong)] p-2 pl-10 rounded-lg focus:outline-none focus:border-indigo-500"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                 Filter by Department
               </label>
               <select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
               >
                 <option value="">All Departments</option>
                 {uniqueDepartments.map((dept) => (
@@ -272,13 +271,13 @@ export default function SuperAdminAttendance() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
                 Filter by Role
               </label>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full border-2 border-slate-300 p-2 rounded-lg focus:outline-none focus:border-indigo-500"
+                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
               >
                 <option value="">All Roles</option>
                 {uniqueRoles.map((role) => (
@@ -303,96 +302,97 @@ export default function SuperAdminAttendance() {
             </button>
           )}
         </div>
-  
-        {/* Users Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            <div className="col-span-full text-center p-8 text-slate-500">
-              Loading users...
-            </div>
-          ) : filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => {
-              const stats = attendanceStats[user._id] || {
-                totalDays: 0,
-                present: 0,
-                pending: 0,
-              };
-              return (
-                <div
-                  key={user._id}
-                  onClick={() => handleUserClick(user._id)}
-                  className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 hover:shadow-lg hover:border-indigo-300 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
-                        <User className="text-indigo-600" size={24} />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                          {user.name}
-                        </h3>
-                        <p className="text-sm text-slate-500">{user.email}</p>
-                      </div>
-                    </div>
-                    <ChevronRight
-                      className="text-slate-400 group-hover:text-indigo-600 transition-colors"
-                      size={20}
-                    />
-                  </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Department:</span>
-                      <span className="font-semibold text-slate-900">
-                        {typeof user.department === "object"
-                          ? user.department?.name
-                          : user.department || "N/A"}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Role:</span>
-                      <span className="font-semibold text-slate-900">
-                        {typeof user.role === "object"
-                          ? user.role?.name
-                          : user.role || "N/A"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 pt-4 border-t border-slate-200">
-                    <p className="text-xs text-slate-500 mb-2">This Month</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-slate-900">
-                          {stats.totalDays}
-                        </p>
-                        <p className="text-xs text-slate-500">Total</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-green-600">
-                          {stats.present}
-                        </p>
-                        <p className="text-xs text-slate-500">Present</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-lg font-bold text-yellow-600">
-                          {stats.pending}
-                        </p>
-                        <p className="text-xs text-slate-500">Pending</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="col-span-full text-center p-8 text-slate-500">
-              No users found
-            </div>
-          )}
+        {/* Users Table */}
+        <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm overflow-hidden border border-[var(--border)]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-[var(--bg-elevated)] border-b border-[var(--border)]">
+                <tr>
+                  <th className="p-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">User</th>
+                  <th className="p-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Department</th>
+                  <th className="p-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider">Role</th>
+                  <th className="p-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider text-center">This Month (Total / Present / Pending)</th>
+                  <th className="p-4 text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[var(--border)]">
+                {loading ? (
+                  <tr>
+                    <td colSpan="5" className="text-center p-8 text-[var(--text-secondary)]">
+                      Loading users...
+                    </td>
+                  </tr>
+                ) : filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => {
+                    const stats = attendanceStats[user._id] || {
+                      totalDays: 0,
+                      present: 0,
+                      pending: 0,
+                    };
+                    return (
+                      <tr
+                        key={user._id}
+                        onClick={() => handleUserClick(user._id)}
+                        className="hover:bg-[var(--bg-elevated)] transition cursor-pointer group"
+                      >
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-200 transition-colors">
+                              <User className="text-indigo-600" size={20} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-[var(--text-primary)] group-hover:text-indigo-600 transition-colors">
+                                {user.name}
+                              </p>
+                              <p className="text-xs text-[var(--text-secondary)]">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-sm font-semibold text-[var(--text-primary)]">
+                          {typeof user.department === "object"
+                            ? user.department?.name
+                            : user.department || "N/A"}
+                        </td>
+                        <td className="p-4 text-sm font-semibold text-[var(--text-primary)]">
+                          {typeof user.role === "object"
+                            ? user.role?.name
+                            : user.role || "N/A"}
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="flex items-center justify-center gap-4 text-sm font-bold">
+                            <span className="text-[var(--text-primary)]" title="Total Days">
+                              {stats.totalDays}
+                            </span>
+                            <span className="text-green-600" title="Present">
+                              {stats.present}
+                            </span>
+                            <span className="text-yellow-600" title="Pending">
+                              {stats.pending}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-right">
+                          <button className="p-2 text-[var(--text-secondary)] group-hover:text-indigo-600 group-hover:bg-indigo-50 rounded-lg transition-colors">
+                            <ChevronRight size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="text-center p-8 text-[var(--text-secondary)]">
+                      No users found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+

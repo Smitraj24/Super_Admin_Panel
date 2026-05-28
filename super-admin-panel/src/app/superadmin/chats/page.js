@@ -218,7 +218,7 @@ export default function ChatsPage() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
 
@@ -265,13 +265,13 @@ export default function ChatsPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search conversations..."
-                  className="w-full bg-white border border-slate-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             {/* Chats List */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--border)] shadow-sm">
               {loading ? (
                 <div className="flex items-center justify-center p-12">
                   <Loader2 className="animate-spin text-indigo-600" size={32} />
@@ -285,7 +285,7 @@ export default function ChatsPage() {
                       <div
                         key={chat._id}
                         onClick={() => handleSelectChat(chat)}
-                        className="p-4 hover:bg-slate-50 cursor-pointer transition"
+                        className="p-4 hover:bg-[var(--bg-elevated)] cursor-pointer transition"
                       >
                         <div className="flex items-center gap-4">
                           <div className={`w-12 h-12 ${chat.isGroupChat ? 'bg-purple-100' : 'bg-indigo-100'} rounded-full flex items-center justify-center flex-shrink-0`}>
@@ -298,16 +298,16 @@ export default function ChatsPage() {
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-semibold text-slate-900 truncate">
+                              <h3 className="font-semibold text-[var(--text-primary)] truncate">
                                 {getChatTitle(chat)}
                               </h3>
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[var(--text-secondary)]">
                                 {formatTime(chat.lastMessageAt)}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between">
-                              <p className="text-sm text-slate-600 truncate">
+                              <p className="text-sm text-[var(--text-secondary)] truncate">
                                 {chat.lastMessage || "No messages yet"}
                               </p>
                               {unreadCount > 0 && (
@@ -318,7 +318,7 @@ export default function ChatsPage() {
                             </div>
 
                             <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[var(--text-secondary)]">
                                 {getChatSubtitle(chat)}
                               </span>
                             </div>
@@ -351,21 +351,21 @@ export default function ChatsPage() {
         {/* New Chat Modal */}
         {showNewChatModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-              <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-900">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+              <div className="p-6 border-b border-[var(--border)] flex items-center justify-between">
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">
                   {modalType === "direct" ? "Start New Chat" : "Create Group Chat"}
                 </h2>
                 <button
                   onClick={() => setShowNewChatModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg transition"
+                  className="p-2 hover:bg-[var(--bg-elevated)] rounded-lg transition"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               {modalType === "group" && (
-                <div className="p-6 border-b border-slate-200 bg-purple-50">
+                <div className="p-6 border-b border-[var(--border)] bg-purple-50">
                   <label className="block text-sm font-bold text-purple-900 mb-2">
                     Group Name *
                   </label>
@@ -374,7 +374,7 @@ export default function ChatsPage() {
                     value={groupName}
                     onChange={(e) => setGroupName(e.target.value)}
                     placeholder="Enter group name... (Required)"
-                    className="w-full bg-white border-2 border-purple-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full bg-[var(--bg-surface)] border-2 border-purple-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     autoFocus
                   />
                   {!groupName.trim() && selectedParticipants.length >= 2 && (
@@ -385,7 +385,7 @@ export default function ChatsPage() {
                 </div>
               )}
 
-              <div className="p-6 border-b border-slate-200">
+              <div className="p-6 border-b border-[var(--border)]">
                 <div className="relative">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -396,12 +396,12 @@ export default function ChatsPage() {
                     value={userSearchQuery}
                     onChange={(e) => setUserSearchQuery(e.target.value)}
                     placeholder={modalType === "direct" ? "Search users and admins..." : "Search participants..."}
-                    className="w-full bg-slate-50 border border-slate-300 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full bg-[var(--bg-elevated)] border border-[var(--border-strong)] rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
                 {modalType === "group" && selectedParticipants.length > 0 && (
                   <div className="mt-3">
-                    <p className="text-sm text-slate-600 mb-2">
+                    <p className="text-sm text-[var(--text-secondary)] mb-2">
                       Selected: {selectedParticipants.length} participants
                     </p>
                   </div>
@@ -431,27 +431,27 @@ export default function ChatsPage() {
                           className={`flex items-center gap-4 p-4 rounded-lg cursor-pointer transition ${
                             isSelected
                               ? "bg-indigo-50 border-2 border-indigo-500"
-                              : "hover:bg-slate-50 border-2 border-transparent"
+                              : "hover:bg-[var(--bg-elevated)] border-2 border-transparent"
                           }`}
                         >
                           <div className={`w-12 h-12 ${isSelected ? 'bg-indigo-200' : 'bg-indigo-100'} rounded-full flex items-center justify-center flex-shrink-0`}>
                             <UserIcon className="text-indigo-600" size={24} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-slate-900 truncate">
+                            <h3 className="font-semibold text-[var(--text-primary)] truncate">
                               {user.name}
                             </h3>
-                            <p className="text-sm text-slate-600 truncate">
+                            <p className="text-sm text-[var(--text-secondary)] truncate">
                               {user.email}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[var(--text-secondary)]">
                                 {user.role?.name || "User"}
                               </span>
                               {user.department && (
                                 <>
                                   <span className="text-xs text-slate-400">•</span>
-                                  <span className="text-xs text-slate-500">
+                                  <span className="text-xs text-[var(--text-secondary)]">
                                     {typeof user.department === "object"
                                       ? user.department.name
                                       : user.department}
@@ -479,7 +479,7 @@ export default function ChatsPage() {
               </div>
 
               {modalType === "group" && (
-                <div className="p-6 border-t border-slate-200 bg-slate-50">
+                <div className="p-6 border-t border-[var(--border)] bg-[var(--bg-elevated)]">
                   <button
                     onClick={handleCreateGroup}
                     disabled={!groupName.trim() || selectedParticipants.length < 2}
@@ -520,3 +520,4 @@ export default function ChatsPage() {
     </ProtectedDashboardRoute>
   );
 }
+

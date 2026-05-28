@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import HolidayWidget from "@/components/HolidayWidget";
 import LeaveCalendar from "@/components/dashboard/LeaveCalendar";
 import {
   getDashboardStatsApi,
@@ -55,9 +56,11 @@ const ACTIVE_STATUSES = new Set([
 
 const TOOLTIP_STYLE = {
   contentStyle: {
-    backgroundColor: "#fff",
-    border: "1px solid #e2e8f0",
+    backgroundColor: "var(--bg-surface)",
+    border: "1px solid var(--border)",
     borderRadius: "8px",
+    color: "var(--text-primary)",
+    fontSize: 12,
   },
 };
 
@@ -111,9 +114,9 @@ const monthBounds = () => {
 const toTime = (d) =>
   d
     ? new Date(d).toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "—";
 
 const breakMins = (breaks = []) =>
@@ -155,35 +158,28 @@ const StatCard = ({ title, value, icon, trend, trendUp, color, sparkline }) => {
   const c = COLOR_MAP[color];
   const max = Math.max(...(sparkline || [1]));
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 hover:shadow-md transition">
+    <div className="rounded-2xl p-5 border border-[var(--border)] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+      style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)" }}>
       <div className={`inline-flex p-2.5 rounded-xl mb-3 ${c.bg} ${c.text}`}>
         {icon}
       </div>
-      <p className="text-sm text-slate-500 mb-1">{title}</p>
+      <p className="text-[12px] text-[var(--text-muted)] mb-1 uppercase tracking-wider">{title}</p>
       <div className="flex items-end justify-between">
-        <p className="text-3xl font-bold text-slate-900">{value}</p>
+        <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">{value}</p>
         {sparkline && (
           <div className="flex items-end gap-0.5 h-8">
             {sparkline.map((v, i) => (
-              <div
-                key={i}
-                className={`w-1.5 rounded-t ${c.bg}`}
-                style={{ height: `${(v / max) * 100}%` }}
-              />
+              <div key={i} className={`w-1.5 rounded-t ${c.bg} opacity-70`} style={{ height: `${(v / max) * 100}%`, minHeight: "4px" }} />
             ))}
           </div>
         )}
       </div>
       <div className="flex items-center gap-1 mt-2">
-        {trendUp !== undefined &&
-          (trendUp ? (
-            <TrendingUp className="w-3.5 h-3.5 text-green-500" />
-          ) : (
-            <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-          ))}
-        <span
-          className={`text-xs ${trendUp ? "text-green-600" : trendUp === false ? "text-red-600" : "text-slate-500"}`}
-        >
+        {trendUp !== undefined && (trendUp
+          ? <TrendingUp className="w-3 h-3 text-emerald-400" />
+          : <TrendingDown className="w-3 h-3 text-rose-400" />
+        )}
+        <span className={`text-[11px] ${trendUp ? "text-emerald-400" : trendUp === false ? "text-rose-400" : "text-[var(--text-muted)]"}`}>
           {trend}
         </span>
       </div>
@@ -197,20 +193,18 @@ const ActionButton = ({ icon, label, subtitle, color, onClick, disabled }) => {
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`${c.bg} ${c.border} border-2 rounded-2xl p-4 sm:p-6 transition-all hover:shadow-md
-        ${disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-105 cursor-pointer"}`}
+      className={`rounded-2xl p-4 sm:p-5 border border-[var(--border)] transition-all duration-200
+        hover:border-[var(--border-strong)] hover:shadow-lg hover:-translate-y-0.5
+        ${disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}`}
+      style={{ background: "var(--bg-surface)" }}
     >
       <div className="flex flex-col items-center gap-3 text-center">
-        <div
-          className={`${c.iconBg} w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-white`}
-        >
+        <div className={`${c.iconBg} w-11 h-11 rounded-xl flex items-center justify-center text-white`}>
           {icon}
         </div>
         <div>
-          <p className="font-bold text-sm sm:text-base text-slate-800">
-            {label}
-          </p>
-          <p className="text-xs sm:text-sm text-slate-500">{subtitle}</p>
+          <p className="font-semibold text-[13px] text-[var(--text-primary)]">{label}</p>
+          <p className="text-[11px] text-[var(--text-muted)] mt-0.5">{subtitle}</p>
         </div>
       </div>
     </button>
@@ -219,18 +213,16 @@ const ActionButton = ({ icon, label, subtitle, color, onClick, disabled }) => {
 
 const SummaryItem = ({ label, value, color }) => (
   <div className="flex items-center justify-between">
-    <span className="text-sm text-slate-600">{label}</span>
-    <span className={`text-lg font-bold ${COLOR_MAP[color].text}`}>
-      {value}
-    </span>
+    <span className="text-[13px] text-[var(--text-secondary)]">{label}</span>
+    <span className={`text-base font-bold ${COLOR_MAP[color].text}`}>{value}</span>
   </div>
 );
 
 const ChartCard = ({ title, children }) => (
-  <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+  <div className="rounded-2xl p-6 border border-[var(--border)]" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)" }}>
     <div className="flex items-center justify-between mb-6">
-      <h3 className="text-xl font-bold text-slate-900">{title}</h3>
-      <select className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">{title}</h3>
+      <select className="text-[12px] border border-[var(--border-strong)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400">
         <option>This Week</option>
         <option>Last Week</option>
         <option>This Month</option>
@@ -375,13 +367,13 @@ export default function UnifiedDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <main className="min-h-screen bg-[var(--bg-base)]">
         <Navbar />
         <Sidebar />
         <div className="sidebar-aware pt-14 flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4" />
-            <p className="text-slate-600">Loading dashboard…</p>
+          <div className="text-center animate-fade-in">
+            <div className="w-10 h-10 border-2 border-[var(--border-strong)] border-t-indigo-500 rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-[var(--text-muted)] text-sm">Loading dashboard…</p>
           </div>
         </div>
       </main>
@@ -389,19 +381,23 @@ export default function UnifiedDashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <main className="min-h-screen bg-[var(--bg-base)]">
       <Navbar />
       <Sidebar />
 
       <div className="sidebar-aware pt-14">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 animate-fade-in">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <h2
+              className="text-2xl sm:text-3xl font-semibold tracking-tight
+  bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
+  bg-clip-text text-transparent animate-pulse"
+            >
               Attendance System
             </h2>
-            <div className="flex items-center gap-2 bg-indigo-50 px-3 sm:px-4 py-2 rounded-lg text-indigo-600">
-              <CalendarIcon size={16} />
+            <div className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 sm:px-4 py-2 rounded-xl text-indigo-400">
+              <CalendarIcon size={14} />
               <span className="text-xs sm:text-sm font-semibold hidden sm:block">
                 {new Date().toLocaleDateString("en-US", {
                   weekday: "long",
@@ -418,355 +414,391 @@ export default function UnifiedDashboard() {
             <StatCard
               title="Days Present"
               color="green"
-              trendUp={true}
-              trend="This month"
               value={displayVal(monthlySummary?.present, stats.presentToday)}
               icon={<Users className="w-5 h-5" />}
-              sparkline={[
-                displayVal(monthlySummary?.present, stats.presentToday) - 2,
-                null,
-                displayVal(monthlySummary?.present, stats.presentToday),
-              ].map((v) => Math.max(0, v ?? 0))}
+
             />
             <StatCard
               title="Work Hours"
               color="blue"
-              trend="This month"
               value={`${displayVal(Math.floor(monthlySummary?.totalWorkHours), stats.totalWorkHours)}h`}
               icon={<Clock className="w-5 h-5" />}
-              sparkline={[
-                20,
-                30,
-                displayVal(
-                  monthlySummary?.totalWorkHours,
-                  stats.totalWorkHours,
-                ),
-              ]}
+
             />
             <StatCard
               title="Late Check-ins"
               color="orange"
-              trendUp={false}
-              trend="This month"
               value={lateCount}
               icon={<Clock className="w-5 h-5" />}
-              sparkline={[Math.max(0, lateCount - 1), lateCount, lateCount]}
+
             />
             <StatCard
               title="Days Absent"
               color="red"
-              trendUp={false}
-              trend="This month"
               value={actualAbsent}
               icon={<UserX className="w-5 h-5" />}
-              sparkline={[actualAbsent, actualAbsent, actualAbsent]}
+
             />
             <StatCard
               title="On Break"
               color="purple"
-              trend="Right now"
               value={isOnBreak ? "Yes" : "No"}
               icon={<Coffee className="w-5 h-5" />}
               sparkline={[0, 0, isOnBreak ? 1 : 0]}
             />
           </div>
 
-          {/* Tracking + Today Summary */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">
-                    Attendance Tracking
-                  </h3>
-                  <p className="text-sm text-slate-500">
-                    Track your attendance with one click
-                  </p>
-                </div>
-                {stats.userStatus === "LATE" && (
-                  <div className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                    Late Check-In
+
+
+          {/* ── Row: Tracking + Today Summary ── */}
+          {/* Dashboard Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+
+            {/* LEFT SIDE */}
+            <div className="xl:col-span-2 space-y-6">
+
+              {/* Attendance Tracking */}
+              <div
+                className="rounded-2xl border border-[var(--border)] p-5 sm:p-6"
+                style={{
+                  background: "var(--bg-surface)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                  <div>
+                    <h3 className="text-[20px] font-semibold text-[var(--text-primary)]">
+                      Attendance Tracking
+                    </h3>
+
+                    <p className="text-[12px] text-[var(--text-muted)] mt-1">
+                      Track your attendance with one click
+                    </p>
                   </div>
-                )}
+
+                  {stats.userStatus === "LATE" && (
+                    <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-[12px] font-semibold flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
+                      Late Check-In
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <ActionButton
+                    icon={<LogIn className="w-5 h-5 sm:w-6 sm:h-6" />}
+                    label="Check In"
+                    subtitle="Start Your Day"
+                    color="green"
+                    onClick={action(checkInApi, "Checked in successfully!")}
+                    disabled={hasCheckedInToday}
+                  />
+
+                  <ActionButton
+                    icon={<Coffee className="w-5 h-5 sm:w-6 sm:h-6" />}
+                    label="Break"
+                    subtitle="Take a Break"
+                    color="orange"
+                    onClick={action(breakInApi, "Break started!")}
+                    disabled={!isCheckedIn || isOnBreak}
+                  />
+
+                  <ActionButton
+                    icon={<Play className="w-5 h-5 sm:w-6 sm:h-6" />}
+                    label="Resume"
+                    subtitle="Back to Work"
+                    color="blue"
+                    onClick={action(breakOutApi, "Break ended!")}
+                    disabled={!isOnBreak}
+                  />
+
+                  <ActionButton
+                    icon={<LogOut className="w-5 h-5 sm:w-6 sm:h-6" />}
+                    label="Check Out"
+                    subtitle="End Your Day"
+                    color="red"
+                    onClick={action(checkOutApi, "Checked out successfully!")}
+                    disabled={!isCheckedIn}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <ActionButton
-                  icon={<LogIn className="w-5 h-5 sm:w-6 sm:h-6" />}
-                  label="Check In"
-                  subtitle="Start Your Day"
-                  color="green"
-                  onClick={action(checkInApi, "Checked in successfully!")}
-                  disabled={hasCheckedInToday}
-                />
-                <ActionButton
-                  icon={<Coffee className="w-5 h-5 sm:w-6 sm:h-6" />}
-                  label="Break"
-                  subtitle="Take a Break"
-                  color="orange"
-                  onClick={action(breakInApi, "Break started!")}
-                  disabled={!isCheckedIn || isOnBreak}
-                />
-                <ActionButton
-                  icon={<Play className="w-5 h-5 sm:w-6 sm:h-6" />}
-                  label="Resume"
-                  subtitle="Back to Work"
-                  color="blue"
-                  onClick={action(breakOutApi, "Break ended!")}
-                  disabled={!isOnBreak}
-                />
-                <ActionButton
-                  icon={<LogOut className="w-5 h-5 sm:w-6 sm:h-6" />}
-                  label="Check Out"
-                  subtitle="End Your Day"
-                  color="red"
-                  onClick={action(checkOutApi, "Checked out successfully!")}
-                  disabled={!isCheckedIn}
-                />
+
+              {/* Attendance History */}
+              <div
+                className="rounded-2xl border border-[var(--border)] p-4 sm:p-6"
+                style={{
+                  background: "var(--bg-surface)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                  <h3 className="text-[18px] font-semibold text-[var(--text-primary)]">
+                    Attendance History
+                  </h3>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="date"
+                      className="input-base text-[13px] rounded-xl px-3 py-2 border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    />
+
+                    <button className="text-[13px] bg-[var(--bg-elevated)] hover:bg-[var(--border)] text-[var(--text-secondary)] px-4 py-2 rounded-xl font-medium transition-all border border-[var(--border)]">
+                      Filter
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-auto max-h-[420px]">
+                  <table className="w-full text-sm min-w-[560px]">
+                    <thead>
+                      <tr className="border-b border-[var(--border)]">
+                        {[
+                          "Date",
+                          "Entry",
+                          "Exit",
+                          "Breaks",
+                          "Break Time",
+                          "Work Hours",
+                          "Status",
+                          "User",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="text-left py-3 px-3 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {history.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={8}
+                            className="text-center py-8 text-[var(--text-muted)] text-sm"
+                          >
+                            No records found
+                          </td>
+                        </tr>
+                      ) : (
+                        history.map((r, i) => (
+                          <tr
+                            key={i}
+                            className="border-b border-[var(--border)] hover:bg-[var(--bg-elevated)] transition-colors"
+                          >
+                            <td className="py-3 px-3 text-[13px] text-[var(--text-secondary)] whitespace-nowrap">
+                              {r.date}
+                            </td>
+
+                            <td className="py-3 px-3 text-emerald-400 font-semibold text-[13px]">
+                              {r.entryTime}
+                            </td>
+
+                            <td className="py-3 px-3 text-[13px] text-[var(--text-muted)]">
+                              {r.exitTime}
+                            </td>
+
+                            <td className="py-3 px-3 text-blue-400 text-[13px]">
+                              {r.breaks}
+                            </td>
+
+                            <td className="py-3 px-3 text-[13px] text-[var(--text-secondary)]">
+                              {r.totalBreakTime}
+                            </td>
+
+                            <td className="py-3 px-3 text-[13px] text-[var(--text-secondary)]">
+                              {r.workingHours}
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400">
+                                {r.status}
+                              </span>
+                            </td>
+
+                            <td className="py-3 px-3">
+                              <p className="text-indigo-400 font-medium text-[13px]">
+                                {r.userEmail}
+                              </p>
+
+                              <p className="text-[11px] text-[var(--text-muted)]">
+                                {r.userName}
+                              </p>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
 
-            {/* Today's Summary */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-              <h3 className="text-xl font-bold text-slate-900 mb-5">
-                Today's Summary
-              </h3>
-              <div className="space-y-3">
-                <SummaryItem
-                  label="Check In"
-                  value={stats.checkInTime}
-                  color="green"
-                />
-                <SummaryItem
-                  label="Check Out"
-                  value={stats.checkOutTime}
-                  color="red"
-                />
-                <SummaryItem
-                  label="Total Break"
-                  value={stats.totalBreakTime}
-                  color="orange"
-                />
-                <SummaryItem
-                  label="Working Hours"
-                  value={stats.workingHours}
-                  color="blue"
-                />
-              </div>
+            {/* RIGHT SIDE */}
+            <div className="space-y-6">
 
-              {/* Break details */}
-              {stats.breaks.length > 0 && (
-                <div className="mt-5 pt-4 border-t border-slate-100">
-                  <h4 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                    <Coffee className="w-4 h-4 text-orange-500" /> Break Details
-                  </h4>
-                  <div className="space-y-2">
-                    {stats.breaks.map((b) => (
-                      <div
-                        key={b.index}
-                        className={`p-3 rounded-lg border text-xs ${b.isActive ? "bg-orange-50 border-orange-200" : "bg-slate-50 border-slate-200"}`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-slate-600">
-                            Break #{b.index}
-                          </span>
-                          {b.isActive && (
-                            <span className="bg-orange-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                              Active
+              {/* Today's Summary */}
+              <div
+                className="rounded-2xl border border-[var(--border)] p-5 sm:p-6"
+                style={{
+                  background: "var(--bg-surface)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <h3 className="text-[18px] font-semibold text-[var(--text-primary)] mb-5">
+                  Today's Summary
+                </h3>
+
+                <div className="space-y-3">
+                  <SummaryItem
+                    label="Check In"
+                    value={stats.checkInTime}
+                    color="green"
+                  />
+
+                  <SummaryItem
+                    label="Check Out"
+                    value={stats.checkOutTime}
+                    color="red"
+                  />
+
+                  <SummaryItem
+                    label="Total Break"
+                    value={stats.totalBreakTime}
+                    color="orange"
+                  />
+
+                  <SummaryItem
+                    label="Working Hours"
+                    value={stats.workingHours}
+                    color="blue"
+                  />
+                </div>
+
+                {/* Break Details */}
+                {stats.breaks.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-[var(--border)]">
+                    <h4 className="text-[12px] font-semibold text-[var(--text-secondary)] mb-3 flex items-center gap-2">
+                      <Coffee className="w-3.5 h-3.5 text-orange-400" />
+                      Break Details
+                    </h4>
+
+                    <div className="space-y-2">
+                      {stats.breaks.map((b) => (
+                        <div
+                          key={b.index}
+                          className={`p-3 rounded-xl border text-xs ${b.isActive
+                            ? "bg-orange-500/10 border-orange-500/20"
+                            : "bg-[var(--bg-elevated)] border-[var(--border)]"
+                            }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-semibold text-[var(--text-secondary)]">
+                              Break #{b.index}
                             </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-medium">
-                              {b.breakStart}
-                            </span>
-                            <span className="text-slate-400">→</span>
-                            <span
-                              className={`font-medium ${b.isActive ? "text-orange-600" : "text-red-600"}`}
-                            >
-                              {b.breakEnd}
+
+                            {b.isActive && (
+                              <span className="bg-orange-500 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <span className="w-1 h-1 bg-white rounded-full animate-pulse" />
+                                Active
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-emerald-400 font-medium">
+                                {b.breakStart}
+                              </span>
+
+                              <span className="text-[var(--text-muted)]">→</span>
+
+                              <span
+                                className={`font-medium ${b.isActive
+                                  ? "text-orange-400"
+                                  : "text-rose-400"
+                                  }`}
+                              >
+                                {b.breakEnd}
+                              </span>
+                            </div>
+
+                            <span className="font-semibold text-[var(--text-secondary)]">
+                              {b.duration}
                             </span>
                           </div>
-                          <span className="font-semibold text-slate-600">
-                            {b.duration}
-                          </span>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Goal Progress */}
+                <div className="mt-5 pt-4 border-t border-[var(--border)]">
+                  <div className="flex items-center justify-between mb-2 text-[12px]">
+                    <span className="text-[var(--text-muted)]">
+                      {stats.goalProgress}% of 8h goal
+                    </span>
+
+                    <span className="font-semibold text-[var(--text-primary)]">
+                      {stats.workingHours} / 8h
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-[var(--bg-elevated)] rounded-full h-1.5">
+                    <div
+                      className="bg-gradient-to-r from-indigo-500 to-violet-500 h-1.5 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(stats.goalProgress, 100)}%`,
+                      }}
+                    />
                   </div>
                 </div>
-              )}
-
-              {/* Goal progress */}
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2 text-sm">
-                  <span className="text-slate-500">
-                    {stats.goalProgress}% of 8h goal
-                  </span>
-                  <span className="font-semibold text-slate-900">
-                    {stats.workingHours} / 8h
-                  </span>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div
-                    className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(stats.goalProgress, 100)}%` }}
-                  />
-                </div>
               </div>
+
+
             </div>
           </div>
 
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ChartCard title="Weekly Attendance">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyAttendance}>
-                  <defs>
-                    <linearGradient id="gPresent" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="day"
-                    stroke="#94a3b8"
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                  <Tooltip {...TOOLTIP_STYLE} />
-                  <Area
-                    type="monotone"
-                    dataKey="present"
-                    stroke="#6366f1"
-                    strokeWidth={2}
-                    fill="url(#gPresent)"
-                    fillOpacity={1}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </ChartCard>
 
-            <ChartCard title="Work Hours Overview">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyWorkHours}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis
-                    dataKey="day"
-                    stroke="#94a3b8"
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                  <Tooltip {...TOOLTIP_STYLE} />
-                  <Bar dataKey="hours" fill="#6366f1" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-          </div>
-    
-          {/* History Table */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900">
-                Attendance History
+          {/* Leave + Holiday Section */}
+
+          <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
+
+            {/* Recent Leaves Calendar */}
+            <div
+              className="rounded-2xl p-6 border border-[var(--border)]"
+              style={{
+                background: "var(--bg-surface)",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <h3 className="text-[18px] font-semibold text-[var(--text-primary)] mb-6">
+                Recent Leaves Calendar
               </h3>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  className="text-sm border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-                <button className="text-sm bg-slate-100 hover:bg-slate-200 px-4 py-1.5 rounded-lg font-medium transition">
-                  Filter
-                </button>
-              </div>
+
+              <LeaveCalendar leaves={leaves} holidays={holidays} />
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    {[
-                      "Date",
-                      "Entry",
-                      "Exit",
-                      "Breaks",
-                      "Break Time",
-                      "Work Hours",
-                      "Status",
-                      "User",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        className="text-left py-3 px-3 text-xs font-semibold text-slate-500 whitespace-nowrap"
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={8}
-                        className="text-center py-8 text-slate-400"
-                      >
-                        No records found
-                      </td>
-                    </tr>
-                  ) : (
-                    history.map((r, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                      >
-                        <td className="py-3 px-3 text-slate-700 whitespace-nowrap">
-                          {r.date}
-                        </td>
-                        <td className="py-3 px-3 text-green-600 font-semibold">
-                          {r.entryTime}
-                        </td>
-                        <td className="py-3 px-3 text-slate-500">
-                          {r.exitTime}
-                        </td>
-                        <td className="py-3 px-3 text-blue-600">{r.breaks}</td>
-                        <td className="py-3 px-3 text-slate-700">
-                          {r.totalBreakTime}
-                        </td>
-                        <td className="py-3 px-3 text-slate-500">
-                          {r.workingHours}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-                            {r.status}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <p className="text-blue-600 font-medium">
-                            {r.userEmail}
-                          </p>
-                          <p className="text-xs text-slate-500">{r.userName}</p>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            {/* Holiday Widget */}
+            <div
+              className="rounded-2xl p-6 border border-[var(--border)] h-fit"
+              style={{
+                background: "var(--bg-surface)",
+                boxShadow: "var(--shadow-sm)",
+              }}
+            >
+              <HolidayWidget />
             </div>
+
           </div>
 
-          {/* Recent Leaves Calendar */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-6">
-              Recent Leaves Calendar
-            </h3>
-            <LeaveCalendar leaves={leaves} holidays={holidays} />
-          </div>
+
+
         </div>
       </div>
-    </main>
+    </main >
   );
 }

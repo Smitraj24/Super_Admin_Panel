@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactCompiler: true,
+  turbopack: {
+    root: process.cwd(),
+  },
 
   images: {
     formats: ["image/avif", "image/webp"],
@@ -8,11 +10,6 @@ const nextConfig = {
   },
 
   compress: true,
-
-  experimental: {
-    optimizePackageImports: ["lucide-react", "recharts", "@fullcalendar/react"],
-    optimizeCss: true,
-  },
 
   async headers() {
     return [
@@ -23,19 +20,28 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "geolocation=(), microphone=(), camera=()" },
+          {
+            key: "Permissions-Policy",
+            value: "geolocation=(), microphone=(), camera=()",
+          },
         ],
       },
       {
         source: "/_next/static/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
       {
         source: "/images/:path*",
         headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
         ],
       },
     ];

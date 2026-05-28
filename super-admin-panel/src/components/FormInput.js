@@ -1,11 +1,14 @@
-export default function FormInput({ label, ...props }) {
+export default function FormInput({ label, className = "", ...props }) {
   return (
-    <div className="mb-4">
-      <label className="block mb-1 font-medium">{label}</label>
-
+    <div className="space-y-1.5">
+      {label && (
+        <label className="block text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
+          {label}
+        </label>
+      )}
       <input
         {...props}
-        className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className={`input-base w-full px-3.5 py-2.5 rounded-xl text-sm transition-all ${className}`}
       />
     </div>
   );

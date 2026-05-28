@@ -2,24 +2,14 @@
 
 import { useAuth } from "../context/AuthContext";
 import {
-  Bell,
-  User,
-  Settings,
-  LogOut,
-  X,
-  Check,
-  Clock,
-  AlertCircle,
-  Search,
-  Moon,
+  Bell, User, Settings, LogOut, X, Check, Clock,
+  AlertCircle, Search, Sun, Moon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
+import { useTheme } from "next-themes";
 import {
-  getNotificationsApi,
-  markAsReadApi,
-  markAllAsReadApi,
-  deleteNotificationApi,
+  getNotificationsApi, markAsReadApi, markAllAsReadApi, deleteNotificationApi,
 } from "@/services/notificationApi";
 import { cachedFetch, invalidateCache } from "@/lib/cache";
 import { useSidebar } from "@/context/SidebarContext";
@@ -27,28 +17,22 @@ import { useSidebar } from "@/context/SidebarContext";
 const ROLE_MAP = { SUPER_ADMIN: "superadmin", ADMIN: "admin", USER: "user" };
 const DEPT_MAP = { CE: "ce", IT: "it", SALES: "sales", HR: "hr" };
 const ICON_MAP = {
-  success: <Check size={16} className="text-emerald-500" />,
-  warning: <Clock size={16} className="text-amber-500" />,
-  alert: <AlertCircle size={16} className="text-rose-500" />,
-  default: <Bell size={16} className="text-blue-500" />,
+  success: <Check size={13} className="text-emerald-400" />,
+  warning: <Clock size={13} className="text-amber-400" />,
+  alert:   <AlertCircle size={13} className="text-rose-400" />,
+  default: <Bell size={13} className="text-[#7c6fff]" />,
 };
 const NOTIF_TTL = 60_000;
 const NOTIF_CACHE_KEY = "notifications";
 
 const getGreeting = (h = new Date().getHours()) =>
   h < 12 ? "Good Morning" : h < 18 ? "Good Afternoon" : "Good Evening";
-
 const getGreetingIcon = (h = new Date().getHours()) =>
   h < 12 ? "🌅" : h < 18 ? "☀️" : "🌙";
-
 const getTimeStr = () =>
-  new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
+  new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+const getDateStr = () =>
+  new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 const getTimeAgo = (date) => {
   const s = Math.floor((Date.now() - new Date(date)) / 1000);
   if (s < 60) return "Just now";
@@ -58,38 +42,29 @@ const getTimeAgo = (date) => {
   return new Date(date).toLocaleDateString();
 };
 
-const getNotifIcon = (type) => ICON_MAP[type] ?? ICON_MAP.default;
-
-const getDateStr = () =>
-  new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-
 const NotificationItem = memo(({ notif, onMarkRead, onDelete }) => (
-  <div
-    className={`px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-colors ${!notif.read ? "bg-indigo-50/40" : ""}`}
-  >
+  <div className={`px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--bg-elevated)] transition-colors ${!notif.read ? "bg-[#7c6fff]/5" : ""}`}>
     <div className="flex gap-3">
-      <div className="shrink-0 mt-0.5">{getNotifIcon(notif.type)}</div>
+      <div className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
+        {ICON_MAP[notif.type] ?? ICON_MAP.default}
+      </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <p className={`text-sm font-semibold truncate ${!notif.read ? "text-slate-900" : "text-slate-600"}`}>
+          <p className={`text-[13px] font-semibold truncate ${!notif.read ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}>
             {notif.title}
           </p>
-          {!notif.read && <span className="w-2 h-2 bg-indigo-500 rounded-full shrink-0 mt-1" />}
+          {!notif.read && <span className="w-1.5 h-1.5 bg-[#7c6fff] rounded-full shrink-0 mt-1.5 animate-pulse" />}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notif.message}</p>
-        <div className="flex items-center justify-between mt-1.5">
-          <span className="text-[11px] text-slate-400">{getTimeAgo(notif.createdAt)}</span>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">{notif.message}</p>
+        <div className="flex items-center justify-between mt-2">
+          <span className="text-[11px] text-[var(--text-muted)]">{getTimeAgo(notif.createdAt)}</span>
           <div className="flex gap-2">
             {!notif.read && (
-              <button onClick={() => onMarkRead(notif._id)} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+              <button onClick={() => onMarkRead(notif._id)} className="text-[11px] text-[#7c6fff] hover:text-[#a5b4fc] font-medium transition-colors">
                 Mark read
               </button>
             )}
-            <button onClick={() => onDelete(notif._id)} className="text-xs text-rose-500 hover:text-rose-600 font-medium">
+            <button onClick={() => onDelete(notif._id)} className="text-[11px] text-rose-400 hover:text-rose-300 font-medium transition-colors">
               Delete
             </button>
           </div>
@@ -100,19 +75,25 @@ const NotificationItem = memo(({ notif, onMarkRead, onDelete }) => (
 ));
 NotificationItem.displayName = "NotificationItem";
 
-const IconButton = memo(({ onClick, children, className = "" }) => (
+const NavIconBtn = memo(({ onClick, children, className = "", badge }) => (
   <button
     onClick={onClick}
-    className={`p-2 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors ${className}`}
+    className={`relative p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all duration-150 ${className}`}
   >
     {children}
+    {badge > 0 && (
+      <span className="absolute top-1 right-1 min-w-[15px] h-[15px] bg-rose-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold px-0.5 shadow-lg">
+        {badge > 9 ? "9+" : badge}
+      </span>
+    )}
   </button>
 ));
-IconButton.displayName = "IconButton";
+NavIconBtn.displayName = "NavIconBtn";
 
 export default function Navbar() {
   const { user, logout, loading } = useAuth();
   const { collapsed } = useSidebar();
+  const { theme, setTheme } = useTheme();
   const router = useRouter();
 
   const [showProfile, setShowProfile] = useState(false);
@@ -123,31 +104,25 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
   const [dateStr, setDateStr] = useState("");
+  const [greeting, setGreeting] = useState("");
+  const [greetingIcon, setGreetingIcon] = useState("");
+  const [timeStr, setTimeStr] = useState("");
+  const [mounted, setMounted] = useState(false);
   const searchTimer = useRef(null);
 
+  useEffect(() => { setMounted(true); }, []);
+
   const { roleKey, rolePath, deptPath } = useMemo(() => {
-    const roleKey = (user?.role?.name || user?.role || "USER")
-      .toUpperCase()
-      .replace(" ", "_");
-    const deptKey = (user?.department?.name || user?.department || "CE")
-      .toUpperCase()
-      .replace(" ", "_");
-    return {
-      roleKey,
-      rolePath: ROLE_MAP[roleKey] || "user",
-      deptPath: DEPT_MAP[deptKey] || "ce",
-    };
+    const roleKey = (user?.role?.name || user?.role || "USER").toUpperCase().replace(" ", "_");
+    const deptKey = (user?.department?.name || user?.department || "CE").toUpperCase().replace(" ", "_");
+    return { roleKey, rolePath: ROLE_MAP[roleKey] || "user", deptPath: DEPT_MAP[deptKey] || "ce" };
   }, [user?.role, user?.department]);
 
   const fetchNotifs = useCallback(async () => {
     if (!user) return;
     setLoadingNotifs(true);
     try {
-      const res = await cachedFetch(
-        NOTIF_CACHE_KEY,
-        () => getNotificationsApi(20, 0),
-        NOTIF_TTL,
-      );
+      const res = await cachedFetch(NOTIF_CACHE_KEY, () => getNotificationsApi(20, 0), NOTIF_TTL);
       setNotifications(res.data?.notifications || []);
       setUnreadCount(res.data?.unreadCount || 0);
     } catch (e) {
@@ -157,24 +132,17 @@ export default function Navbar() {
     }
   }, [user]);
 
-  const [greeting, setGreeting] = useState("");
-  const [greetingIcon, setGreetingIcon] = useState("");
-  const [timeStr, setTimeStr] = useState("");
-
   useEffect(() => {
     if (user) fetchNotifs();
     setDateStr(getDateStr());
     setGreeting(getGreeting());
     setGreetingIcon(getGreetingIcon());
     setTimeStr(getTimeStr());
-
-    // Tick every second to keep time and greeting live
     const tick = setInterval(() => {
       setTimeStr(getTimeStr());
       setGreeting(getGreeting());
       setGreetingIcon(getGreetingIcon());
     }, 1000);
-
     return () => clearInterval(tick);
   }, [user, fetchNotifs]);
 
@@ -197,20 +165,14 @@ export default function Navbar() {
     const val = e.target.value;
     setSearchQuery(val);
     clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => {
-      // TODO: wire up search action here
-    }, 300);
+    searchTimer.current = setTimeout(() => {}, 300);
   }, []);
 
   const markAsRead = useCallback(async (id) => {
     setNotifications((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
     setUnreadCount((prev) => Math.max(0, prev - 1));
     invalidateCache(NOTIF_CACHE_KEY);
-    try {
-      await markAsReadApi(id);
-    } catch {
-      fetchNotifs();
-    }
+    try { await markAsReadApi(id); } catch { fetchNotifs(); }
   }, [fetchNotifs]);
 
   const markAllRead = useCallback(async () => {
@@ -218,9 +180,7 @@ export default function Navbar() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
     invalidateCache(NOTIF_CACHE_KEY);
-    try {
-      await markAllAsReadApi();
-    } catch {
+    try { await markAllAsReadApi(); } catch {
       setNotifications(snap.notifications);
       setUnreadCount(snap.unreadCount);
     }
@@ -231,20 +191,13 @@ export default function Navbar() {
     setNotifications((prev) => prev.filter((n) => n._id !== id));
     if (target && !target.read) setUnreadCount((prev) => Math.max(0, prev - 1));
     invalidateCache(NOTIF_CACHE_KEY);
-    try {
-      await deleteNotificationApi(id);
-    } catch {
-      fetchNotifs();
-    }
+    try { await deleteNotificationApi(id); } catch { fetchNotifs(); }
   }, [notifications, fetchNotifs]);
 
   const goToProfile = useCallback(() => {
-    const path =
-      roleKey === "SUPER_ADMIN"
-        ? `/${rolePath}/profile`
-        : roleKey === "ADMIN"
-          ? `/admin/${deptPath}/profile`
-          : `/dashboard/${deptPath}/profile`;
+    const path = roleKey === "SUPER_ADMIN" ? `/${rolePath}/profile`
+      : roleKey === "ADMIN" ? `/admin/${deptPath}/profile`
+      : `/dashboard/${deptPath}/profile`;
     router.push(path);
     setShowProfile(false);
   }, [roleKey, rolePath, deptPath, router]);
@@ -252,21 +205,24 @@ export default function Navbar() {
   if (loading || !user) return null;
 
   const userInitial = user?.name?.charAt(0).toUpperCase() || "U";
+  const isDark = mounted && theme !== "light";
 
   return (
-    <header className={`mg:ml-64 fixed top-0 right-0 z-30 flex items-center justify-between px-4 py-3 bg-white border-b border-slate-200 shadow-sm transition-all duration-300
-      ${collapsed ? "left-20" : "left-64"}
-    `}>
+    <header
+      className={`fixed top-0 right-0 z-30 flex items-center justify-between px-4 py-2.5
+        glass border-b border-[var(--border)] transition-all duration-300
+        ${collapsed ? "left-20" : "left-64"}
+      `}
+      style={{ boxShadow: "var(--shadow-sm)" }}
+    >
       {/* Greeting */}
       {!showMobileSearch && (
-        <div className="shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900">
-            {greetingIcon} {greeting}!
+        <div className="shrink-0 animate-fade-in">
+          <h2 className="text-[15px] font-semibold text-[var(--text-primary)] leading-tight">
+            {greetingIcon} {greeting}
           </h2>
-          <p className="text-xs text-slate-400 hidden lg:block">
-            {timeStr && (
-              <span className="font-mono font-medium text-slate-500">{timeStr}</span>
-            )}
+          <p className="text-[11px] text-[var(--text-muted)] hidden lg:block mt-0.5">
+            <span className="font-mono">{timeStr}</span>
             {timeStr && " · "}Welcome back to HRMS
           </p>
         </div>
@@ -274,92 +230,95 @@ export default function Navbar() {
 
       {/* Mobile Search */}
       {showMobileSearch && (
-        <div className="flex-1 md:hidden">
+        <div className="flex-1 md:hidden animate-fade-in">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
             <input
               autoFocus
               type="text"
               value={searchQuery}
               onChange={handleSearchChange}
               placeholder="Search anything..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="input-base w-full rounded-xl pl-9 pr-9 py-2 text-sm"
             />
-            <button
-              onClick={() => setShowMobileSearch(false)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 rounded"
-            >
-              <X size={15} className="text-slate-500" />
+            <button onClick={() => setShowMobileSearch(false)} className="absolute right-3 top-1/2 -translate-y-1/2">
+              <X size={14} className="text-[var(--text-muted)]" />
             </button>
           </div>
         </div>
       )}
 
       {/* Desktop Search */}
-      <div className="hidden md:flex flex-1 max-w-md mx-4 lg:mx-8">
+      <div className="hidden md:flex flex-1 max-w-sm mx-6">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={14} />
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearchChange}
             placeholder="Search anything..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+            className="input-base w-full rounded-xl pl-9 pr-3 py-2 text-[13px]"
           />
         </div>
       </div>
 
       {/* Right controls */}
-      <div className={`flex items-center gap-1 sm:gap-2 ${showMobileSearch ? "hidden md:flex" : "flex"}`}>
-        <IconButton onClick={() => setShowMobileSearch(true)} className="md:hidden">
-          <Search size={18} />
-        </IconButton>
+      <div className={`flex items-center gap-1 ${showMobileSearch ? "hidden md:flex" : "flex"}`}>
+        <NavIconBtn onClick={() => setShowMobileSearch(true)} className="md:hidden">
+          <Search size={17} />
+        </NavIconBtn>
 
-        <div className="hidden sm:flex px-3 py-1.5 bg-slate-50 rounded-lg">
-          <span className="text-xs font-medium text-slate-700">{dateStr}</span>
+        {/* Date pill */}
+        <div className="hidden sm:flex items-center px-3 py-1.5 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
+          <span className="text-[12px] font-medium text-[var(--text-secondary)]">{dateStr}</span>
         </div>
+
+        {/* Theme toggle */}
+        {mounted && (
+          <NavIconBtn onClick={() => setTheme(isDark ? "light" : "dark")}>
+            {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </NavIconBtn>
+        )}
 
         {/* Notifications */}
         <div className="relative notif-dropdown">
-          <IconButton onClick={() => setShowNotifs((v) => !v)}>
-            <Bell size={18} />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold px-0.5">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </IconButton>
+          <NavIconBtn onClick={() => setShowNotifs((v) => !v)} badge={unreadCount}>
+            <Bell size={17} />
+          </NavIconBtn>
 
           {showNotifs && (
-            <div className="absolute right-[-20px] mt-3 w-[calc(40vh-0.8rem)] sm:w-96 bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-purple-600 to-violet-600 flex items-center justify-between">
+            <div className="absolute right-0 mt-2 w-[340px] sm:w-[380px] rounded-2xl overflow-hidden animate-scale-in z-50 border border-[var(--border-strong)]"
+              style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-lg)" }}>
+              {/* Header — teal-to-purple gradient */}
+              <div className="px-4 py-3.5 flex items-center justify-between"
+                style={{ background: "linear-gradient(135deg, #7c6fff 0%, #4f46e5 60%, #00d4aa 100%)" }}>
                 <div>
-                  <h3 className="font-bold text-base text-white">Notifications</h3>
-                  <p className="text-xs text-purple-100">{unreadCount} unread</p>
+                  <h3 className="font-semibold text-[14px] text-white">Notifications</h3>
+                  <p className="text-[11px] text-white/70 mt-0.5">{unreadCount} unread</p>
                 </div>
-                <IconButton onClick={() => setShowNotifs(false)} className="text-white hover:text-white hover:bg-white/20">
-                  <X size={16} />
-                </IconButton>
+                <button onClick={() => setShowNotifs(false)} className="p-1.5 text-white/70 hover:text-white hover:bg-white/15 rounded-lg transition-all">
+                  <X size={15} />
+                </button>
               </div>
 
               {unreadCount > 0 && (
-                <div className="px-4 py-2 flex justify-end border-b border-slate-100">
-                  <button onClick={markAllRead} className="text-xs text-purple-600 hover:text-purple-700 font-medium">
+                <div className="px-4 py-2 flex justify-end border-b border-[var(--border)]">
+                  <button onClick={markAllRead} className="text-[12px] text-[#7c6fff] hover:text-[#a5b4fc] font-medium transition-colors">
                     Mark all as read
                   </button>
                 </div>
               )}
 
-              <div className="h-[40vh] overflow-y-auto">
+              <div className="max-h-[360px] overflow-y-auto">
                 {loadingNotifs ? (
-                  <div className="py-10 flex flex-col items-center gap-2 text-slate-400">
-                    <div className="w-8 h-8 border-2 border-slate-300 border-t-purple-600 rounded-full animate-spin" />
+                  <div className="py-10 flex flex-col items-center gap-3 text-[var(--text-muted)]">
+                    <div className="w-7 h-7 border-2 border-[var(--border-strong)] border-t-[#7c6fff] rounded-full animate-spin" />
                     <p className="text-xs">Loading…</p>
                   </div>
                 ) : notifications.length === 0 ? (
-                  <div className="py-10 flex flex-col items-center gap-2 text-slate-400">
-                    <Bell size={36} className="opacity-20" />
-                    <p className="text-xs">No notifications</p>
+                  <div className="py-12 flex flex-col items-center gap-2 text-[var(--text-muted)]">
+                    <Bell size={32} className="opacity-20" />
+                    <p className="text-xs">No notifications yet</p>
                   </div>
                 ) : (
                   notifications.map((n) => (
@@ -368,10 +327,9 @@ export default function Navbar() {
                 )}
               </div>
 
-               
               {notifications.length > 0 && (
-                <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 text-center">
-                  <button className="text-xs text-purple-600 hover:text-purple-700 font-medium">
+                <div className="px-4 py-2.5 border-t border-[var(--border)] text-center bg-[var(--bg-elevated)]">
+                  <button className="text-[12px] text-[#7c6fff] hover:text-[#a5b4fc] font-medium transition-colors">
                     View all notifications
                   </button>
                 </div>
@@ -380,56 +338,66 @@ export default function Navbar() {
           )}
         </div>
 
-        <IconButton className="hidden sm:flex"><Moon size={18} /></IconButton>
-
         {/* Profile */}
-        <div className="relative profile-dropdown">
+        <div className="relative profile-dropdown ml-1">
           <button
             onClick={() => setShowProfile((v) => !v)}
-            className="flex items-center p-1 rounded-xl hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 p-1 pr-2 rounded-xl hover:bg-[var(--bg-elevated)] transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-bold shadow">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-[13px] font-bold shadow-lg"
+              style={{ background: "linear-gradient(135deg, #7c6fff, #00d4aa)" }}>
               {userInitial}
             </div>
+            <span className="hidden sm:block text-[13px] font-medium text-[var(--text-secondary)] max-w-[80px] truncate">
+              {user?.name?.split(" ")[0]}
+            </span>
           </button>
 
           {showProfile && (
-            <div className="absolute right-0 mt-2 w-56 sm:w-60 bg-white border border-slate-200 rounded-2xl shadow-xl py-1.5 overflow-hidden">
-              <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-violet-50 border-b border-purple-100">
+            <div className="absolute right-0 mt-2 w-56 rounded-2xl overflow-hidden animate-scale-in z-50 border border-[var(--border-strong)]"
+              style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-lg)" }}>
+              {/* Profile header */}
+              <div className="px-4 py-3.5 border-b border-[var(--border)]"
+                style={{ background: "linear-gradient(135deg, rgba(124,111,255,0.12) 0%, rgba(0,212,170,0.06) 100%)" }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow"
+                    style={{ background: "linear-gradient(135deg, #7c6fff, #00d4aa)" }}>
                     {userInitial}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">{user?.name}</p>
-                    <p className="text-xs text-slate-500 capitalize truncate">
+                    <p className="text-[13px] font-semibold text-[var(--text-primary)] truncate">{user?.name}</p>
+                    <p className="text-[11px] text-[var(--text-muted)] capitalize truncate">
                       {(user?.role?.name || user?.role || "").toLowerCase().replace("_", " ")}
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-2 truncate">{user?.email}</p>
+                <p className="text-[11px] text-[var(--text-muted)] mt-2 truncate">{user?.email}</p>
               </div>
 
-              {[
-                { icon: <User size={15} />, label: "Profile Settings", action: goToProfile },
-                { icon: <Settings size={15} />, label: "System Config", action: () => {} },
-              ].map(({ icon, label, action }) => (
-                <button
-                  key={label}
-                  onClick={action}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                >
-                  <span className="text-slate-500">{icon}</span> {label}
-                </button>
-              ))}
+              <div className="py-1">
+                {[
+                  { icon: <User size={14} />, label: "Profile Settings", action: goToProfile },
+                  { icon: <Settings size={14} />, label: "System Config", action: () => {} },
+                ].map(({ icon, label, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all"
+                  >
+                    <span className="text-[var(--text-muted)]">{icon}</span>
+                    {label}
+                  </button>
+                ))}
 
-              <div className="h-px bg-slate-100 my-1" />
-              <button
-                onClick={() => { logout(); router.push("/login"); }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
-              >
-                <LogOut size={15} /> Sign Out
-              </button>
+                <div className="h-px bg-[var(--border)] mx-3 my-1" />
+
+                <button
+                  onClick={() => { logout(); router.push("/login"); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] text-rose-400 hover:text-rose-300 hover:bg-rose-500/8 transition-all"
+                >
+                  <LogOut size={14} /> Sign Out
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -437,6 +405,3 @@ export default function Navbar() {
     </header>
   );
 }
-
-
-// 

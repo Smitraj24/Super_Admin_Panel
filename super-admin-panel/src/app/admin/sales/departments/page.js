@@ -19,10 +19,6 @@ export default function DepartmentsPage() {
   const [editingId, setEditingId] = useState(null);
   const [editName, setEditName] = useState("");
 
-  useEffect(() => {
-    fetchDepartments();
-  }, []);
-
   const fetchDepartments = async () => {
     try {
       const response = await getDepartmentsApi();
@@ -33,6 +29,10 @@ export default function DepartmentsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchDepartments();
+  }, []);
 
   const handleAddDepartment = async () => {
     if (!departmentInput.trim()) return;
@@ -110,7 +110,7 @@ export default function DepartmentsPage() {
                 Manage Departments
               </h1>
               <p className="text-sm text-purple-900">
-                Create and manage company departments
+                Create and manage compan  s
               </p>
             </div>
 

@@ -6,12 +6,7 @@ import Navbar from "@/components/Navbar";
 import ChatWindow from "@/components/ChatWindow";
 import { getUserChatsApi } from "@/services/chatApi";
 import { useAuth } from "@/context/AuthContext";
-import {
-  MessageCircle,
-  User as UserIcon,
-  Search,
-  Loader2,
-} from "lucide-react";
+import { MessageCircle, User as UserIcon, Search, Loader2 } from "lucide-react";
 
 export default function UserChatsPage() {
   const { user: currentUser } = useAuth();
@@ -20,27 +15,6 @@ export default function UserChatsPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    loadChats();
-  }, []);
-
-  useEffect(() => {
-    if (searchQuery) {
-      const filtered = chats.filter((chat) => {
-        const otherUser = chat.participants.find(
-          (p) => p._id !== currentUser._id
-        );
-        return (
-          otherUser?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          otherUser?.email.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      });
-      setFilteredChats(filtered);
-    } else {
-      setFilteredChats(chats);
-    }
-  }, [searchQuery, chats, currentUser]);
 
   const loadChats = async () => {
     try {
@@ -55,6 +29,27 @@ export default function UserChatsPage() {
     }
   };
 
+  useEffect(() => {
+    loadChats();
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const filtered = chats.filter((chat) => {
+        const otherUser = chat.participants.find(
+          (p) => p._id !== currentUser._id,
+        );
+        return (
+          otherUser?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          otherUser?.email.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      });
+      setFilteredChats(filtered);
+    } else {
+      setFilteredChats(chats);
+    }
+  }, [searchQuery, chats, currentUser]);
+
   const getOtherUser = (chat) => {
     return chat.participants.find((p) => p._id !== currentUser._id);
   };
@@ -63,7 +58,7 @@ export default function UserChatsPage() {
     return chat.messages.filter(
       (msg) =>
         !msg.readBy.includes(currentUser._id) &&
-        msg.sender._id !== currentUser._id
+        msg.sender._id !== currentUser._id,
     ).length;
   };
 
@@ -174,7 +169,9 @@ export default function UserChatsPage() {
                             </span>
                             {otherUser?.department && (
                               <>
-                                <span className="text-xs text-slate-400">•</span>
+                                <span className="text-xs text-slate-400">
+                                  •
+                                </span>
                                 <span className="text-xs text-slate-500">
                                   {typeof otherUser.department === "object"
                                     ? otherUser.department.name

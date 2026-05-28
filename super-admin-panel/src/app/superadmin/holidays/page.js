@@ -76,7 +76,7 @@ export default function HolidayPage() {
 
   return (
     <ProtectedDashboardRoute requiredRole={ROLES.SUPER_ADMIN}>
-      <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="min-h-screen bg-[var(--bg-base)]">
         <Sidebar />
         <Navbar />
 
@@ -87,7 +87,7 @@ export default function HolidayPage() {
 
           <form
             onSubmit={handleSubmit}
-            className="bg-white p-6 rounded-xl mb-8 border border-slate-200"
+            className="bg-[var(--bg-surface)] p-6 rounded-xl mb-8 border border-[var(--border)]"
           >
             <h2 className="text-xl font-semibold mb-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
               Add New Holiday
@@ -196,15 +196,15 @@ export default function HolidayPage() {
             </form>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-slate-200">
+          <div className="bg-[var(--bg-surface)] rounded-xl shadow-sm overflow-hidden border border-[var(--border)]">
             <table className="w-full text-left">
-              <thead className="bg-slate-100 border-b">
+              <thead className="bg-[var(--bg-elevated)] border-b">
                 <tr>
-                  <th className="p-4 font-bold text-slate-700">TITLE</th>
-                  <th className="p-4 font-bold text-slate-700">DATE</th>
-                  <th className="p-4 font-bold text-slate-700">TYPE</th>
-                  <th className="p-4 font-bold text-slate-700">DESCRIPTION</th>
-                  <th className="p-4 font-bold text-slate-700 text-right">
+                  <th className="p-4 font-bold text-[var(--text-primary)]">TITLE</th>
+                  <th className="p-4 font-bold text-[var(--text-primary)]">DATE</th>
+                  <th className="p-4 font-bold text-[var(--text-primary)]">TYPE</th>
+                  <th className="p-4 font-bold text-[var(--text-primary)]">DESCRIPTION</th>
+                  <th className="p-4 font-bold text-[var(--text-primary)] text-right">
                     ACTIONS
                   </th>
                 </tr>
@@ -213,7 +213,7 @@ export default function HolidayPage() {
                 {holidays.map((holiday) => (
                   <tr
                     key={holiday._id}
-                    className="hover:bg-slate-50 transition"
+                    className="hover:bg-[var(--bg-elevated)] transition"
                   >
                     <td className="p-4 font-medium">{holiday.title}</td>
                     <td className="p-4">
@@ -232,7 +232,7 @@ export default function HolidayPage() {
                         {holiday.type}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-500 text-sm">
+                    <td className="p-4 text-[var(--text-secondary)] text-sm">
                       {holiday.description || "-"}
                     </td>
                     <td className="p-4 text-right space-x-2">
@@ -259,3 +259,4 @@ export default function HolidayPage() {
     </ProtectedDashboardRoute>
   );
 }
+
