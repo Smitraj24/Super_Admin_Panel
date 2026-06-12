@@ -308,9 +308,7 @@ export const addParticipant = async (req, res) => {
 
     // Check if already a participant
     if (chat.participants.includes(userId)) {
-      return res
-        .status(400)
-        .json({ message: "User is already a participant" });
+      return res.status(400).json({ message: "User is already a participant" });
     }
 
     chat.participants.push(userId);
@@ -361,7 +359,7 @@ export const removeParticipant = async (req, res) => {
     }
 
     chat.participants = chat.participants.filter(
-      (p) => p.toString() !== userId
+      (p) => p.toString() !== userId,
     );
     await chat.save();
 
@@ -405,7 +403,7 @@ export const leaveGroupChat = async (req, res) => {
     }
 
     chat.participants = chat.participants.filter(
-      (p) => p.toString() !== currentUserId.toString()
+      (p) => p.toString() !== currentUserId.toString(),
     );
     await chat.save();
 
@@ -465,3 +463,6 @@ export const updateGroupName = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+// saturday and sunday off, monday to friday 9am to 6pm, 1 hour lunch break at 1pm, timezone is IST (UTC+5:30)  

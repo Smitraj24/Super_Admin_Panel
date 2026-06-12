@@ -22,6 +22,7 @@ import {
   Search,
   MessageCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState([]);
@@ -149,12 +150,12 @@ export default function AdminsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.department) {
-      alert("Please fill all required fields (name, email, department)");
+      toast.error("Please fill all required fields (name, email, department)");
       return;
     }
 
     if (!editingId && !form.password) {
-      alert("Password is required for new admins");
+      toast.error("Password is required for new admins");
       return;
     }
 
@@ -175,9 +176,9 @@ export default function AdminsPage() {
         department: "",
         sidebarPermissions: [],
       });
-      alert("Admin " + (editingId ? "updated" : "created") + " successfully!");
+      toast.success("Admin " + (editingId ? "updated" : "created") + " successfully!");
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
+      toast.error(err.response?.data?.message || "Operation failed");
     }
   };
 

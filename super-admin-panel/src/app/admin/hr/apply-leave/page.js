@@ -13,6 +13,7 @@ import {
   deleteUserLeaveApi,
   updateUserLeaveApi,
 } from "@/services/leaveApi";
+import { toast } from "react-toastify";
 
 const EMPTY_FORM = {
   leaveType: "",
@@ -96,7 +97,7 @@ export default function HRLeaveDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (new Date(form.toDate) < new Date(form.fromDate)) {
-      alert("End date cannot be before start date");
+      toast.error("End date cannot be before start date");
       return;
     }
     setFormLoading(true);
@@ -106,7 +107,7 @@ export default function HRLeaveDashboard() {
         : await applyLeaveApi(form);
 
       if (res.data.success) {
-        alert(
+        toast.success(
           editingLeave
             ? "Leave updated successfully"
             : "Leave applied successfully",
@@ -117,7 +118,7 @@ export default function HRLeaveDashboard() {
         fetchLeaves();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Server error");
+      toast.error(err.response?.data?.message || "Server error");
     } finally {
       setFormLoading(false);
     }
@@ -127,8 +128,12 @@ export default function HRLeaveDashboard() {
     setEditingLeave(leave);
     setForm({
       leaveType: leave.leaveType,
-      fromDate: new Date(leave.fromDate).toISOString().split("T")[0],
-      toDate: new Date(leave.toDate).toISOString().split("T")[0],
+      fromDate: new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+      }).format(new Date(leave.fromDate)),
+      toDate: new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+      }).format(new Date(leave.toDate)),
       reason: leave.reason,
       isHalfDay: leave.isHalfDay || false,
     });
@@ -148,7 +153,7 @@ export default function HRLeaveDashboard() {
       await deleteUserLeaveApi(id);
       fetchLeaves();
     } catch (err) {
-      alert(err.response?.data?.message || "Error deleting leave");
+      toast.error(err.response?.data?.message || "Error deleting leave");
     }
   };
 
@@ -266,7 +271,7 @@ export default function HRLeaveDashboard() {
               )}
 
               <div className="flex justify-between items-center">
-                <h3 className="text-xl bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <h3 className="text-xl font-semibold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                   My Leave Requests
                 </h3>
                 <button
@@ -296,7 +301,7 @@ export default function HRLeaveDashboard() {
               )}
 
               {/* My Leaves Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="bg-white border border-blue-200 rounded-lg shadow overflow-hidden">
                 {userLeaves.length === 0 ? (
                   <p className="p-6 text-center text-gray-500">
                     No leave requests. Click "+ Add Leave" to apply.
@@ -392,7 +397,7 @@ export default function HRLeaveDashboard() {
           {/* ── All Leaves Tab ── */}
           {activeTab === "all" && (
             <div className="space-y-6">
-              <h3 className="text-xl font-bold">
+              <h3 className="text-xl font-semibold bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
                 All Employees' Leave Requests
               </h3>
 
@@ -411,29 +416,8 @@ export default function HRLeaveDashboard() {
                 ))}
               </div>
 
-              {/* Filters */}
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  placeholder="Search by name..."
-                  className="border px-3 py-2 rounded flex-1"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <select
-                  className="border px-3 py-2 rounded"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="ALL">All</option>
-                  <option value="PENDING">Pending</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="REJECTED">Rejected</option>
-                </select>
-              </div>
-
               {/* All Leaves Table */}
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="bg-white border border-blue-200 rounded-lg shadow overflow-hidden">
                 {loading ? (
                   <p className="p-6 text-center text-gray-500">Loading...</p>
                 ) : filteredLeaves.length === 0 ? (
@@ -442,6 +426,36 @@ export default function HRLeaveDashboard() {
                   </p>
                 ) : (
                   <div className="overflow-x-auto">
+                    {/* Filters */}
+                    <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 bg-slate-50 ">
+                      {/* Search */}
+                      <div className="flex flex-col gap-2 w-full max-w-md">
+                        <label className="text-sm font-semibold text-slate-700">
+                          Search User
+                        </label>
+
+                        <input
+                          type="text"
+                          placeholder="Search employee name..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                          className=" w-full px-4 py-2.5 border border-slate-300 rounded-lg bg-white text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition-al "
+                        />
+                      </div>
+
+                      {/* Status Filter */}
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className=" min-w-[180px] px-4 py-2.5 border border-blue-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-300 transitio "
+                      >
+                        <option value="ALL">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="APPROVED">Approved</option>
+                        <option value="REJECTED">Rejected</option>
+                      </select>
+                    </div>
+
                     <table className="w-full">
                       <thead className="bg-gray-100 border-b">
                         <tr className="text-left">

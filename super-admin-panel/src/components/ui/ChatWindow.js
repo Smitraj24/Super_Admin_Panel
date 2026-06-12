@@ -24,6 +24,7 @@ import {
   LogOut,
   Check,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function ChatWindow({ user, chat: initialChat, onClose, onUpdate }) {
   const { user: currentUser } = useAuth();
@@ -113,7 +114,7 @@ export default function ChatWindow({ user, chat: initialChat, onClose, onUpdate 
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Send message error:", error);
-      alert("Failed to send message");
+      toast.error("Failed to send message");
     } finally {
       setSending(false);
     }
@@ -130,12 +131,12 @@ export default function ChatWindow({ user, chat: initialChat, onClose, onUpdate 
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error("Update group name error:", error);
-      alert("Failed to update group name");
+      toast.error("Failed to update group name");
     }
   };
 
   const handleLeaveGroup = async () => {
-    if (!confirm("Are you sure you want to leave this group?")) return;
+    if (!window.confirm("Are you sure you want to leave this group?")) return;
 
     try {
       await leaveGroupChatApi(chat._id);
@@ -143,7 +144,7 @@ export default function ChatWindow({ user, chat: initialChat, onClose, onUpdate 
       onClose();
     } catch (error) {
       console.error("Leave group error:", error);
-      alert(error.response?.data?.message || "Failed to leave group");
+      toast.error(error.response?.data?.message || "Failed to leave group");
     }
   };
 

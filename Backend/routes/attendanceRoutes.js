@@ -8,11 +8,14 @@ import {
   getAttendanceByDate,
   getAttendanceByDateRange,
   getAllUsersAttendance,
+  getAllUsersSummary,
+  getUserSummaryById,
   updateAttendanceRecord,
   completeBreakOut,
   getAttendanceSummary,
   getDashboardStats,
   getWeeklyStats,
+  getUserAttendanceById,
 } from "../controllers/attendanceController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import roleMiddleware from "../middleware/roleMiddleware.js";
@@ -29,29 +32,18 @@ router.post("/break-out", breakOut);
 router.post("/check-out", checkOut);
 router.get("/status", getTodayStatus);
 router.get("/monthly", getAttendanceByDateRange);
+router.get("/summary", getAttendanceSummary);
 router.get("/dashboard-stats", getDashboardStats);
 router.get("/weekly-stats", getWeeklyStats);
 
-// HR Admin routes
-router.get(
-  "/all",
-  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
-  departmentScope,
-  getAllUsersAttendance,
-);
-router.put(
-  "/:id",
-  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
-  departmentScope,
-  updateAttendanceRecord,
-);
-router.put(
-  "/:id/complete-break",
-  roleMiddleware(["ADMIN", "SUPER_ADMIN"]),
-  departmentScope,
-  completeBreakOut,
-);
+// HR Admin / Super Admin routes
+router.get("/all",          roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, getAllUsersAttendance);
+router.get("/all-summary",  roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, getAllUsersSummary);
 
-router.get("/summary", getAttendanceSummary);
+router.put("/:id",               roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, updateAttendanceRecord);
+router.put("/:id/complete-break", roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, completeBreakOut);
+
+router.get("/user/:userId",         roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, getUserAttendanceById);
+router.get("/user/:userId/summary", roleMiddleware(["ADMIN", "SUPER_ADMIN"]), departmentScope, getUserSummaryById);
 
 export default router;

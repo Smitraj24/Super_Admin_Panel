@@ -12,10 +12,12 @@ import {
 
 import User from "../models/User.models.js";
 import Role from "../models/Roles.models.js";
+import cloudinary from "../config/cloudinary.js";
+import { uploadImage } from "../utils/uploadImage.js";
 
 export const getUser = async (req, res) => {
   try {
-    const userRole = await Role.findOne({ name: "USER" });        
+    const userRole = await Role.findOne({ name: "USER" });
 
     if (!userRole) {
       return res.status(404).json({
@@ -45,9 +47,9 @@ export const getProfile = async (req, res) => {
       .select("-password");
 
     if (!profile) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "User not found" 
+        message: "User not found",
       });
     }
 
@@ -56,9 +58,9 @@ export const getProfile = async (req, res) => {
       data: profile,
     });
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message 
+      message: error.message,
     });
   }
 };
@@ -81,9 +83,9 @@ export const updateProfile = async (req, res) => {
 
     // Check if email is already taken by another user
     if (updateData.email) {
-      const existingUser = await User.findOne({ 
-        email: updateData.email, 
-        _id: { $ne: userId } 
+      const existingUser = await User.findOne({
+        email: updateData.email,
+        _id: { $ne: userId },
       });
       if (existingUser) {
         return res.status(400).json({ message: "Email already in use" });
@@ -91,11 +93,10 @@ export const updateProfile = async (req, res) => {
     }
 
     // Update user
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      updateData,
-      { new: true, runValidators: true }
-    )
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    })
       .populate("role", "name")
       .populate("department", "name")
       .populate("reportTo", "name email")
@@ -112,9 +113,9 @@ export const updateProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("Update profile error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: error.message || "Error updating profile" 
+      message: error.message || "Error updating profile",
     });
   }
 };
@@ -189,9 +190,9 @@ export const updateUser = async (req, res) => {
 export const getUpcomingBirthdays = async (req, res) => {
   try {
     // Get all users with birthday field
-    const users = await User.find({ 
+    const users = await User.find({
       birthday: { $exists: true, $ne: null },
-      isActive: true 
+      isActive: true,
     })
       .populate("department", "name")
       .select("name birthday department")
@@ -207,28 +208,28 @@ export const getUpcomingBirthdays = async (req, res) => {
     // Calculate upcoming birthdays within next 30 days
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const upcomingBirthdays = users
       .map((user) => {
         const birthday = new Date(user.birthday);
         const currentYear = today.getFullYear();
-        
+
         // Set birthday to current year
         const nextBirthday = new Date(
           currentYear,
           birthday.getMonth(),
-          birthday.getDate()
+          birthday.getDate(),
         );
-        
+
         // If birthday has passed this year, set to next year
         if (nextBirthday < today) {
           nextBirthday.setFullYear(currentYear + 1);
         }
-        
+
         // Calculate days until birthday
         const diffTime = nextBirthday - today;
         const daysUntil = Math.round(diffTime / (1000 * 60 * 60 * 24));
-        
+
         return {
           ...user,
           nextBirthday,
@@ -247,6 +248,68 @@ export const getUpcomingBirthdays = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+// file upload
+export const uploadProfilePhoto = async (req, res) => {
+  try {
+    console.log("BUFFER:", !!req.file?.buffer);
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded" });
+    }
+
+    // Delete old image if exists
+    if (user.profileImagePublicId) {
+      try {
+        await cloudinary.uploader.destroy(user.profileImagePublicId);
+      } catch (err) {
+        console.log("Failed to delete old image:", err.message);
+      }
+    }
+
+    // Upload the new image asset
+    const result = await uploadImage(req.file.buffer);
+
+    user.profileImage = result.secure_url;
+    user.profileImagePublicId = result.public_id;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile photo uploaded successfully",
+      data: {
+        profileImage: user.profileImage,
+      },
+    });
+  } catch (error) {
+    console.log("UPLOAD ERROR:", error);
+
+    // Provide a user-friendly message for Cloudinary auth errors
+    let message = error.message;
+    if (error.http_code === 403 || message.includes("403") || message.includes("Invalid")) {
+      message =
+        "Failed to upload image due to Cloudinary authentication error. Please contact the administrator.";
+    }
+
+    return res.status(500).json({
+      success: false,
+      message,
     });
   }
 };

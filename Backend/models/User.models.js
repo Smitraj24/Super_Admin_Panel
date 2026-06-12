@@ -23,6 +23,15 @@ const userSchema = new mongoose.Schema(
       ref: "Department",
       index: true,
     },
+    profileImage: {
+      type: String,
+      default: "",
+    },
+
+    profileImagePublicId: {
+      type: String,
+      default: "",
+    },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     sidebarPermissions: {
       type: [String],
@@ -39,7 +48,7 @@ const userSchema = new mongoose.Schema(
       SL: { type: Number, default: 1 },
       DL: { type: Number, default: 0 },
     },
-    lastLeaveRefill: { type: Date, default: Date.now }, // Track last monthly refill
+    lastLeaveRefill: { type: Date, default: Date.now },
     // Profile Information
     personalEmail: { type: String, trim: true, lowercase: true },
     companyEmail: { type: String, trim: true, lowercase: true },
@@ -59,7 +68,6 @@ const userSchema = new mongoose.Schema(
     designation: { type: String, trim: true },
     batch: { type: String, trim: true },
     reportTo: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    profileImage: { type: String },
     // Address Information
     address: {
       street: { type: String, trim: true },

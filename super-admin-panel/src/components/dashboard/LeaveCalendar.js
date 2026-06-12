@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Clock, UserCheck, Briefcase } from "lucide-react";
 
-export default function LeaveCalendar({ leaves = [], holidays = [] }) {
+export default function LeaveCalendar({ leaves = [], holidays = [], selectedUserId = "", selectedUserTodayAtt = null }) {
   const today = new Date();
 
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
@@ -292,6 +292,32 @@ export default function LeaveCalendar({ leaves = [], holidays = [] }) {
                 {dayLeaves.length > (dayHoliday ? 1 : 2) && (
                   <div className="text-[9px] text-slate-500 px-1">
                     +{dayLeaves.length - (dayHoliday ? 1 : 2)} more
+                  </div>
+                )}
+
+                {/* Selected User's Today Attendance Timeline on Today's Cell */}
+                {isToday && selectedUserId && selectedUserTodayAtt && (
+                  <div className="mt-1 pt-1 border-t border-dashed border-indigo-200 space-y-0.5">
+                    <div className="flex items-center gap-1 text-[8px] text-green-600 font-semibold">
+                      <UserCheck size={8} />
+                      <span>IN: {selectedUserTodayAtt.checkIn ? new Date(selectedUserTodayAtt.checkIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "---"}</span>
+                    </div>
+                    {selectedUserTodayAtt.breaks?.length > 0 && selectedUserTodayAtt.breaks.map((b, bi) => (
+                      <div key={bi} className="flex items-center gap-0.5">
+                        <div className="flex items-center gap-1 text-[7px] text-yellow-600 font-semibold">
+                          <Clock size={7} />
+                          <span>B{bi+1}I: {new Date(b.breakIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[7px] text-blue-600 font-semibold">
+                          <Clock size={7} />
+                          <span>O: {b.breakOut ? new Date(b.breakOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "---"}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-1 text-[8px] text-purple-600 font-semibold">
+                      <Briefcase size={8} />
+                      <span>OUT: {selectedUserTodayAtt.checkOut ? new Date(selectedUserTodayAtt.checkOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "---"}</span>
+                    </div>
                   </div>
                 )}
               </div>

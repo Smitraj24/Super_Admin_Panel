@@ -4,6 +4,8 @@ import { SidebarProvider } from "../context/SidebarContext";
 import { SocketProvider } from "../context/SocketContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "react-hot-toast";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const viewport = {
   width: "device-width",
@@ -25,6 +27,7 @@ export default function RootLayout({ children }) {
               <SidebarProvider>
                 {children}
                 <Toaster position="top-right" />
+                <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover theme="colored" />
               </SidebarProvider>
             </SocketProvider>
           </AuthProvider>

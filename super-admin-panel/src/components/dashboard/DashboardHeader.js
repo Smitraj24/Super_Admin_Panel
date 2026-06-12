@@ -12,7 +12,7 @@ const DashboardHeader = memo(() => {
   return (
     <div className="flex items-center justify-between">
       <h2
-        className="text-xl sm:text-2xl font-semibold tracking-tight
+        className="text-3xl font-semibold tracking-tight
         bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
         bg-clip-text text-transparent animate-pulse"
       >

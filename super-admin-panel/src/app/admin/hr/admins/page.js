@@ -25,6 +25,7 @@ import {
   XCircle,
   MessageCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState([]);
@@ -50,7 +51,6 @@ export default function AdminsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      
       const [adminsRes, deptsRes] = await Promise.all([
         getAdminsApi(),
         getDepartmentsApi(),
@@ -75,12 +75,12 @@ export default function AdminsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.department) {
-      alert("Please fill all required fields (name, email, department)");
+      toast.error("Please fill all required fields (name, email, department)");
       return;
     }
 
     if (!editingId && !form.password) {
-      alert("Password is required for new admins");
+      toast.error("Password is required for new admins");
       return;
     }
 
@@ -100,9 +100,11 @@ export default function AdminsPage() {
         role: "ADMIN",
         department: "",
       });
-      alert("Admin " + (editingId ? "updated" : "created") + " successfully!");
+      toast.success(
+        "Admin " + (editingId ? "updated" : "created") + " successfully!",
+      );
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
+      toast.error(err.response?.data?.message || "Operation failed");
     }
   };
 
@@ -155,8 +157,8 @@ export default function AdminsPage() {
               </p>
             </div>
 
-            <div className="bg-white border rounded-lg px-4 py-2 flex items-center gap-2">
-              <Users size={16} />
+            <div className="bg-white text-blue-600 border border-blue-300  rounded-lg px-4 py-2 flex items-center gap-2">
+              <Users size={16} className="text-blue-800" />
               {admins.length} Admins
             </div>
           </div>
@@ -168,14 +170,14 @@ export default function AdminsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-blue-200 p-6 shadow-lg h-fit">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <h3 className="font-bold mb-4 flex items-center gap-2 text-blue-600">
                   {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                   {editingId ? "Edit Admin" : "Add New Admin"}
                 </h3>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-cyan-700 mb-1">
                       Full Name *
                     </label>
                     <input
@@ -183,13 +185,13 @@ export default function AdminsPage() {
                       value={form.name}
                       onChange={handleChange}
                       placeholder="e.g., John Doe"
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-cyan-700 mb-1">
                       Email Address *
                     </label>
                     <input
@@ -198,14 +200,14 @@ export default function AdminsPage() {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="e.g., admin@company.com"
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                       required
                     />
                   </div>
 
                   {!editingId && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-cyan-700 mb-1">
                         Password *
                       </label>
                       <input
@@ -214,21 +216,21 @@ export default function AdminsPage() {
                         value={form.password}
                         onChange={handleChange}
                         placeholder="Enter secure password"
-                        className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                        className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                         required
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-cyan-700 mb-1">
                       Department *
                     </label>
                     <select
                       name="department"
                       value={form.department}
                       onChange={handleChange}
-                      className="w-full border border-slate-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                       required
                     >
                       <option value="">-- Select Department --</option>
@@ -242,7 +244,7 @@ export default function AdminsPage() {
 
                   <button
                     type="submit"
-                    className="w-full bg-blue- 400 text-white py-2 rounded-lg hover:bg-green-700 font-medium transition"
+                    className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium transition"
                   >
                     {editingId ? "Update Admin" : "Create Admin"}
                   </button>
@@ -268,8 +270,8 @@ export default function AdminsPage() {
               </div>
 
               <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-2 overflow-hidden">
-                  <Search size={18} className="text-gray-400" />
+                <div className="bg-white border border-blue-200 rounded-2xl p-4 flex items-center gap-2 overflow-hidden">
+                  <Search size={18} className="text-blue-400" />
                   <input
                     type="text"
                     placeholder="Search admins by name, email, or department..."
@@ -279,10 +281,10 @@ export default function AdminsPage() {
                   />
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div className="bg-white border border-blue-200 rounded-2xl overflow-hidden">
                   <div className="overflow-auto ">
                     <table className="w-full text-sm md:text-md min-w-[600px]">
-                      <thead className="border-b border-slate-300 bg-slate-50 sticky top-0 z-10">
+                      <thead className="border-b border-blue-300 bg-blue-50 sticky top-0 z-10">
                         <tr>
                           <th className="p-3 text-left">Admin</th>
                           <th className="p-3 text-left hidden sm:table-cell">
@@ -300,11 +302,11 @@ export default function AdminsPage() {
                           filteredAdmins.map((admin) => (
                             <tr
                               key={admin._id}
-                              className="border-b border-slate-200 hover:bg-gray-50"
+                              className="border-b border-blue-200 hover:bg-blue-50"
                             >
                               <td className="p-3">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold">
+                                  <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
                                     {admin.name?.charAt(0).toUpperCase()}
                                   </div>
                                   <div>
@@ -328,7 +330,7 @@ export default function AdminsPage() {
                                     size={14}
                                     className="text-gray-500"
                                   />
-                                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                                     {admin.department?.name || "N/A"}
                                   </span>
                                 </div>

@@ -18,12 +18,20 @@ import { getAllUsersAttendanceApi } from "@/services/attandanceApi";
 import { getSuperAdminLeavesApi } from "@/services/leaveApi";
 import { getHolidaysApi } from "@/services/holidayApi";
 
-const todayStr = () => new Date().toISOString().split("T")[0];
+const todayStr = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+
 const monthRange = () => {
-  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const year  = parseInt(parts.find((p) => p.type === "year").value);
+  const month = parseInt(parts.find((p) => p.type === "month").value);
+  const lastDay = new Date(year, month, 0).getDate();
   return {
-    first: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0],
-    last: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0],
+    first: `${year}-${String(month).padStart(2, "0")}-01`,
+    last:  `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
   };
 };
 

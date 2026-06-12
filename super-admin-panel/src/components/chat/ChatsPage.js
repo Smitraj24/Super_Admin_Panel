@@ -21,6 +21,7 @@ import {
   Users,
   Trash2,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 /**
  * Unified Chats Page — works for SUPER_ADMIN, ADMIN, and USER roles.
@@ -203,7 +204,7 @@ export default function ChatsPage({
       setSelectedUser(null);
     } catch (err) {
       console.error("Create group error:", err);
-      alert("Failed to create group");
+      toast.error("Failed to create group");
     }
   };
 

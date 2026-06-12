@@ -5,6 +5,7 @@ import { getMonthlyAttendanceApi } from "@/services/attandanceApi";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { Menu } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function Attendance() {
   const [attendance, setAttendance] = useState([]);
@@ -21,12 +22,11 @@ export default function Attendance() {
     setLoading(true);
     try {
       const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split("T")[0];
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const lastDayNum = new Date(y, now.getMonth() + 1, 0).getDate();
+      const firstDay = `${y}-${m}-01`;
+      const lastDay = `${y}-${m}-${String(lastDayNum).padStart(2, "0")}`;
 
       const res = await getMonthlyAttendanceApi(firstDay, lastDay);
       setAttendance(res.data);
@@ -41,7 +41,7 @@ export default function Attendance() {
 
   const handleFilter = async () => {
     if (!startDate || !endDate) {
-      alert("Select both dates");
+      toast.error("Select both dates");
       return;
     }
     setLoading(true);

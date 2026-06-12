@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { PlusCircle, Trash2, Edit3, Building2 } from "lucide-react";
+import { toast } from "react-toastify";
 import { ProtectedDashboardRoute } from "@/components/auth/ProtectedDashboardRoute";
 import { ROLES } from "@/utils/constants";
 import {
@@ -46,7 +47,7 @@ export default function DepartmentsPage() {
       fetchDepartments();
     } catch (error) {
       console.error("Failed to create department:", error);
-      alert("Failed to create department");
+      toast.error("Failed to create department");
     } finally {
       setSubmitting(false);
     }
@@ -63,7 +64,7 @@ export default function DepartmentsPage() {
       fetchDepartments();
     } catch (error) {
       console.error("Failed to update department:", error);
-      alert("Failed to update department");
+      toast.error("Failed to update department");
     } finally {
       setSubmitting(false);
     }
@@ -77,7 +78,7 @@ export default function DepartmentsPage() {
       fetchDepartments();
     } catch (error) {
       console.error("Failed to delete department:", error);
-      alert("Failed to delete department");
+      toast.error("Failed to delete department");
     }
   };
 

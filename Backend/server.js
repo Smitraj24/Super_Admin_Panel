@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -20,7 +22,6 @@ import attendanceRoutes from "./routes/attendanceRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 
-dotenv.config();
 await connectDB();
 
 const app = express();

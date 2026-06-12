@@ -23,6 +23,7 @@ import {
   EyeOff,
   MessageCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -150,7 +151,7 @@ export default function UsersPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.department) {
-      alert("Please fill all required fields");
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -190,7 +191,7 @@ export default function UsersPage() {
         ],
       });
     } catch (err) {
-      alert(err.response?.data?.message || "Operation failed");
+      toast.error(err.response?.data?.message || "Operation failed");
     }
   };
 

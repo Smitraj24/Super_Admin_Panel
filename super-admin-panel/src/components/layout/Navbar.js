@@ -7,9 +7,6 @@ import {
   Settings,
   LogOut,
   X,
-  Check,
-  Clock,
-  AlertCircle,
   Search,
   Sun,
   Moon,
@@ -21,8 +18,6 @@ import {
   useCallback,
   useMemo,
   useRef,
-  memo,
-  use,
 } from "react";
 import { useTheme } from "next-themes";
 import {
@@ -34,106 +29,9 @@ import {
 import { cachedFetch, invalidateCache } from "@/lib/cache";
 import { useSidebar } from "@/context/SidebarContext";
 
-const ROLE_MAP = { SUPER_ADMIN: "superadmin", ADMIN: "admin", USER: "user" };
-const DEPT_MAP = { EMPLOYEE: "employee", SALES: "sales", HR: "hr" };
-const ICON_MAP = {
-  success: <Check size={13} className="text-emerald-400" />,
-  warning: <Clock size={13} className="text-amber-400" />,
-  alert: <AlertCircle size={13} className="text-rose-400" />,
-  default: <Bell size={13} className="text-[#7c6fff]" />,
-};
-const NOTIF_TTL = 60_000;
-const NOTIF_CACHE_KEY = "notifications";
-
-const getGreeting = (h = new Date().getHours()) =>
-  h < 12 ? "Good Morning" : h < 18 ? "Good Afternoon" : "Good Evening";
-const getGreetingIcon = (h = new Date().getHours()) =>
-  h < 12 ? "🌅" : h < 18 ? "☀️" : "🌙";
-const getTimeStr = () =>
-  new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-const getDateStr = () =>
-  new Date().toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-const getTimeAgo = (date) => {
-  const s = Math.floor((Date.now() - new Date(date)) / 1000);
-  if (s < 60) return "Just now";
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
-  return new Date(date).toLocaleDateString();
-};
-
-const NotificationItem = memo(({ notif, onMarkRead, onDelete }) => (
-  <div
-    className={`px-4 py-3 border-b border-[var(--border)] hover:bg-[var(--bg-elevated)] transition-colors ${!notif.read ? "bg-[#7c6fff]/5" : ""}`}
-  >
-    <div className="flex gap-3">
-      <div className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-[var(--bg-elevated)] flex items-center justify-center">
-        {ICON_MAP[notif.type] ?? ICON_MAP.default}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <p
-            className={`text-[13px] font-semibold truncate ${!notif.read ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
-          >
-            {notif.title}
-          </p>
-          {!notif.read && (
-            <span className="w-1.5 h-1.5 bg-[#7c6fff] rounded-full shrink-0 mt-1.5 animate-pulse" />
-          )}
-        </div>
-        <p className="text-xs text-[var(--text-muted)] mt-0.5 line-clamp-2">
-          {notif.message}
-        </p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-[11px] text-[var(--text-muted)]">
-            {getTimeAgo(notif.createdAt)}
-          </span>
-          <div className="flex gap-2">
-            {!notif.read && (
-              <button
-                onClick={() => onMarkRead(notif._id)}
-                className="text-[11px] text-[#7c6fff] hover:text-[#a5b4fc] font-medium transition-colors"
-              >
-                Mark read
-              </button>
-            )}
-            <button
-              onClick={() => onDelete(notif._id)}
-              className="text-[11px] text-rose-400 hover:text-rose-300 font-medium transition-colors"
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-));
-NotificationItem.displayName = "NotificationItem";
-
-const NavIconBtn = memo(({ onClick, children, className = "", badge }) => (
-  <button
-    onClick={onClick}
-    className={`relative p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-all duration-150 ${className}`}
-  >
-    {children}
-    {badge > 0 && (
-      <span className="absolute top-1 right-1 min-w-[15px] h-[15px] bg-rose-500 text-white text-[9px] rounded-full flex items-center justify-center font-bold px-0.5 shadow-lg">
-        {badge > 9 ? "9+" : badge}
-      </span>
-    )}
-  </button>
-));
-NavIconBtn.displayName = "NavIconBtn";
+import { ROLE_MAP, DEPT_MAP, NOTIF_TTL, NOTIF_CACHE_KEY } from "./navbarConstants";
+import { getGreeting, getGreetingIcon, getTimeStr, getDateStr } from "./navbarUtils";
+import NotificationItem from "./NotificationItem";
 
 export default function Navbar() {
   const { user, logout, loading } = useAuth();
@@ -297,7 +195,7 @@ export default function Navbar() {
     px-4 lg:px-6
     border-b border-white/10
     backdrop-blur-2xl
-    bg-white dark:bg-[#111827]/95
+     dark:bg-[#111827]/95
     transition-all duration-300
 
     left-0 right-0
@@ -372,7 +270,7 @@ export default function Navbar() {
             placeholder="Search anything..."
             className="
           w-full rounded-2xl
-          bg-white/5 border border-violet-500/40
+          bg-white/5 border border-violet-900
           pl-10 pr-4 py-2.5
           text-sm text-black
           placeholder:text-slate-500
@@ -646,4 +544,4 @@ export default function Navbar() {
   );
 }
 
-//
+

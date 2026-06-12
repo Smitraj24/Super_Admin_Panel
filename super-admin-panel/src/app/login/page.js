@@ -18,6 +18,7 @@ import {
   BarChart4,
   UserCog,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function Login() {
   const router = useRouter();
@@ -67,7 +68,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      alert(error?.response?.data?.message || "Invalid email or password");
+      toast.error(error?.response?.data?.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }

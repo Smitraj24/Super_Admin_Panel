@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import {
   getMonthlyAttendanceApi,
   getAttendanceSummary,
 } from "@/services/attandanceApi";
-import { getUserLeavesApi } from "@/services/leaveApi";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
 import {
@@ -16,23 +15,28 @@ import {
   Target,
   BarChart3,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants
 
 const ITEMS_PER_PAGE = 5;
 const MAX_VISIBLE_PAGES = 5;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers
 
 const monthBounds = () => {
-  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const year = parseInt(parts.find((p) => p.type === "year").value);
+  const month = parseInt(parts.find((p) => p.type === "month").value);
+  const lastDay = new Date(year, month, 0).getDate();
   return {
-    first: new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split("T")[0],
-    last: new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0],
+    first: `${year}-${String(month).padStart(2, "0")}-01`,
+    last: `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`,
   };
 };
 
@@ -62,26 +66,6 @@ const workHours = (checkIn, checkOut, breaks) => {
   const net =
     (new Date(checkOut) - new Date(checkIn)) / 60000 - breakMinutes(breaks);
   return minsToHM(net);
-};
-
-/** Count leave days that overlap [start, end] for given status/type filters */
-const countLeaveDays = (leaves, start, end, { status, leaveType } = {}) => {
-  const s = new Date(start),
-    e = new Date(end);
-  return leaves
-    .filter((l) => {
-      if (status && l.status !== status) return false;
-      if (leaveType && l.leaveType !== leaveType) return false;
-      return new Date(l.fromDate) <= e && new Date(l.toDate) >= s;
-    })
-    .reduce((total, l) => {
-      const from = new Date(l.fromDate),
-        to = new Date(l.toDate);
-      const clampStart = from < s ? s : from;
-      const clampEnd = to > e ? e : to;
-      const days = Math.ceil((clampEnd - clampStart) / 86400000) + 1;
-      return total + (l.isHalfDay ? 0.5 : days);
-    }, 0);
 };
 
 const pageNumbers = (current, total) => {
@@ -118,30 +102,30 @@ const MetricBadge = ({ icon: Icon, label, value, colorClass, borderClass }) => (
   </div>
 );
 
-// ─── Status badge helper ──────────────────────────────────────────────────────
-
 const STATUS_STYLES = {
-  CHECKED_IN:     "bg-blue-100 text-blue-700",
-  CHECKED_OUT:    "bg-green-100 text-green-700",
-  LATE:           "bg-orange-100 text-orange-700",
-  ON_BREAK:       "bg-yellow-100 text-yellow-700",
-  BACK_TO_WORK:   "bg-cyan-100 text-cyan-700",
-  ON_LEAVE:       "bg-red-100 text-red-700",
+  CHECKED_IN: "bg-blue-100 text-blue-700",
+  CHECKED_OUT: "bg-green-100 text-green-700",
+  LATE: "bg-orange-100 text-orange-700",
+  ON_BREAK: "bg-yellow-100 text-yellow-700",
+  BACK_TO_WORK: "bg-cyan-100 text-cyan-700",
+  ON_LEAVE: "bg-red-100 text-red-700",
   HALF_DAY_LEAVE: "bg-yellow-300 text-yellow-900",
 };
 
 const STATUS_LABELS = {
-  CHECKED_IN:     "Checked In",
-  CHECKED_OUT:    "Checked Out",
-  LATE:           "Late",
-  ON_BREAK:       "On Break",
-  BACK_TO_WORK:   "Back to Work",
-  ON_LEAVE:       "On Leave",
+  CHECKED_IN: "Checked In",
+  CHECKED_OUT: "Checked Out",
+  LATE: "Late",
+  ON_BREAK: "On Break",
+  BACK_TO_WORK: "Back to Work",
+  ON_LEAVE: "On Leave",
   HALF_DAY_LEAVE: "Half Day",
 };
 
 const StatusBadge = ({ status }) => (
-  <span className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_STYLES[status] || "bg-gray-100 text-gray-700"}`}>
+  <span
+    className={`px-2 py-0.5 rounded text-xs font-semibold ${STATUS_STYLES[status] || "bg-gray-100 text-gray-700"}`}
+  >
     {STATUS_LABELS[status] || status.replace(/_/g, " ")}
   </span>
 );
@@ -151,7 +135,6 @@ const StatusBadge = ({ status }) => (
 export default function AttendancePage() {
   const [attendance, setAttendance] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [leaves, setLeaves] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -160,8 +143,6 @@ export default function AttendancePage() {
   const abortRef = useRef(null);
   const requestRef = useRef(0);
 
-  // ── Fetch
-
   const fetch = useCallback(async (from, to) => {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
@@ -169,16 +150,14 @@ export default function AttendancePage() {
 
     setLoading(true);
     try {
-      const [attRes, sumRes, lvRes] = await Promise.all([
+      const [attRes, sumRes] = await Promise.all([
         getMonthlyAttendanceApi(from, to),
         getAttendanceSummary(from, to),
-        getUserLeavesApi(),
       ]);
 
       if (id !== requestRef.current) return;
       setAttendance(attRes.data);
       setSummary(sumRes.data);
-      setLeaves(lvRes.data.data || []);
       setStartDate(from);
       setEndDate(to);
       setCurrentPage(1);
@@ -196,7 +175,7 @@ export default function AttendancePage() {
   }, [fetch]);
 
   const handleFilter = useCallback(() => {
-    if (!startDate || !endDate) return alert("Select both dates");
+    if (!startDate || !endDate) return toast.error("Select both dates");
     fetch(startDate, endDate);
   }, [fetch, startDate, endDate]);
 
@@ -205,7 +184,7 @@ export default function AttendancePage() {
     return () => abortRef.current?.abort();
   }, [fetchCurrentMonth]);
 
-  // ── Derived values
+  // ── Derived values (display only — all counts come from backend summary)
 
   const sorted = useMemo(
     () => [...attendance].sort((a, b) => new Date(b.date) - new Date(a.date)),
@@ -220,27 +199,13 @@ export default function AttendancePage() {
     [currentPage, totalPages],
   );
 
-  const lateCount = useMemo(
-    () => attendance.filter((r) => r.isLate).length,
-    [attendance],
-  );
-  const plLeaves = useMemo(
-    () => countLeaveDays(leaves, startDate, endDate, { status: "APPROVED", leaveType: "PL" }),
-    [leaves, startDate, endDate],
-  );
-  // Backend already excludes approved leaves from absent count
-  const actualAbsent = summary ? summary.absent : 0;
-  const attendanceRate = summary
-    ? Math.round((summary.present / summary.totalDays) * 100)
-    : 0;
-  const avgWorkHours = summary
-    ? (summary.totalWorkHours / summary.totalDays).toFixed(1)
-    : 0;
+  // All derived values come from backend summary — zero client-side calculation
+  const attendanceRate = summary?.attendanceRate ?? 0;
+  const avgWorkHours = summary?.avgWorkHours ?? 0;
+  const lateCount = summary?.lateCount ?? 0;
 
   const pct = (n) =>
     summary ? `${Math.round((n / summary.totalDays) * 100)}%(${n})` : "0%(0)";
-
-  // ── Render
 
   return (
     <div className="flex min-h-screen">
@@ -336,7 +301,7 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Stats Grid — all values from backend summary */}
           {summary && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <StatTile
@@ -355,7 +320,7 @@ export default function AttendancePage() {
                 bg="bg-cyan-400"
                 border="border-cyan-500"
                 label="Absent"
-                value={pct(actualAbsent)}
+                value={pct(summary.absent)}
               />
               <StatTile
                 bg="bg-yellow-400"
@@ -367,7 +332,7 @@ export default function AttendancePage() {
                 bg="bg-green-600"
                 border="border-green-700"
                 label="Total Office"
-                value={`${summary.totalOfficeHours}h ${((summary.totalOfficeHours % 1) * 60).toFixed(0)}m`}
+                value={`${Math.floor(summary.totalOfficeHours)}h`}
               />
               <StatTile
                 bg="bg-indigo-600"
@@ -384,8 +349,8 @@ export default function AttendancePage() {
               <StatTile
                 bg="bg-green-700"
                 border="border-green-800"
-                label="PL Leaves"
-                value={plLeaves || "0"}
+                label="On Leave"
+                value={summary.leaves || 0}
               />
             </div>
           )}
@@ -514,18 +479,12 @@ export default function AttendancePage() {
   );
 }
 
-// Tiny pagination button
-
 const PagBtn = ({ onClick, disabled, active, children }) => (
   <button
     onClick={onClick}
     disabled={disabled}
     className={`px-3 py-1 text-sm border transition-colors
-      ${
-        active
-          ? "bg-gray-700 text-white border-gray-700"
-          : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"
-      }
+      ${active ? "bg-gray-700 text-white border-gray-700" : "bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300"}
       disabled:opacity-30 disabled:cursor-not-allowed`}
   >
     {children}

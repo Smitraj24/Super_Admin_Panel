@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, memo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users,
   Building2,
@@ -9,172 +9,45 @@ import {
   Briefcase,
   BarChart3,
   Activity,
-  TrendingUp,
-  TrendingDown,
   Calendar as CalendarIcon,
   RefreshCw,
+  Search,
+  X,
 } from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  PieChart as RechartsPie,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
 import StatCard from "@/components/dashboard/StatCard";
 import QuickActionButton from "@/components/dashboard/ActionButton";
 import LeaveCalendar from "@/components/dashboard/LeaveCalendar";
+import UpcomingBirthdays from "@/components/dashboard/UpcomingBirthdays";
+import AttendanceOverview from "@/components/dashboard/AttendanceOverview";
+import ShiftDistribution from "@/components/dashboard/ShiftDistribution";
+import DepartmentSummary from "@/components/dashboard/DepartmentSummary";
+import RecentLeaves from "@/components/dashboard/RecentLeaves";
+import { SectionCard } from "@/components/dashboard/SuperAdminSections";
+import {
+  todayStr,
+  monthRange,
+  isPresent,
+  getTimeAgo,
+  safeArray,
+  shiftFor,
+  pct,
+} from "@/components/dashboard/SuperAdminConstants";
 import {
   getStatsApi,
   getDepartmentsApi,
   getUsersApi,
   getAdminsApi,
 } from "@/services/superAdminApi";
-import { getAllUsersAttendanceApi } from "@/services/attandanceApi";
+import {
+  getAllUsersAttendanceApi,
+  getUserAttendanceByIdApi,
+} from "@/services/attandanceApi";
 import { getSuperAdminLeavesApi } from "@/services/leaveApi";
 import { getHolidaysApi } from "@/services/holidayApi";
 import { cachedFetch } from "@/lib/cache";
-import UpcomingBirthdays from "@/components/dashboard/UpcomingBirthdays";
-
-// ─── Constants
-const COLORS = ["#10b981", "#f59e0b", "#8b5cf6", "#3b82f6"];
-
-const STATUS_PRESENT = new Set([
-  "CHECKED_IN",
-  "LATE",
-  "ON_BREAK",
-  "BACK_TO_WORK",
-]);
-
-const RATE_COLOR = (r) =>
-  r >= 90
-    ? "bg-green-100 text-green-700"
-    : r >= 80
-      ? "bg-blue-100 text-blue-700"
-      : r >= 70
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-red-100 text-red-700";
-
-const LEAVE_COLOR = (s) =>
-  s === "APPROVED"
-    ? "bg-green-100 text-green-700"
-    : s === "PENDING"
-      ? "bg-yellow-100 text-yellow-700"
-      : "bg-red-100 text-red-700";
-
-// ─── Helpers
-const todayStr = () => new Date().toISOString().split("T")[0];
-
-const monthRange = () => {
-  const now = new Date();
-  return {
-    first: new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split("T")[0],
-    last: new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0],
-  };
-};
-
-const isPresent = (r) => STATUS_PRESENT.has(r.status) || r.checkIn;
-
-const getTimeAgo = (timestamp) => {
-  const s = Math.floor((Date.now() - new Date(timestamp)) / 1000);
-  if (s < 60) return `${s}s ago`;
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86400)}d ago`;
-};
-
-const safeArray = (val) =>
-  Array.isArray(val?.data) ? val.data : Array.isArray(val) ? val : [];
-
-const shiftFor = (checkIn) => {
-  const h = checkIn ? new Date(checkIn).getHours() : 9;
-  if (h >= 6 && h < 14) return "morning";
-  if (h >= 14 && h < 22) return "evening";
-  if (h >= 22 || h < 6) return "night";
-  return "flexible";
-};
-
-// ─── Sub-components
-
-const LegendItem = memo(({ color, label, value }) => (
-  <div className="flex items-center justify-between">
-    <div className="flex items-center gap-2">
-      <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
-      <span className="text-[13px] text-[var(--text-secondary)]">{label}</span>
-    </div>
-    <span className="text-[13px] font-semibold text-[var(--text-primary)]">
-      {value}
-    </span>
-  </div>
-));
-LegendItem.displayName = "LegendItem";
-
-const SystemMetric = memo(
-  ({ icon, label, value, subtitle, trend, trendUp }) => (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--bg-elevated)] border border-[var(--border)]">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-[var(--bg-surface)]">{icon}</div>
-        <div>
-          <p className="text-[11px] text-[var(--text-muted)]">{label}</p>
-          <p className="text-[13px] font-bold text-[var(--text-primary)]">
-            {value}
-          </p>
-          {subtitle && (
-            <p className="text-[11px] text-[var(--text-muted)]">{subtitle}</p>
-          )}
-        </div>
-      </div>
-      {trend && (
-        <div className="flex items-center gap-1">
-          {trendUp ? (
-            <TrendingUp className="w-3 h-3 text-emerald-400" />
-          ) : (
-            <TrendingDown className="w-3 h-3 text-rose-400" />
-          )}
-          <span
-            className={`text-[11px] font-semibold ${trendUp ? "text-emerald-400" : "text-rose-400"}`}
-          >
-            {trend}
-          </span>
-        </div>
-      )}
-    </div>
-  ),
-);
-SystemMetric.displayName = "SystemMetric";
-
-const SectionCard = memo(({ title, action, children, className = "" }) => (
-  <div
-    className={`rounded-2xl p-6 border border-[var(--border)] ${className}`}
-    style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-sm)" }}
-  >
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-[15px] font-semibold text-[var(--text-primary)]">
-        {title}
-      </h3>
-      {action}
-    </div>
-    {children}
-  </div>
-));
-SectionCard.displayName = "SectionCard";
-
-const pct = (num, total) =>
-  total > 0 ? ((num / total) * 100).toFixed(1) : "0.0";
-
-// ─── Main Component
 
 export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -206,21 +79,22 @@ export default function SuperAdminDashboard() {
   const [recentLeaves, setRecentLeaves] = useState([]);
   const [allLeaves, setAllLeaves] = useState([]);
   const [holidays, setHolidays] = useState([]);
-  const [shiftData, setShiftData] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
-  const [systemInfo] = useState({
-    activeUsers: 0,
-    uptime: "99.9%",
-    storage: "256 GB",
-    dbSize: "1.2 GB",
-  });
+  const [shiftData, setShiftData] = useState([]);
+
+  // User filter state
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [selectedUserTodayAtt, setSelectedUserTodayAtt] = useState(null);
+  const [selectedUserLoading, setSelectedUserLoading] = useState(false);
+  const [selectedUserData, setSelectedUserData] = useState(null);
 
   const fetchAll = useCallback(async () => {
     try {
       const today = todayStr();
       const { first, last } = monthRange();
 
-      // Cache slow/static data longer; attendance data shorter
       const [
         statsRes,
         deptsRes,
@@ -249,7 +123,6 @@ export default function SuperAdminDashboard() {
         cachedFetch("sa:holidays", () => getHolidaysApi(), 3_600_000),
       ]);
 
-      // Normalise arrays
       const allUsers = [
         ...safeArray(usersRes.data?.users ?? usersRes.data),
         ...safeArray(adminsRes.data),
@@ -260,19 +133,14 @@ export default function SuperAdminDashboard() {
       const departments = deptsRes.data || [];
       const holidaysData = safeArray(holidaysRes.data);
 
-      // Store all leaves for calendar
+      setAllUsers(allUsers);
       setAllLeaves(allLeavesData);
-
-      // Store holidays for calendar
       setHolidays(holidaysData);
 
       const totalEmployees = allUsers.length;
-
-      // Attendance counts
       const presentToday = todayRecs.filter(isPresent).length;
       const lateCount = todayRecs.filter((r) => r.isLate).length;
 
-      // On-leave today
       const todayDate = new Date(today);
       todayDate.setHours(0, 0, 0, 0);
       const onLeaveToday = allLeavesData.filter((l) => {
@@ -290,7 +158,6 @@ export default function SuperAdminDashboard() {
       );
       const attendanceRate = parseFloat(pct(presentToday, totalEmployees));
 
-      // Working hours (current month)
       const totalWorkingHours = Math.round(
         monthRecs.reduce((acc, r) => {
           if (!r.checkIn || !r.checkOut) return acc;
@@ -319,7 +186,6 @@ export default function SuperAdminDashboard() {
         total: totalEmployees,
       });
 
-      // Department summary
       setDeptSummary(
         departments.map((dept) => {
           const members = allUsers.filter(
@@ -338,7 +204,6 @@ export default function SuperAdminDashboard() {
         }),
       );
 
-      // Recent leaves
       setRecentLeaves(
         [...allLeavesData]
           .sort(
@@ -362,17 +227,16 @@ export default function SuperAdminDashboard() {
           })),
       );
 
-      // 7-day trend
       setTrend(
         Array.from({ length: 7 }, (_, i) => {
           const d = new Date();
           d.setDate(d.getDate() - (6 - i));
-          const dStr = d.toISOString().split("T")[0];
+          const dStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);
           const dayRecs =
             dStr === today
               ? todayRecs
               : monthRecs.filter(
-                  (r) => new Date(r.date).toISOString().split("T")[0] === dStr,
+                  (r) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(r.date)) === dStr,
                 );
           const present = dayRecs.filter(isPresent).length;
           return {
@@ -388,8 +252,8 @@ export default function SuperAdminDashboard() {
         }),
       );
 
-      // Shift distribution
-      const counts = todayRecs.reduce((acc, r) => {
+      // Shift distribution from today's records
+      const shiftCounts = todayRecs.reduce((acc, r) => {
         const s = r.shift ? r.shift.toLowerCase() : shiftFor(r.checkIn);
         const key = s.includes("morning")
           ? "Morning"
@@ -401,16 +265,15 @@ export default function SuperAdminDashboard() {
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
-      const total = presentToday || 1;
+      const shiftTotal = presentToday || 1;
       setShiftData(
-        Object.entries(counts).map(([name, value]) => ({
+        Object.entries(shiftCounts).map(([name, value]) => ({
           name: `${name} Shift`,
           value,
-          percentage: pct(value, total),
+          percentage: pct(value, shiftTotal),
         })),
       );
 
-      // Recent activity from stats
       if (statsRes.data?.recentActivity)
         setRecentActivity(statsRes.data.recentActivity);
     } catch (err) {
@@ -432,7 +295,52 @@ export default function SuperAdminDashboard() {
     fetchAll();
   };
 
-  // ── Loading ──
+  // Fetch selected user's today attendance
+  const fetchSelectedUserAttendance = useCallback(
+    async (userId) => {
+      if (!userId) {
+        setSelectedUserTodayAtt(null);
+        setSelectedUserData(null);
+        return;
+      }
+      setSelectedUserLoading(true);
+      try {
+        const today = todayStr();
+        const res = await getUserAttendanceByIdApi(userId, today, today);
+        const records = res.data?.data || [];
+        const record = records.length > 0 ? records[0] : null;
+        setSelectedUserTodayAtt(record);
+
+        // Find user info
+        const user = allUsers.find((u) => u._id === userId);
+        setSelectedUserData(user || null);
+      } catch (err) {
+        console.error("Error fetching user attendance:", err);
+        setSelectedUserTodayAtt(null);
+      } finally {
+        setSelectedUserLoading(false);
+      }
+    },
+    [allUsers],
+  );
+
+  // When user selection changes, fetch their attendance
+  useEffect(() => {
+    if (selectedUserId && allUsers.length > 0) {
+      fetchSelectedUserAttendance(selectedUserId);
+    }
+  }, [selectedUserId, allUsers, fetchSelectedUserAttendance]);
+
+  // Filter users for dropdown based on search
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery) return allUsers;
+    const q = userSearchQuery.toLowerCase();
+    return allUsers.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q),
+    );
+  }, [allUsers, userSearchQuery]);
+
   if (loading) {
     return (
       <main className="min-h-screen">
@@ -449,16 +357,6 @@ export default function SuperAdminDashboard() {
       </main>
     );
   }
-
-  // ── Derived display values ──
-  const { present, absent, onLeave, late, total } = overview;
-
-  const pieData = [
-    { name: "Present", value: present },
-    { name: "Absent", value: absent },
-    { name: "On Leave", value: onLeave },
-    { name: "Late", value: late },
-  ];
 
   return (
     <main className="min-h-screen">
@@ -509,7 +407,6 @@ export default function SuperAdminDashboard() {
                 title: "Total Employees",
                 value: stats.totalEmployees,
                 icon: <Users size={18} />,
-                //  trend: "+8.5%",
                 up: true,
                 color: "purple",
                 sparkline: [1100, 1150, 1200, stats.totalEmployees],
@@ -518,7 +415,6 @@ export default function SuperAdminDashboard() {
                 title: "Present Today",
                 value: stats.presentToday,
                 icon: <UserCheck size={18} />,
-                // trend: `${stats.attendanceRate}%`,
                 up: stats.attendanceRate >= 80,
                 color: "blue",
                 sparkline: [850, 900, 950, stats.presentToday],
@@ -527,7 +423,6 @@ export default function SuperAdminDashboard() {
                 title: "Total Departments",
                 value: stats.totalDepartments,
                 icon: <Building2 size={18} />,
-                // trend: "+7.2",
                 up: true,
                 color: "green",
                 sparkline: [20, 22, 23, stats.totalDepartments],
@@ -536,7 +431,6 @@ export default function SuperAdminDashboard() {
                 title: "On Leave Today",
                 value: stats.onLeaveToday,
                 icon: <Briefcase size={18} />,
-                // trend: "0.9%",
                 up: false,
                 color: "orange",
                 sparkline: [100, 110, 120, stats.onLeaveToday],
@@ -545,7 +439,6 @@ export default function SuperAdminDashboard() {
                 title: "Working Hours (mo.)",
                 value: `${stats.totalWorkingHours}h`,
                 icon: <Clock size={18} />,
-                //   trend: "+12.8%",
                 up: true,
                 color: "cyan",
                 sparkline: [7000, 7500, 8000, stats.totalWorkingHours],
@@ -554,7 +447,6 @@ export default function SuperAdminDashboard() {
                 title: "Attendance Rate",
                 value: `${stats.attendanceRate}%`,
                 icon: <BarChart3 size={18} />,
-                //  trend: "+4.6%",
                 up: true,
                 color: "indigo",
                 sparkline: [88, 90, 91, stats.attendanceRate],
@@ -564,179 +456,209 @@ export default function SuperAdminDashboard() {
             ))}
           </div>
 
-          {/* Attendance Overview + Trend */}
+          {/* Attendance Overview + Trend + Birthdays */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Donut */}
-            <SectionCard title="Attendance Overview">
-              <div className="flex justify-center mb-5">
-                <div className="relative w-44 h-44">
-                  {mounted && (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsPie>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={72}
-                          paddingAngle={2}
-                          dataKey="value"
-                        >
-                          {COLORS.map((c, i) => (
-                            <Cell key={i} fill={c} />
-                          ))}
-                        </Pie>
-                      </RechartsPie>
-                    </ResponsiveContainer>
-                  )}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <p className="text-2xl font-bold text-[var(--text-primary)]">
-                      {total}
-                    </p>
-                    <p className="text-[11px] text-[var(--text-muted)]">
-                      Employees
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  { color: "bg-emerald-500", label: "Present", val: present },
-                  { color: "bg-amber-500", label: "Absent", val: absent },
-                  { color: "bg-violet-500", label: "On Leave", val: onLeave },
-                  { color: "bg-blue-500", label: "Late", val: late },
-                ].map(({ color, label, val }) => (
-                  <LegendItem
-                    key={label}
-                    color={color}
-                    label={label}
-                    value={`${val} (${pct(val, total)}%)`}
-                  />
-                ))}
-              </div>
-              <div className="mt-4 pt-4 border-t border-[var(--border)] flex items-center justify-between text-lg">
-                <span className="text-[var(--text-secondary)]">
-                  Attendance Rate
-                </span>
-                <span className="font-bold text-[var(--text-primary)]">
-                  {stats.attendanceRate}%
-                </span>
-              </div>
-            </SectionCard>
-
-           
-            {/* Upcoming Birthdays */}
+            <AttendanceOverview
+              overview={overview}
+              attendanceRate={stats.attendanceRate}
+              mounted={mounted}
+            />
+            <ShiftDistribution shiftData={shiftData} mounted={mounted} />
             <UpcomingBirthdays />
           </div>
 
-          {/* Department Summary + Recent Leaves Table */}
+          {/* Department Summary + Recent Leaves */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SectionCard title="Department Summary">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--border)]">
-                      {["Department", "Employees", "Present", "Rate"].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="text-left py-2 px-2 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deptSummary.slice(0, 5).map((d, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-[var(--border)] hover:bg-[var(--bg-elevated)] transition-colors"
-                      >
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-primary)]">
-                          {d.department}
-                        </td>
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-secondary)]">
-                          {d.employees}
-                        </td>
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-secondary)]">
-                          {d.presentToday}
-                        </td>
-                        <td className="py-2.5 px-2">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${RATE_COLOR(d.rate)}`}
-                          >
-                            {d.rate}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </SectionCard>
-
-            <SectionCard title="Recent Leaves">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--border)]">
-                      {["Employee", "Typ e", "From", "To", "Status"].map(
-                        (h) => (
-                          <th
-                            key={h}
-                            className="text-left py-2 px-2 text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider"
-                          >
-                            {h}
-                          </th>
-                        ),
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentLeaves.map((l, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-[var(--border)] hover:bg-[var(--bg-elevated)] transition-colors"
-                      >
-                        <td className="py-2.5 px-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-xl bg-indigo-500/10 text-indigo-400 text-xs font-bold flex items-center justify-center">
-                              {l.employee.charAt(0)}
-                            </div>
-                            <span className="text-[13px] text-[var(--text-primary)] truncate max-w-[80px]">
-                              {l.employee}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-secondary)] whitespace-nowrap">
-                          {l.leaveType}
-                        </td>
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-secondary)]">
-                          {l.from}
-                        </td>
-                        <td className="py-2.5 px-2 text-[13px] text-[var(--text-secondary)]">
-                          {l.to}
-                        </td>
-                        <td className="py-2.5 px-2">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${LEAVE_COLOR(l.status)}`}
-                          >
-                            {l.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </SectionCard>
+            <DepartmentSummary deptSummary={deptSummary} />
+            <RecentLeaves recentLeaves={recentLeaves} />
           </div>
 
-          {/* Recent Leaves Calendar - Full Width */}
+          {/* Leave Calendar */}
           <SectionCard title="Recent Leaves Calendar">
-            <LeaveCalendar leaves={allLeaves} holidays={holidays} />
+            <LeaveCalendar
+              leaves={allLeaves}
+              holidays={holidays}
+              selectedUserId={selectedUserId}
+              selectedUserTodayAtt={selectedUserTodayAtt}
+            />
+          </SectionCard>
+
+          {/* View Employee Today's Status - Filter below calendar */}
+          <SectionCard
+            title={
+              <span className="flex items-center gap-2">
+                <Search size={16} className="text-indigo-400" />
+                View Employee Today's Status
+              </span>
+            }
+          >
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={16}
+                />
+                <input
+                  type="text"
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  placeholder="Search employee by name or email..."
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--border)] bg-white dark:bg-[var(--bg-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                />
+              </div>
+              <select
+                value={selectedUserId}
+                onChange={(e) => {
+                  setSelectedUserId(e.target.value);
+                  setUserSearchQuery("");
+                }}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-white dark:bg-[var(--bg-surface)] text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              >
+                <option value="">-- Select an employee --</option>
+                {filteredUsers.map((u) => (
+                  <option key={u._id} value={u._id}>
+                    {u.name} ({u.email})
+                  </option>
+                ))}
+              </select>
+              {selectedUserId && (
+                <button
+                  onClick={() => {
+                    setSelectedUserId("");
+                    setUserSearchQuery("");
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <X size={16} />
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Selected User Today Status Summary */}
+            {selectedUserId && (
+              <div className="mt-4 p-4 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50/60 to-white/60 backdrop-blur-sm">
+                {selectedUserLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-indigo-600">
+                    <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin" />
+                    Loading attendance...
+                  </div>
+                ) : selectedUserTodayAtt ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-full bg-indigo-100">
+                          <UserCheck size={18} className="text-indigo-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900">
+                            {selectedUserData?.name || "Selected Employee"}
+                          </p>
+                          <p className="text-xs text-indigo-600/70">
+                            {selectedUserData?.email || ""}
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                        selectedUserTodayAtt.status === "CHECKED_IN" || selectedUserTodayAtt.status === "BACK_TO_WORK"
+                          ? "bg-green-100 text-green-700"
+                          : selectedUserTodayAtt.status === "LATE"
+                            ? "bg-yellow-100 text-yellow-700"
+                            : selectedUserTodayAtt.status === "ON_BREAK"
+                              ? "bg-blue-100 text-blue-700"
+                              : selectedUserTodayAtt.checkOut
+                                ? "bg-purple-100 text-purple-700"
+                                : "bg-red-100 text-red-700"
+                      }`}>
+                        {selectedUserTodayAtt.status || (selectedUserTodayAtt.checkOut ? "CHECKED_OUT" : "ABSENT")}
+                      </div>
+                    </div>
+
+                    {/* Today's Timeline */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/70 border border-green-200">
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                          <UserCheck size={14} className="text-green-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-green-600 font-semibold">CHECK-IN</p>
+                          <p className="text-xs font-bold text-green-800">
+                            {selectedUserTodayAtt.checkIn
+                              ? new Date(selectedUserTodayAtt.checkIn).toLocaleTimeString("en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                              : "---"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/70 border border-purple-200">
+                        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Briefcase size={14} className="text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-purple-600 font-semibold">CHECK-OUT</p>
+                          <p className="text-xs font-bold text-purple-800">
+                            {selectedUserTodayAtt.checkOut
+                              ? new Date(selectedUserTodayAtt.checkOut).toLocaleTimeString("en-US", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                })
+                              : "---"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/70 border border-blue-200">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Clock size={14} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-blue-600 font-semibold">TOTAL BREAKS</p>
+                          <p className="text-xs font-bold text-blue-800">
+                            {selectedUserTodayAtt.breaks?.length || 0} break{(selectedUserTodayAtt.breaks?.length || 0) !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Break Details */}
+                    {selectedUserTodayAtt.breaks?.length > 0 && (
+                      <div>
+                        <p className="text-[11px] font-semibold text-indigo-700 mb-2">Break Details</p>
+                        <div className="space-y-1.5">
+                          {selectedUserTodayAtt.breaks.map((b, bi) => (
+                            <div key={bi} className="flex items-center gap-3 text-xs bg-white/50 rounded-lg px-3 py-2 border border-slate-200">
+                              <span className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-[10px]">
+                                B{bi + 1}
+                              </span>
+                              <div className="flex items-center gap-4">
+                                <span className="text-green-700 font-medium">
+                                  In: {new Date(b.breakIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}
+                                </span>
+                                <span className="text-blue-700 font-medium">
+                                  Out: {b.breakOut
+                                    ? new Date(b.breakOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })
+                                    : "---"}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-sm text-slate-500">
+                    <Clock size={16} />
+                    <span>No attendance record found for today</span>
+                  </div>
+                )}
+              </div>
+            )}
           </SectionCard>
 
           {/* Recent Activity */}
@@ -826,7 +748,7 @@ export default function SuperAdminDashboard() {
               />
               <QuickActionButton
                 icon={<BarChart3 />}
-                path="/super-admin/employees/add"
+                path="/superadmin/audit"
                 label="Generate Report"
                 subtitle="Custom reports"
                 color="indigo"

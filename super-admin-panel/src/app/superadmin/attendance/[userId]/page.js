@@ -1,418 +1,515 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  getAllUsersAttendanceApi,
-  updateAttendanceApi,
-  getAttendanceSummary,
-} from "@/services/attandanceApi";
-import { getUsers } from "@/services/userApi";
-import { getAdminsApi } from "@/services/superAdminApi";
+
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
+
 import {
-  Calendar,
-  Edit,
-  Download,
+  getUserAttendanceByIdApi,
+  updateAttendanceApi,
+  getUserSummaryByIdApi,
+} from "@/services/attandanceApi";
+
+import { getUsersApi, getAdminsApi } from "@/services/adminApi";
+
+import {
   ArrowLeft,
-  User,
+  Calendar,
   CheckCircle,
+  Clock,
+  Coffee,
+  Download,
+  Edit,
+  Filter,
+  PlayCircle,
+  StopCircle,
+  User,
   XCircle,
   Briefcase,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
-export default function UserAttendanceDetail() {
-  const { userId } = useParams();
+//   CONSTANTS
+
+const STATUS = {
+  CHECKED_OUT: "CHECKED_OUT",
+  ON_BREAK: "ON_BREAK",
+  BACK_TO_WORK: "BACK_TO_WORK",
+};
+
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
+//HELPER FUNCS
+
+// Build YYYY-MM-DD strings for a given month/year without timezone shifts
+const toDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const getMonthRange = (month, year) => ({
+  firstDay: `${year}-${String(month).padStart(2, "0")}-01`,
+  lastDay: toDateStr(new Date(year, month, 0)),
+});
+
+const formatDateTimeLocal = (dateString) => {
+  if (!dateString) return "";
+
+  const date = new Date(dateString);
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(date.getDate()).padStart(
+    2,
+    "0",
+  )}T${String(date.getHours()).padStart(2, "0")}:${String(
+    date.getMinutes(),
+  ).padStart(2, "0")}`;
+};
+
+const formatTime = (dateString) => {
+  if (!dateString) return "-";
+
+  return new Date(dateString).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const calculateBreakMinutes = (breaks = []) => {
+  return breaks.reduce((total, brk) => {
+    if (brk.breakIn && brk.breakOut) {
+      return (
+        total + (new Date(brk.breakOut) - new Date(brk.breakIn)) / (1000 * 60)
+      );
+    }
+
+    return total;
+  }, 0);
+};
+
+const formatBreakTime = (breaks = []) => {
+  const mins = calculateBreakMinutes(breaks);
+
+  const hours = Math.floor(mins / 60);
+  const remaining = Math.floor(mins % 60);
+
+  return hours ? `${hours}h ${remaining}m` : `${remaining}m`;
+};
+
+const calculateWorkingHours = (checkIn, checkOut, breaks = []) => {
+  if (!checkIn || !checkOut) return "-";
+
+  const totalMinutes = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60);
+
+  const workMinutes = totalMinutes - calculateBreakMinutes(breaks);
+
+  const hours = Math.floor(workMinutes / 60);
+  const mins = Math.floor(workMinutes % 60);
+
+  return `${hours}h ${mins}m`;
+};
+
+// MAIN COMPONENT
+
+export default function HRUserAttendanceDetail() {
+  const params = useParams();
   const router = useRouter();
+
+  const userId = params.userId;
+
+  const currentDate = new Date();
 
   const [user, setUser] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+
+  const [selectedMonth, setSelectedMonth] = useState(
+    String(currentDate.getMonth() + 1).padStart(2, "0"),
+  );
+
+  const [selectedYear, setSelectedYear] = useState(
+    String(currentDate.getFullYear()),
+  );
+
   const [loading, setLoading] = useState(false);
-  const [editingRecord, setEditingRecord] = useState(null);
+
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // ✅ Set default month/year
-  useEffect(() => {
-    const now = new Date();
-    setSelectedMonth(String(now.getMonth() + 1).padStart(2, "0"));
-    setSelectedYear(String(now.getFullYear()));
-    fetchUserData();
-  }, [userId]);
+  const [editingRecord, setEditingRecord] = useState(null);
 
-  // ✅ Fetch attendance when filter changes
-  useEffect(() => {
-    if (selectedMonth && selectedYear) fetchAttendance();
-  }, [selectedMonth, selectedYear, userId]);
+  const years = useMemo(() => {
+    return Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  }, []);
 
-  // ✅ Get user
-  const fetchUserData = async () => {
+  // FETCH USER DATA
+
+  const fetchUserData = useCallback(async () => {
     try {
       const [usersRes, adminsRes] = await Promise.all([
-        getUsers(),
+        getUsersApi(),
         getAdminsApi(),
       ]);
 
       const allUsers = [...(usersRes.data || []), ...(adminsRes.data || [])];
-      setUser(allUsers.find((u) => u._id === userId));
+
+      const foundUser = allUsers.find((u) => u._id === userId);
+
+      setUser(foundUser);
     } catch (error) {
-      console.error("Error fetching user:", error);
+      console.error(error);
     }
-  };
+  }, [userId]);
 
-  // ✅ Reusable date range
-  const getDateRange = () => {
-    const year = parseInt(selectedYear);
-    const month = parseInt(selectedMonth);
-    return {
-      firstDay: new Date(year, month - 1, 1).toISOString().split("T")[0],
-      lastDay: new Date(year, month, 0).toISOString().split("T")[0],
-    };
-  };
+  // FETCH ATTENDANCE
 
-  // ✅ Fetch attendance
-  const fetchAttendance = async () => {
+  const fetchAttendance = useCallback(async () => {
+    if (!selectedMonth || !selectedYear) return;
+
     setLoading(true);
+
     try {
-      const { firstDay, lastDay } = getDateRange();
+      const year = parseInt(selectedYear);
+      const month = parseInt(selectedMonth);
 
       const [attendanceRes, summaryRes] = await Promise.all([
-        getAllUsersAttendanceApi(firstDay, lastDay),
-        getAttendanceSummary(firstDay, lastDay),
+        getUserAttendanceByIdApi(
+          userId,
+          getMonthRange(month, year).firstDay,
+          getMonthRange(month, year).lastDay,
+        ),
+        getUserSummaryByIdApi(userId, year, month),
       ]);
 
-      const userAttendance = (attendanceRes.data?.data || [])
-        .filter((a) => a.userId?._id === userId)
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+      const records = (attendanceRes.data?.data || []).sort(
+        (a, b) => new Date(b.date) - new Date(a.date),
+      );
 
-      setAttendance(userAttendance);
+      setAttendance(records);
       setSummary(summaryRes.data);
     } catch (error) {
-      console.error("Error fetching attendance:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedMonth, selectedYear, userId]);
 
-  // ✅ Edit modal
+  // EFFECTS
+
+  useEffect(() => {
+    fetchUserData();
+  }, [fetchUserData]);
+
+  useEffect(() => {
+    fetchAttendance();
+  }, [fetchAttendance]);
+
+  // AUTO REFRESH
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAttendance();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchAttendance]);
+
+  // EDIT MODAL OPEN
+
   const openEditModal = (record) => {
     setEditingRecord({
       ...record,
-      newCheckIn: record.checkIn
-        ? new Date(record.checkIn).toISOString().slice(0, 16)
-        : "",
-      newCheckOut: record.checkOut
-        ? new Date(record.checkOut).toISOString().slice(0, 16)
-        : "",
+
+      form: {
+        checkIn: formatDateTimeLocal(record.checkIn),
+        checkOut: formatDateTimeLocal(record.checkOut),
+
+        breaks: (record.breaks || []).map((brk) => ({
+          breakIn: formatDateTimeLocal(brk.breakIn),
+          breakOut: formatDateTimeLocal(brk.breakOut),
+        })),
+      },
     });
+
     setShowEditModal(true);
   };
 
+  //   SAVE ATTENDANCE
+
   const handleSaveEdit = async () => {
     try {
-      const updates = {};
+      const updates = {
+        checkIn: editingRecord.form.checkIn
+          ? new Date(editingRecord.form.checkIn).toISOString()
+          : null,
 
-      if (editingRecord.newCheckIn) updates.checkIn = editingRecord.newCheckIn;
-      if (editingRecord.newCheckOut)
-        updates.checkOut = editingRecord.newCheckOut;
+        checkOut: editingRecord.form.checkOut
+          ? new Date(editingRecord.form.checkOut).toISOString()
+          : null,
 
-      if (Object.keys(updates).length) {
-        await updateAttendanceApi(editingRecord._id, updates);
-        fetchAttendance();
-      }
+        breaks: editingRecord.form.breaks.map((brk) => ({
+          breakIn: brk.breakIn ? new Date(brk.breakIn).toISOString() : null,
+
+          breakOut: brk.breakOut ? new Date(brk.breakOut).toISOString() : null,
+        })),
+      };
+
+      await updateAttendanceApi(editingRecord._id, updates);
+
+      await fetchAttendance();
+
+      toast.success("Attendance updated successfully");
 
       setShowEditModal(false);
       setEditingRecord(null);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to update attendance");
     }
   };
 
-  // ✅ CSV export
+  // DOWNLOAD REPORT
+
   const generateReport = () => {
-    const csv = [
-      ["Date", "Check In", "Check Out", "Break", "Work", "Status"],
-      ...attendance.map((r) => [
-        new Date(r.date).toLocaleDateString(),
-        formatTime(r.checkIn),
-        formatTime(r.checkOut),
-        formatBreakTime(r.breaks),
-        calculateWorkingHours(r.checkIn, r.checkOut, r.breaks),
-        r.status,
+    const csvContent = [
+      ["Date", "Check In", "Check Out", "Break", "Work Hours", "Status"],
+
+      ...attendance.map((record) => [
+        new Date(record.date).toLocaleDateString(),
+
+        formatTime(record.checkIn),
+
+        formatTime(record.checkOut),
+
+        formatBreakTime(record.breaks),
+
+        calculateWorkingHours(record.checkIn, record.checkOut, record.breaks),
+
+        record.status,
       ]),
     ]
       .map((row) => row.join(","))
       .join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${user?.name}-attendance.csv`;
-    link.click();
-  };
-
-  // ✅ Helpers
-  const formatTime = (t) =>
-    t
-      ? new Date(t).toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "-";
-
-  const formatBreakTime = (breaks = []) => {
-    let mins = 0;
-    breaks.forEach((b) => {
-      if (b.breakIn && b.breakOut)
-        mins += (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
+    const blob = new Blob([csvContent], {
+      type: "text/csv",
     });
-    const h = Math.floor(mins / 60);
-    const m = Math.floor(mins % 60);
-    return h ? `${h}h ${m}m` : `${m}m`;
+
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+
+    a.href = url;
+
+    a.download = `${user?.name}-attendance.csv`;
+
+    a.click();
   };
-
-  const calculateWorkingHours = (inT, outT, breaks = []) => {
-    if (!inT || !outT) return "-";
-    let mins = (new Date(outT) - new Date(inT)) / 60000;
-    breaks.forEach((b) => {
-      if (b.breakIn && b.breakOut)
-        mins -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000;
-    });
-    return `${Math.floor(mins / 60)}h ${Math.floor(mins % 60)}m`;
-  };
-
-  const months = [
-    { value: "01", label: "January" },
-    { value: "02", label: "February" },
-    { value: "03", label: "March" },
-    { value: "04", label: "April" },
-    { value: "05", label: "May" },
-    { value: "06", label: "June" },
-    { value: "07", label: "July" },
-    { value: "08", label: "August" },
-    { value: "09", label: "September" },
-    { value: "10", label: "October" },
-    { value: "11", label: "November" },
-    { value: "12", label: "December" },
-  ];
-
-  const years = Array.from(
-    { length: 5 },
-    (_, i) => new Date().getFullYear() - i,
-  );
 
   return (
     <div className="min-h-screen">
-      <Sidebar />
       <Navbar />
+      <Sidebar />
 
-      <div className="md:ml-64 pt-20 p-6">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => router.push("/superadmin/attendance")}
-            className="flex items-center gap-2 text-indigo-600 hover:text-indigo-700 mb-4 font-semibold"
-          >
-            <ArrowLeft size={20} />
-            Back to All Users
-          </button>
+      <div className="md:ml-64 p-4 md:p-8 pt-24">
+        {/* HEADER */}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center">
-                <User className="text-indigo-600" size={32} />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-[var(--text-primary)]">
-                  {user?.name}
-                </h1>
-                <p className="text-[var(--text-secondary)]">{user?.email}</p>
-                <div className="flex gap-3 mt-1">
-                  <span className="text-sm text-[var(--text-secondary)]">
-                    Department:{" "}
-                    <span className="font-semibold">
-                      {typeof user?.department === "object"
-                        ? user?.department?.name
-                        : user?.department}
-                    </span>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8 mt-16">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+              <User className="text-white" size={26} />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                {user?.name || "Employee Name"}
+              </h1>
+
+              <p className="text-gray-600 text-sm md:text-base">
+                {user?.email || "employee@email.com"}
+              </p>
+
+              <div className="flex flex-wrap gap-2 mt-2">
+                {user?.department && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                    {typeof user.department === "object"
+                      ? user.department?.name
+                      : user.department}
                   </span>
-                  <span className="text-sm text-[var(--text-secondary)]">
-                    Role:{" "}
-                    <span className="font-semibold">
-                      {typeof user?.role === "object"
-                        ? user?.role?.name
-                        : user?.role}
-                    </span>
+                )}
+
+                {user?.role && (
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    {typeof user.role === "object"
+                      ? user.role?.name
+                      : user.role}
                   </span>
-                </div>
+                )}
               </div>
             </div>
+          </div>
 
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => router.push("/admin/hr/attendance")}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-100 transition-all duration-200 shadow-sm hover:shadow"
+            >
+              <ArrowLeft size={18} />
+              Back
+            </button>
             <button
               onClick={generateReport}
-              className="flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               <Download size={18} />
-              Download Report
+              Export Report
             </button>
           </div>
         </div>
-        {/* Month/Year Selector */}
-        <div className="bg-[var(--bg-surface)] rounded-2xl shadow-sm border border-[var(--border)] p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
-                Select Month
-              </label>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
-              >
-                {months.map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
-                Select Year
-              </label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* FILTER */}
+
+        <div className="bg-white rounded-2xl p-5 shadow mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter size={18} />
+            <h2 className="font-semibold">Filter Attendance</h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="border p-3 rounded-xl"
+            >
+              {MONTHS.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="border p-3 rounded-xl"
+            >
+              {years.map((year) => (
+                <option key={year}>{year}</option>
+              ))}
+            </select>
           </div>
         </div>
-        .{/* Attendance Table */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-surface)] shadow-sm overflow-hidden">
-          {/* HEADER */}
-          <div className="px-6 py-5 border-b border-[var(--border)] flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-                Attendance Records
-              </h2>
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">
-                {attendance.length} records found
-              </p>
-            </div>
+
+        {/* SUMMARY */}
+
+        {summary && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            <SummaryCard
+              title="Total Days"
+              value={summary.totalDays}
+              icon={<Calendar />}
+              color="from-blue-500 to-cyan-500"
+            />
+            <SummaryCard
+              title="Present"
+              value={summary.present}
+              icon={<CheckCircle />}
+              color="from-green-500 to-emerald-500"
+            />
+            <SummaryCard
+              title="Half Day"
+              value={summary.halfDay ?? 0}
+              icon={<Clock />}
+              color="from-purple-500 to-violet-500"
+            />
+            <SummaryCard
+              title="Absent"
+              value={summary.absent}
+              icon={<XCircle />}
+              color="from-red-500 to-orange-500"
+            />
+            <SummaryCard
+              title="Work Hours"
+              value={`${summary.totalWorkHours}h`}
+              icon={<Briefcase />}
+              color="from-purple-500 to-pink-500"
+            />
+          </div>
+        )}
+
+        {/* TABLE */}
+
+        <div className="bg-white rounded-2xl shadow overflow-hidden">
+          <div className="p-5 border-b">
+            <h2 className="text-xl font-bold">Attendance Records</h2>
           </div>
 
-          {/* TABLE */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--bg-elevated)] text-[var(--text-secondary)]">
+            <table className="w-full">
+              <thead className="bg-gray-50">
                 <tr>
-                  {[
-                    "Date",
-                    "Check In",
-                    "Check Out",
-                    "Break",
-                    "Hours",
-                    "Status",
-                    "Actions",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-6 py-4 text-left font-medium whitespace-nowrap"
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  <TableHead icon={<Calendar size={15} />} title="Date" />
+                  <TableHead icon={<PlayCircle size={15} />} title="Check In" />
+                  <TableHead
+                    icon={<StopCircle size={15} />}
+                    title="Check Out"
+                  />
+                  <TableHead icon={<Coffee size={15} />} title="Break" />
+                  <TableHead icon={<Clock size={15} />} title="Work Hours" />
+                  <TableHead icon={<CheckCircle size={15} />} title="Status" />
+                  <TableHead icon={<Edit size={15} />} title="Action" />
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-[var(--border)]">
+              <tbody>
                 {loading ? (
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="text-center py-10 text-[var(--text-secondary)]"
-                    >
-                      Loading attendance records...
+                    <td colSpan={7} className="text-center p-10 text-gray-500">
+                      Loading...
                     </td>
                   </tr>
-                ) : attendance.length > 0 ? (
+                ) : attendance.length ? (
                   attendance.map((record) => (
-                    <tr
-                      key={record._id}
-                      className="hover:bg-[var(--bg-elevated)] transition"
-                    >
-                      {/* DATE */}
-                      <td className="px-6 py-4 font-medium text-[var(--text-primary)] whitespace-nowrap">
-                        {new Date(record.date).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                    <tr key={record._id} className="border-b hover:bg-gray-50">
+                      <td className="p-4">
+                        {new Date(record.date).toLocaleDateString()}
                       </td>
 
-                      {/* CHECK IN */}
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 rounded-md bg-green-50 text-green-700 border border-green-100 text-xs font-medium">
-                          {formatTime(record.checkIn)}
-                        </span>
+                      <td className="p-4">{formatTime(record.checkIn)}</td>
+
+                      <td className="p-4">{formatTime(record.checkOut)}</td>
+
+                      <td className="p-4">{formatBreakTime(record.breaks)}</td>
+
+                      <td className="p-4">
+                        {calculateWorkingHours(
+                          record.checkIn,
+                          record.checkOut,
+                          record.breaks,
+                        )}
                       </td>
 
-                      {/* CHECK OUT */}
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 rounded-md bg-red-50 text-red-700 border border-red-100 text-xs font-medium">
-                          {formatTime(record.checkOut)}
-                        </span>
+                      <td className="p-4">
+                        <StatusBadge status={record.status} />
                       </td>
 
-                      {/* BREAK */}
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 rounded-md bg-orange-50 text-orange-700 border border-orange-100 text-xs font-medium">
-                          {formatBreakTime(record.breaks)}
-                        </span>
-                      </td>
-
-                      {/* HOURS */}
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-100 text-xs font-semibold">
-                          {calculateWorkingHours(
-                            record.checkIn,
-                            record.checkOut,
-                            record.breaks,
-                          )}
-                        </span>
-                      </td>
-
-                      {/* STATUS */}
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1 text-xs rounded-full font-medium ${
-                            record.status === "CHECKED_OUT"
-                              ? "bg-green-100 text-green-700"
-                              : record.status === "ON_BREAK"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {record.status}
-                        </span>
-                      </td>
-
-                      {/* ACTION */}
-                      <td className="px-6 py-4">
+                      <td className="p-4">
                         <button
                           onClick={() => openEditModal(record)}
-                          className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition"
+                          className="bg-blue-600 text-white px-2 py-1 rounded-lg flex items-center gap-2"
                         >
                           <Edit size={14} />
                           Edit
@@ -422,11 +519,8 @@ export default function UserAttendanceDetail() {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="7"
-                      className="text-center py-10 text-[var(--text-secondary)]"
-                    >
-                      No attendance records found for this month
+                    <td colSpan={7} className="text-center p-10 text-gray-500">
+                      No attendance found
                     </td>
                   </tr>
                 )}
@@ -434,76 +528,196 @@ export default function UserAttendanceDetail() {
             </table>
           </div>
         </div>
-      </div>
 
-      {/* Edit Modal */}
-      {showEditModal && editingRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-surface)] rounded-2xl p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4">Edit Attendance Record</h3>
+        {/* MODAL */}
 
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  Date: {new Date(editingRecord.date).toLocaleDateString()}
-                </p>
+        {showEditModal && editingRecord && (
+          <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+            <div className="bg-white rounded-3xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-6">Edit Attendance</h2>
+
+              <div className="space-y-5">
+                {/* CHECK IN */}
+
+                <div>
+                  <label className="block mb-2 font-medium">Check In</label>
+
+                  <input
+                    type="datetime-local"
+                    value={editingRecord.form.checkIn}
+                    onChange={(e) =>
+                      setEditingRecord((prev) => ({
+                        ...prev,
+                        form: {
+                          ...prev.form,
+                          checkIn: e.target.value,
+                        },
+                      }))
+                    }
+                    className="w-full border p-3 rounded-xl"
+                  />
+                </div>
+
+                {/* CHECK OUT */}
+
+                <div>
+                  <label className="block mb-2 font-medium">Check Out</label>
+
+                  <input
+                    type="datetime-local"
+                    value={editingRecord.form.checkOut}
+                    onChange={(e) =>
+                      setEditingRecord((prev) => ({
+                        ...prev,
+                        form: {
+                          ...prev.form,
+                          checkOut: e.target.value,
+                        },
+                      }))
+                    }
+                    className="w-full border p-3 rounded-xl"
+                  />
+                </div>
+
+                {/* BREAKS */}
+
+                <div>
+                  <label className="block mb-3 font-medium">Breaks</label>
+
+                  <div className="space-y-4">
+                    {editingRecord.form.breaks.map((brk, idx) => (
+                      <div
+                        key={idx}
+                        className="grid md:grid-cols-2 gap-3 bg-gray-50 p-4 rounded-xl"
+                      >
+                        <input
+                          type="datetime-local"
+                          value={brk.breakIn}
+                          onChange={(e) => {
+                            const updatedBreaks = [
+                              ...editingRecord.form.breaks,
+                            ];
+
+                            updatedBreaks[idx].breakIn = e.target.value;
+
+                            setEditingRecord((prev) => ({
+                              ...prev,
+                              form: {
+                                ...prev.form,
+                                breaks: updatedBreaks,
+                              },
+                            }));
+                          }}
+                          className="border p-3 rounded-xl"
+                        />
+
+                        <input
+                          type="datetime-local"
+                          value={brk.breakOut}
+                          onChange={(e) => {
+                            const updatedBreaks = [
+                              ...editingRecord.form.breaks,
+                            ];
+
+                            updatedBreaks[idx].breakOut = e.target.value;
+
+                            setEditingRecord((prev) => ({
+                              ...prev,
+                              form: {
+                                ...prev.form,
+                                breaks: updatedBreaks,
+                              },
+                            }));
+                          }}
+                          className="border p-3 rounded-xl"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ACTIONS */}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={handleSaveEdit}
+                    className="flex-1 bg-green-600 text-white py-3 rounded-xl"
+                  >
+                    Save Changes
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingRecord(null);
+                    }}
+                    className="flex-1 bg-gray-200 py-3 rounded-xl"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
-                  Check In Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={editingRecord.newCheckIn}
-                  onChange={(e) =>
-                    setEditingRecord({
-                      ...editingRecord,
-                      newCheckIn: e.target.value,
-                    })
-                  }
-                  className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-[var(--text-primary)] mb-2">
-                  Check Out Time
-                </label>
-                <input
-                  type="datetime-local"
-                  value={editingRecord.newCheckOut}
-                  onChange={(e) =>
-                    setEditingRecord({
-                      ...editingRecord,
-                      newCheckOut: e.target.value,
-                    })
-                  }
-                  className="w-full border-2 border-[var(--border-strong)] p-2 rounded-lg focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingRecord(null);
-                }}
-                className="flex-1 bg-slate-300 text-[var(--text-primary)] px-4 py-2 rounded-lg hover:bg-slate-400"
-              >
-                Cancel
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+// REUSABLE COMPONENTS
+
+function SummaryCard({ title, value, icon, color }) {
+  return (
+    <div
+      className={`bg-gradient-to-r ${color} text-white rounded-2xl p-5 shadow`}
+    >
+      <div className="flex justify-between items-center mb-3">{icon}</div>
+
+      <h2 className="text-3xl font-bold">{value}</h2>
+
+      <p className="text-sm opacity-90">{title}</p>
+    </div>
+  );
+}
+
+function TableHead({ icon, title }) {
+  return (
+    <th className="p-4 text-left font-semibold text-gray-700">
+      <div className="flex items-center gap-2">
+        {icon}
+        {title}
+      </div>
+    </th>
+  );
+}
+
+function StatusBadge({ status }) {
+  const statusStyles = {
+    CHECKED_OUT: "bg-green-100 text-green-700",
+    CHECKED_IN: "bg-blue-100 text-blue-700",
+    LATE: "bg-orange-100 text-orange-700",
+    ON_BREAK: "bg-yellow-100 text-yellow-700",
+    BACK_TO_WORK: "bg-blue-100 text-blue-700",
+    ON_LEAVE: "bg-red-100 text-red-700",
+    HALF_DAY_LEAVE: "bg-purple-100 text-purple-700",
+  };
+
+  const labels = {
+    CHECKED_OUT: "Checked Out",
+    CHECKED_IN: "Checked In",
+    LATE: "Late",
+    ON_BREAK: "On Break",
+    BACK_TO_WORK: "Back to Work",
+    ON_LEAVE: "On Leave",
+    HALF_DAY_LEAVE: "Half Day Leave",
+  };
+
+  return (
+    <span
+      className={`px-3 py-1 rounded-full text-xs font-semibold ${statusStyles[status] || "bg-gray-100 text-gray-700"}`}
+    >
+      {labels[status] || status}
+    </span>
   );
 }

@@ -41,6 +41,13 @@ export default function DashboardRedirect() {
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
         <p className="text-gray-600">Redirecting to your dashboard...</p>
       </div>
+
+      <div>
+         <div className = "absolute bottom-4 right-4 text-xs text-gray-400">
+           what's up with the redirect?
+         </div>
+      </div>
+
     </div>
   );
 }

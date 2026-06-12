@@ -3,7 +3,49 @@ import Attendance from "../models/Attendance.js";
 import Leave from "../models/Leave.js";
 import Holiday from "../models/Holiday.js";
 
-export const getToday = () => new Date().toISOString().split("T")[0];
+// ─── Timezone helpers (IST = UTC+5:30) ───────────────────────────────────────
+
+/**
+ * Returns today's date string in YYYY-MM-DD format using IST timezone.
+ * Prevents the UTC midnight shift that would return yesterday for IST users.
+ */
+export const getToday = () => {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+};
+
+/**
+ * Builds a YYYY-MM-DD string for the 1st of a given month.
+ * Pure string construction — no Date conversion, no timezone risk.
+ */
+const monthFirstDay = (year, month) =>
+  `${year}-${String(month).padStart(2, "0")}-01`;
+
+/**
+ * Builds a YYYY-MM-DD string for the last day of a given month.
+ * Uses new Date(year, month, 0) which gives local last-day — safe since we only
+ * read .getDate() and never call .toISOString().
+ * Handles leap years automatically (Feb 28/29).
+ */
+const monthLastDay = (year, month) => {
+  const d = new Date(year, month, 0); // day 0 of next month = last day of `month`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+/**
+ * Converts a YYYY-MM-DD string to a local midnight Date without any UTC shift.
+ * new Date("2025-06-01") parses as UTC midnight which shifts in non-UTC zones.
+ * new Date(2025, 5, 1) parses as local midnight — correct for iteration.
+ */
+const localDate = (dateStr) => {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
+/**
+ * Returns the YYYY-MM-DD string for a local Date without UTC conversion.
+ */
+const toDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 // ─── Internal populate helpers ────────────────────────────────────────────────
 
@@ -163,87 +205,172 @@ export const finishBreak = async (id, breakIndex, breakOut) => {
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
-export const computeSummary = async (userId, startDate, endDate) => {
-  const [records, approvedHalfDayLeaves, holidays, approvedFullLeaves] = await Promise.all([
-    Attendance.find({ userId, date: { $gte: startDate, $lte: endDate } }),
-    Leave.find({ user: userId, isHalfDay: true, status: "APPROVED", fromDate: { $lte: new Date(endDate) }, toDate: { $gte: new Date(startDate) } }),
-    Holiday.find({ date: { $gte: new Date(startDate), $lte: new Date(endDate) } }),
-    Leave.find({ user: userId, isHalfDay: false, status: "APPROVED", fromDate: { $lte: new Date(endDate) }, toDate: { $gte: new Date(startDate) } }),
-  ]);
-
-  const holidayDates = new Set(holidays.map((h) => new Date(h.date).toISOString().split("T")[0]));
-
+/**
+ * Builds the working-day list for [startDate, endDate], capped at today (IST),
+ * excluding weekends (Sat/Sun) and public holidays.
+ *
+ * Uses localDate() for iteration so no UTC-offset shift occurs.
+ * Holiday dates stored as UTC midnight in Mongo are converted via toDateStr()
+ * using local time, matching the date strings used for attendance records.
+ */
+const buildWorkingDays = (startDate, endDate, holidayDates) => {
   const workingDays = [];
-  const cursor = new Date(startDate);
-  const end = new Date(endDate);
-  const today = new Date(); today.setHours(23, 59, 59, 999);
-  while (cursor <= end && cursor <= today) {
-    const ds = cursor.toISOString().split("T")[0];
-    if (cursor.getDay() !== 0 && !holidayDates.has(ds)) workingDays.push(ds);
+  const todayStr = getToday();
+  const cursor = localDate(startDate);
+  const end    = localDate(endDate > todayStr ? todayStr : endDate);
+
+  while (cursor <= end) {
+    const ds  = toDateStr(cursor);
+    const dow = cursor.getDay(); // 0=Sun, 6=Sat
+    if (dow !== 0 && dow !== 6 && !holidayDates.has(ds)) workingDays.push(ds);
     cursor.setDate(cursor.getDate() + 1);
   }
+  return workingDays;
+};
+
+export const computeSummary = async (userId, startDate, endDate) => {
+  // Cap endDate to today so we never count future days
+  const todayStr = getToday();
+  const effectiveEnd = endDate > todayStr ? todayStr : endDate;
+
+  const [records, approvedHalfDayLeaves, holidays, approvedFullLeaves] = await Promise.all([
+    Attendance.find({ userId, date: { $gte: startDate, $lte: effectiveEnd } }),
+    Leave.find({
+      user: userId, isHalfDay: true, status: "APPROVED",
+      fromDate: { $lte: new Date(effectiveEnd + "T23:59:59.999Z") },
+      toDate:   { $gte: new Date(startDate  + "T00:00:00.000Z") },
+    }),
+    // Add 1 day buffer on both sides to account for UTC storage of holiday dates
+    Holiday.find({
+      date: {
+        $gte: new Date(startDate + "T00:00:00.000Z"),
+        $lte: new Date(effectiveEnd + "T23:59:59.999Z"),
+      },
+    }),
+    Leave.find({
+      user: userId, isHalfDay: false, status: "APPROVED",
+      fromDate: { $lte: new Date(effectiveEnd + "T23:59:59.999Z") },
+      toDate:   { $gte: new Date(startDate  + "T00:00:00.000Z") },
+    }),
+  ]);
+
+  // Convert holiday Dates to local YYYY-MM-DD strings (avoids UTC shift)
+  const holidayDates = new Set(
+    holidays.map((h) => toDateStr(new Date(h.date)))
+  );
+
+  const workingDays = buildWorkingDays(startDate, effectiveEnd, holidayDates);
 
   const attendanceByDate = new Map(records.map((r) => [r.date, r]));
+
+  // Collect half-day leave dates not already marked in attendance
   const alreadyMarked = new Set(records.filter((r) => r.status === "HALF_DAY_LEAVE").map((r) => r.date));
   const leaveHalfDayCount = approvedHalfDayLeaves.filter(
-    (l) => !alreadyMarked.has(new Date(l.fromDate).toISOString().split("T")[0])
+    (l) => !alreadyMarked.has(toDateStr(new Date(l.fromDate)))
   ).length;
 
+  // Build set of full-leave dates (YYYY-MM-DD) within the range
   const fullLeaveDates = new Set();
   approvedFullLeaves.forEach((l) => {
-    const lc = new Date(l.fromDate), le = new Date(l.toDate);
-    while (lc <= le) { fullLeaveDates.add(lc.toISOString().split("T")[0]); lc.setDate(lc.getDate() + 1); }
+    const lc = localDate(toDateStr(new Date(l.fromDate)));
+    const le = localDate(toDateStr(new Date(l.toDate)));
+    while (lc <= le) { fullLeaveDates.add(toDateStr(lc)); lc.setDate(lc.getDate() + 1); }
   });
 
-  const REQUIRED_DAILY_HOURS = 8.5, HALF_DAY_HOURS = 4;
-  let present = 0, absent = 0, halfDay = 0, totalWorkMinutes = 0, onLeave = 0;
+  const HALF_DAY_HOURS = 4;
+  let present = 0, pending = 0, halfDay = 0, totalWorkMinutes = 0, onLeave = 0;
 
   for (const ds of workingDays) {
     const r = attendanceByDate.get(ds);
-    if (!r) { fullLeaveDates.has(ds) ? onLeave++ : absent++; continue; }
+
+    if (!r) {
+      fullLeaveDates.has(ds) ? onLeave++ : /* absent */ null;
+      continue;
+    }
     if (r.status === "ON_LEAVE")       { onLeave++;                       continue; }
     if (r.status === "HALF_DAY_LEAVE") { halfDay++; present++; onLeave++; continue; }
-    if (!r.checkIn)                    { absent++;                         continue; }
+    if (!r.checkIn)                    { /* absent — no checkIn */         continue; }
 
-    present++;
+    // Has checkIn — employee was present this day
     if (r.checkOut) {
+      // Fully checked out = confirmed present
+      present++;
       let mins = (new Date(r.checkOut) - new Date(r.checkIn)) / 60000;
       r.breaks?.forEach((b) => { if (b.breakIn && b.breakOut) mins -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000; });
       totalWorkMinutes += mins;
       if (mins / 60 < HALF_DAY_HOURS) halfDay++;
+    } else {
+      // Still checked in (today / forgot to check out) — count as present too
+      present++;
+      pending++;
     }
   }
 
   halfDay += leaveHalfDayCount;
   present += leaveHalfDayCount;
 
-  const totalWorkHours  = parseFloat((totalWorkMinutes / 60).toFixed(1));
-  const totalOfficeHours = present * REQUIRED_DAILY_HOURS;
-  const productivity    = totalOfficeHours ? parseInt(((totalWorkMinutes / 60 / totalOfficeHours) * 100).toFixed(0)) : 0;
+  // Absent = Total Working Days − Present − Approved Leave Days
+  const absent = Math.max(0, workingDays.length - present - onLeave);
 
-  return { totalDays: workingDays.length, present, absent, halfDay, totalOffice: present, totalWorkHours, totalOfficeHours, productivity, leaves: onLeave };
+  const lateCount        = records.filter((r) => r.isLate).length;
+  const totalWorkHours   = parseFloat((totalWorkMinutes / 60).toFixed(1));
+  const REQUIRED_DAILY_HOURS = 8.5;
+  const totalOfficeHours = present * REQUIRED_DAILY_HOURS;
+  const productivity     = totalOfficeHours ? parseInt(((totalWorkMinutes / 60 / totalOfficeHours) * 100).toFixed(0)) : 0;
+  const attendanceRate   = workingDays.length ? Math.round((present / workingDays.length) * 100) : 0;
+  const avgWorkHours     = present ? parseFloat((totalWorkMinutes / 60 / present).toFixed(1)) : 0;
+
+  return {
+    totalDays: workingDays.length, present, pending, absent, halfDay,
+    totalOffice: present, totalWorkHours, totalOfficeHours,
+    productivity, leaves: onLeave, lateCount,
+    attendanceRate, avgWorkHours,
+  };
 };
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
 
 export const computeDashboardStats = async (userId) => {
   const today = getToday();
-  const weekStart = new Date();
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  const weekStartStr = weekStart.toISOString().split("T")[0];
 
-  const [allRecords, weekRecords, todayRecord] = await Promise.all([
-    Attendance.find({ userId }).sort({ date: -1 }),
+  // Use IST to get current year/month (avoids UTC offset giving wrong month near midnight)
+  const istParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit",
+  }).formatToParts(new Date());
+  const istYear  = parseInt(istParts.find((p) => p.type === "year").value);
+  const istMonth = parseInt(istParts.find((p) => p.type === "month").value);
+
+  const monthStart = monthFirstDay(istYear, istMonth);
+
+  // Week boundaries (Mon–Sun using IST today)
+  const [ty, tm, td] = today.split("-").map(Number);
+  const todayLocal = new Date(ty, tm - 1, td);
+  // Start from Monday of current week
+  const dow = todayLocal.getDay(); // 0=Sun
+  const daysFromMon = dow === 0 ? 6 : dow - 1;
+  const weekStartDate = new Date(todayLocal);
+  weekStartDate.setDate(todayLocal.getDate() - daysFromMon);
+  const weekStartStr = toDateStr(weekStartDate);
+
+  const [monthRecords, weekRecords, todayRecord] = await Promise.all([
+    Attendance.find({ userId, date: { $gte: monthStart, $lte: today } }),
     Attendance.find({ userId, date: { $gte: weekStartStr, $lte: today } }),
     Attendance.findOne({ userId, date: today }),
   ]);
 
-  let totalPresentDays = 0, totalLateDays = 0;
-  allRecords.forEach((r) => {
-    if (["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "LATE"].includes(r.status)) totalPresentDays++;
+  // Present days = working days (Mon–Fri) where employee actually checked in
+  const PRESENT_STATUSES = new Set(["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "LATE"]);
+  let monthPresentDays = 0, totalLateDays = 0;
+  monthRecords.forEach((r) => {
+    const [y, m, d] = r.date.split("-").map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    // Skip weekends (Sat=6, Sun=0) — those don't count as present working days
+    if (dow === 0 || dow === 6) return;
+    if (PRESENT_STATUSES.has(r.status) && r.checkIn) monthPresentDays++;
     if (r.isLate) totalLateDays++;
   });
 
+  // Weekly work hours
   let weekWorkMinutes = 0;
   weekRecords.forEach((r) => {
     if (r.checkIn && r.checkOut) {
@@ -253,11 +380,13 @@ export const computeDashboardStats = async (userId) => {
     }
   });
 
+  // Today's detail
   let totalWorkMinutes = 0, totalBreakMinutes = 0;
   let checkInTime = "---", checkOutTime = "---", breaks = [], isOnBreak = false;
 
   if (todayRecord) {
-    if (todayRecord.checkIn) checkInTime = new Date(todayRecord.checkIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+    if (todayRecord.checkIn)
+      checkInTime = new Date(todayRecord.checkIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
     if (todayRecord.checkOut) {
       checkOutTime = new Date(todayRecord.checkOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
       totalWorkMinutes = (new Date(todayRecord.checkOut) - new Date(todayRecord.checkIn)) / 60000;
@@ -274,10 +403,10 @@ export const computeDashboardStats = async (userId) => {
 
       breaks.push({
         index: i + 1,
-        breakStart: b.breakIn ? new Date(b.breakIn).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : null,
-        breakEnd: b.breakOut ? new Date(b.breakOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Ongoing",
-        duration: dur > 0 ? `${Math.floor(dur / 60)}h ${Math.floor(dur % 60)}m` : "0m",
-        isActive: !!(b.breakIn && !b.breakOut),
+        breakStart: b.breakIn  ? new Date(b.breakIn).toLocaleTimeString("en-US",  { hour: "2-digit", minute: "2-digit" }) : null,
+        breakEnd:   b.breakOut ? new Date(b.breakOut).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Ongoing",
+        duration:   dur > 0 ? `${Math.floor(dur / 60)}h ${Math.floor(dur % 60)}m` : "0m",
+        isActive:   !!(b.breakIn && !b.breakOut),
       });
     });
 
@@ -285,7 +414,7 @@ export const computeDashboardStats = async (userId) => {
   }
 
   return {
-    presentToday: totalPresentDays,
+    presentToday: monthPresentDays,       // present days this month (up to today)
     totalWorkHours: parseFloat((weekWorkMinutes / 60).toFixed(1)),
     lateCheckIns: totalLateDays,
     absentToday: 0,
@@ -303,17 +432,19 @@ export const computeDashboardStats = async (userId) => {
   };
 };
 
+// ─── Weekly stats (all users, current week) ───────────────────────────────────
+
 export const computeWeeklyStats = async () => {
   const today = new Date();
   const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - today.getDay());
+  weekStart.setDate(today.getDate() - today.getDay()); // Sunday
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const results = await Promise.all(
     Array.from({ length: 7 }, async (_, i) => {
       const d = new Date(weekStart);
       d.setDate(weekStart.getDate() + i);
-      const dateStr = d.toISOString().split("T")[0];
+      const dateStr = toDateStr(d);
       const recs = await Attendance.find({ date: dateStr });
 
       const present = recs.filter((r) =>
@@ -337,4 +468,99 @@ export const computeWeeklyStats = async () => {
     weeklyAttendance: results.map(({ day, present }) => ({ day, present })),
     weeklyWorkHours:  results.map(({ day, hours })   => ({ day, hours })),
   };
+};
+
+// ─── All-users monthly summary (admin list page) ─────────────────────────────
+
+export const computeAllUsersSummary = async (year, month) => {
+  const firstDay = monthFirstDay(year, month);
+  const lastDay  = monthLastDay(year, month);
+  const todayStr = getToday();
+
+  // Fetch holidays for the month to exclude them from working days
+  const holidays = await Holiday.find({
+    date: {
+      $gte: new Date(firstDay + "T00:00:00.000Z"),
+      $lte: new Date(lastDay  + "T23:59:59.999Z"),
+    },
+  });
+  const holidayDates = new Set(holidays.map((h) => toDateStr(new Date(h.date))));
+
+  // Working days = non-weekend, non-holiday days from 1st up to min(lastDay, today)
+  const effectiveEnd = lastDay > todayStr ? todayStr : lastDay;
+  const workingDays  = buildWorkingDays(firstDay, effectiveEnd, holidayDates);
+  const workingDaysCount = workingDays.length;
+
+  // Fetch all records for the month in one query
+  const [allRecords, todayRecords] = await Promise.all([
+    Attendance.find({ date: { $gte: firstDay, $lte: lastDay } })
+      .populate({ path: "userId", select: "name email _id department role", populate: { path: "role department", select: "name" } }),
+    Attendance.find({ date: todayStr }),
+  ]);
+
+  // Per-user stats
+  const userMap = new Map();
+  const PRESENT_STATUSES = new Set(["CHECKED_IN", "ON_BREAK", "BACK_TO_WORK", "CHECKED_OUT", "LATE"]);
+
+  for (const r of allRecords) {
+    const uid = r.userId?._id?.toString();
+    if (!uid) continue;
+    if (!userMap.has(uid)) userMap.set(uid, { totalDays: workingDaysCount, present: 0, pending: 0, lateCount: 0 });
+    const s = userMap.get(uid);
+    if (PRESENT_STATUSES.has(r.status)) {
+      if (r.status === "CHECKED_OUT") s.present++;
+      else s.pending++;
+    }
+    if (r.isLate) s.lateCount++;
+  }
+
+  // Today's dashboard totals
+  const presentToday = todayRecords.filter((r) => PRESENT_STATUSES.has(r.status)).length;
+  const lateToday    = todayRecords.filter((r) => r.isLate || r.status === "LATE").length;
+  const onBreakToday = todayRecords.filter((r) => r.status === "ON_BREAK").length;
+
+  // Total work hours for the month across all users
+  let totalWorkMinutes = 0;
+  for (const r of allRecords) {
+    if (r.checkIn && r.checkOut) {
+      let m = (new Date(r.checkOut) - new Date(r.checkIn)) / 60000;
+      (r.breaks || []).forEach((b) => { if (b.breakIn && b.breakOut) m -= (new Date(b.breakOut) - new Date(b.breakIn)) / 60000; });
+      totalWorkMinutes += m;
+    }
+  }
+
+  return {
+    period: { firstDay, lastDay, workingDays: workingDaysCount },
+    todayStats: {
+      presentToday,
+      lateToday,
+      onBreakToday,
+      totalWorkHours: parseFloat((totalWorkMinutes / 60).toFixed(1)),
+    },
+    userStats: Object.fromEntries(userMap),
+  };
+};
+
+// ─── Per-user summary for admin (by userId) ───────────────────────────────────
+
+export const computeUserSummary = async (userId, year, month) => {
+  return computeSummary(userId, monthFirstDay(year, month), monthLastDay(year, month));
+};
+
+// ─── User attendance by ID (admin) ───────────────────────────────────────────
+
+export const fetchUserAttendanceById = async (userId, { date, startDate, endDate } = {}) => {
+  if (!mongoose.Types.ObjectId.isValid(userId))
+    throw Object.assign(new Error("Invalid user ID"), { status: 400 });
+
+  const filter = { userId: new mongoose.Types.ObjectId(userId) };
+  if (date) filter.date = date;
+  else if (startDate && endDate) filter.date = { $gte: startDate, $lte: endDate };
+  else filter.date = getToday();
+
+  const records = await Attendance.find(filter)
+    .populate({ path: "userId", select: "name email _id department role", populate: { path: "role department", select: "name" } })
+    .sort({ date: -1, createdAt: -1 });
+
+  return { data: records, total: records.length };
 };

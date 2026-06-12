@@ -20,6 +20,7 @@ import {
   Bell,
   BellDot,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function SuperAdminLeaves() {
   const [users, setUsers] = useState([]);
@@ -53,7 +54,7 @@ export default function SuperAdminLeaves() {
       setUserPendingLeaves(pendingCounts);
     } catch (error) {
       console.error("Error fetching users:", error);
-      alert("Failed to fetch users");
+      toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
     }
@@ -72,7 +73,7 @@ export default function SuperAdminLeaves() {
       setUserLeaves(data.leaves || []);
     } catch (error) {
       console.error("Error fetching user leaves:", error);
-      alert("Failed to fetch leave history");
+      toast.error("Failed to fetch leave history");
     } finally {
       setLoading(false);
     }
@@ -126,7 +127,7 @@ export default function SuperAdminLeaves() {
   const handleStatusUpdate = async (leaveId, newStatus) => {
     try {
       await updateSuperAdminLeaveStatusApi(leaveId, newStatus);
-      alert(`Leave ${newStatus.toLowerCase()} successfully`);
+      toast.success(`Leave ${newStatus.toLowerCase()} successfully`);
       fetchUserLeaves(selectedUser._id);
 
       // Update pending count for the user
@@ -138,7 +139,7 @@ export default function SuperAdminLeaves() {
       }
     } catch (error) {
       console.error("Error updating leave status:", error);
-      alert("Failed to update leave status");
+      toast.error("Failed to update leave status");
     }
   };
 
@@ -176,7 +177,7 @@ export default function SuperAdminLeaves() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `leave-report-${selectedUser?.name || "all"}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `leave-report-${selectedUser?.name || "all"}-${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date())}.csv`;
     a.click();
   };
 

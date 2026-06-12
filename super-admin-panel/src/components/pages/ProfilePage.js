@@ -13,7 +13,7 @@ import {
   Save,
   Phone,
   Calendar,
-  Heart,
+  Camera,
   Briefcase,
   Users,
   MapPin,
@@ -21,7 +21,19 @@ import {
   Folder,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { getProfile, updateProfile } from "@/services/userApi";
+import {
+  getProfile,
+  updateProfile,
+  uploadProfilePhotoApi,
+} from "@/services/userApi";
+
+// Convert a stored UTC date to YYYY-MM-DD in IST to avoid midnight shift
+const toISTDateStr = (d) =>
+  d
+    ? new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+        new Date(d),
+      )
+    : "";
 
 export default function ProfilePage() {
   const { user, login } = useAuth();
@@ -32,6 +44,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [messageType, setMessageType] = useState("");
   const [profileData, setProfileData] = useState(null);
+  const [preview, setPreview] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -105,6 +118,51 @@ export default function ProfilePage() {
     }
   };
 
+  // upload image
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setPreview(URL.createObjectURL(file));
+    setMessage("");
+    setMessageType("");
+
+    const formData = new FormData();
+
+    // MUST match upload.single("profileImage")
+    formData.append("profileImage", file);
+
+    try {
+      const response = await uploadProfilePhotoApi(formData);
+
+      if (response.success) {
+        setMessage("Profile photo uploaded successfully!");
+        setMessageType("success");
+
+        // Re-fetch profile to update user context
+        const profileRes = await getProfile();
+        const freshData = profileRes.data?.data || profileRes.data;
+        setProfileData(freshData);
+
+        const currentToken =
+          sessionStorage.getItem("token") || localStorage.getItem("token");
+        login({ token: currentToken, user: freshData });
+
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (error) {
+      console.log("FULL ERROR:", error.response?.data);
+      console.log("STATUS:", error.response?.status);
+
+      const errMsg =
+        error.response?.data?.message || "Failed to upload profile photo";
+      setMessage(errMsg);
+      setMessageType("error");
+      setPreview(""); // revert preview on failure
+    }
+  };
   const handleEdit = () => {
     setIsEditing(true);
     setMessage("");
@@ -123,21 +181,19 @@ export default function ProfilePage() {
         phone: profileData.phone || "",
         gender: profileData.gender || "Male",
         birthday: profileData.birthday
-          ? new Date(profileData.birthday).toISOString().split("T")[0]
+          ? toISTDateStr(profileData.birthday)
           : "",
         maritalStatus: profileData.maritalStatus || "Unmarried",
         marriageAnniversary: profileData.marriageAnniversary
-          ? new Date(profileData.marriageAnniversary)
-              .toISOString()
-              .split("T")[0]
+          ? toISTDateStr(profileData.marriageAnniversary)
           : "",
         designation: profileData.designation || "",
         batch: profileData.batch || "",
         joiningDate: profileData.joiningDate
-          ? new Date(profileData.joiningDate).toISOString().split("T")[0]
+          ? toISTDateStr(profileData.joiningDate)
           : "",
         probationEndDate: profileData.probationEndDate
-          ? new Date(profileData.probationEndDate).toISOString().split("T")[0]
+          ? toISTDateStr(profileData.probationEndDate)
           : "",
         address: {
           street: profileData?.address?.street || "",
@@ -202,20 +258,18 @@ export default function ProfilePage() {
         companyEmail: freshData.companyEmail || "",
         phone: freshData.phone || "",
         gender: freshData.gender || "Male",
-        birthday: freshData.birthday
-          ? new Date(freshData.birthday).toISOString().split("T")[0]
-          : "",
+        birthday: freshData.birthday ? toISTDateStr(freshData.birthday) : "",
         maritalStatus: freshData.maritalStatus || "Unmarried",
         marriageAnniversary: freshData.marriageAnniversary
-          ? new Date(freshData.marriageAnniversary).toISOString().split("T")[0]
+          ? toISTDateStr(freshData.marriageAnniversary)
           : "",
         designation: freshData.designation || "",
         batch: freshData.batch || "",
         joiningDate: freshData.joiningDate
-          ? new Date(freshData.joiningDate).toISOString().split("T")[0]
+          ? toISTDateStr(freshData.joiningDate)
           : "",
         probationEndDate: freshData.probationEndDate
-          ? new Date(freshData.probationEndDate).toISOString().split("T")[0]
+          ? toISTDateStr(freshData.probationEndDate)
           : "",
         address: {
           street: freshData?.address?.street || "",
@@ -280,147 +334,6 @@ export default function ProfilePage() {
 
       <main className="md:pl-64 pt-16 min-h-screen">
         <div className="max-w-6xl mx-auto p-4 md:p-8">
-          <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-6 rounded-2xl px-4 sm:px-10 py-6 sm:py-8 min-h-[180px] mb-6 shadow-sm bg-gradient-to-t from-white via-gray-50 to-gray-200">
-            {/* EDIT BUTTON (TOP RIGHT) */}
-            <div className="absolute top-4 right-4">
-              {!isEditing ? (
-                <button
-                  onClick={handleEdit}
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
-                >
-                  <Settings size={18} />
-                  Edit
-                </button>
-              ) : (
-                <button
-                  onClick={handleCancel}
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
-                >
-                  <X size={18} />
-                  Cancel
-                </button>
-              )}
-            </div>
-
-            {/* Profile Image */}
-            <div className="w-[90px] h-[90px] sm:w-[120px] sm:h-[120px] rounded-xl overflow-hidden border-4 border-white shadow-md flex-shrink-0">
-              <img
-                src="https://demos.themeselection.com/materio-mui-nextjs-admin-template/demo-1/images/avatars/1.png"
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* User Info */}
-            <div className="flex flex-col items-center sm:items-start gap-2 text-center sm:text-left">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                {user.name}
-              </h1>
-
-              <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-6 items-center sm:items-start">
-                <div className="flex gap-2 items-center">
-                  <Palette size={18} />
-                  <p className="font-medium text-gray-500 text-sm sm:text-base">
-                    {formData.designation}
-                  </p>
-                </div>
-
-                <div className="flex gap-2 items-center">
-                  <MapPin size={18} />
-                  <p className="font-medium text-gray-500 text-sm sm:text-base">
-                    {formData.address.street}
-                  </p>
-                </div>
-
-                <div className="flex gap-2 items-center">
-                  <Calendar size={18} />
-                  <p className="font-medium text-gray-500 text-sm sm:text-base">
-                    {formData.joiningDate}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2 h-[44px] mb-10">
-            {/* PROFILE */}
-            <div
-              className={`flex items-center p-4 rounded-lg cursor-pointer transition
-              ${
-                activeTab === "profile"
-                  ? "bg-violet-500 text-white"
-                  : "hover:bg-violet-100"
-              }`}
-              onClick={() => setActiveTab("profile")}
-            >
-              <User
-                size={24}
-                className={`mr-3 ${
-                  activeTab === "profile" ? "text-white" : "text-indigo-600"
-                }`}
-              />
-              <span className="text-lg font-medium">Profile</span>
-            </div>
-
-            {/* TEAMS */}
-            <div
-              className={`flex items-center p-4 rounded-lg cursor-pointer transition
-               ${
-                 activeTab === "teams"
-                   ? "bg-violet-500 text-white"
-                   : "hover:bg-violet-100"
-               }`}
-              onClick={() => setActiveTab("teams")}
-            >
-              <Users
-                size={24}
-                className={`mr-3 ${
-                  activeTab === "teams" ? "text-white" : "text-indigo-600"
-                }`}
-              />
-              <span className="text-lg font-medium">Teams</span>
-            </div>
-
-            {/* PROJECTS */}
-            <div
-              className={`flex items-center p-4 rounded-lg cursor-pointer transition
-             ${
-               activeTab === "projects"
-                 ? "bg-violet-500 text-white"
-                 : "hover:bg-violet-100"
-             }`}
-              onClick={() => setActiveTab("projects")}
-            >
-              <Folder
-                size={24}
-                className={`mr-3 ${
-                  activeTab === "projects" ? "text-white" : "text-indigo-600"
-                }`}
-              />
-              <span className="text-lg font-medium">Projects</span>
-            </div>
-          </div>
-
-          {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-            {activeTab === 'profile' && (
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
-                My Profile
-              </h1>
-            )}
-            {activeTab === 'teams' && (
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
-                Teams Overview
-              </h1>
-            )}
-            {activeTab === 'projects' && (
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900 ">
-                Projects Overview
-              </h1>
-            )}
-          </div> */}
-
           {message && (
             <div
               className={`mb-6 p-4 rounded-lg font-semibold ${
@@ -433,9 +346,96 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Right Content - Profile Details */}
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+            {/* LEFT SIDEBAR */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 flex flex-col items-center gap-4 h-fit">
+              {/* Profile Image */}
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-gray-100">
+                  <img
+                    src={preview || user?.profileImage || null}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Camera Button */}
+                <label
+                  htmlFor="profile-upload"
+                  className="
+                    absolute bottom-2 right-2
+                    w-10 h-10
+                    bg-gradient-to-r from-violet-600 to-indigo-600
+                    text-white rounded-full
+                    flex items-center justify-center
+                    cursor-pointer
+                    shadow-lg
+                    hover:scale-110
+                    transition-all duration-200
+                  "
+                >
+                  <Camera size={18} />
+                </label>
+              </div>
+
+              {/* Upload Button */}
+
+              <input
+                id="profile-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={handleUpload}
+                className="hidden"
+              />
+
+              <h1 className="text-xl font-bold text-gray-800 text-center">
+                {user.name}
+              </h1>
+
+              {/* EDIT / CANCEL BUTTON */}
+              {!isEditing ? (
+                <button
+                  onClick={handleEdit}
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                >
+                  <Settings size={18} />
+                  Edit
+                </button>
+              ) : (
+                <button
+                  onClick={handleCancel}
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                >
+                  <X size={18} />
+                  Cancel
+                </button>
+              )}
+
+              {/* Contact */}
+              <div className="w-full border-t border-slate-200 pt-4">
+                <h3 className="font-bold text-lg mb-3 text-slate-900">
+                  Contact
+                </h3>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Mail size={16} className="text-gray-500 shrink-0" />
+                    <span className="truncate">
+                      {profileData?.email || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-700">
+                    <Phone size={16} className="text-gray-500 shrink-0" />
+                    <span>{profileData?.phone || "-"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT CONTENT */}
+            <div className="flex flex-col gap-6">
+              {/* Content */}
               {activeTab === "profile" &&
                 (isEditing ? (
                   <form
@@ -931,18 +931,6 @@ export default function ProfilePage() {
                     </div>
                   </div>
                 ))}
-              {activeTab === "teams" && (
-                <div className="p-6">
-                  <h3 className="text-xl font-bold">Teams Overview</h3>
-                  <p>Teams content placeholder.</p>
-                </div>
-              )}
-              {activeTab === "projects" && (
-                <div className="p-6">
-                  <h3 className="text-xl font-bold">Projects Overview</h3>
-                  <p>Projects content placeholder.</p>
-                </div>
-              )}
             </div>
           </div>
         </div>

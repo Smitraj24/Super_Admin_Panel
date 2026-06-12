@@ -6,7 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import API from "@/lib/api";
 import ChatWindow from "@/components/ui/ChatWindow";
 import {
-  Users,
+  User,
   UserPlus,
   Edit3,
   Trash2,
@@ -14,6 +14,7 @@ import {
   UserCircle,
   MessageCircle,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -35,7 +36,7 @@ export default function UsersPage() {
 
   // Get selected department name
   const selectedDepartment = departments.find(
-    (dept) => dept._id === form.department
+    (dept) => dept._id === form.department,
   );
   const deptName = selectedDepartment?.name?.toLowerCase() || "";
 
@@ -102,12 +103,12 @@ export default function UsersPage() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Auto-select sidebar permissions when department is selected
     if (name === "department") {
       const selectedDept = departments.find((dept) => dept._id === value);
       const deptName = selectedDept?.name?.toLowerCase() || "";
-      
+
       if (deptName === "sales") {
         setForm({
           ...form,
@@ -158,7 +159,7 @@ export default function UsersPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.department) {
-      alert("Please fill all required fields");
+      toast.error("Please fill all required fields");
       return;
     }
 
@@ -185,7 +186,7 @@ export default function UsersPage() {
       });
     } catch (err) {
       console.error(err.response?.data);
-      alert("Operation failed");
+      toast.error("Operation failed");
     }
   };
 
@@ -227,32 +228,32 @@ export default function UsersPage() {
 
       <main className="md:pl-64 pt-16">
         <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-8 py-3 gap-4 overflow-hidden">
             <div>
-              <h1 className="text-3xl font-bold flex items-center gap-2 text-green-900 font-semibold ">
-                <Users className="text-green-9  00" size={28} />
+              <h1 className="text-2xl font-bold flex items-center gap-2 bg-gradient-to-r from-cyan-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <User size={24} className="text-cyan-600" />
                 User Directory
               </h1>
-              <p className="text-gray-500 text-sm text-green-600">
+              <p className="text-cyan-600 text-sm ">
                 Manage user accounts and departments
               </p>
             </div>
-            <div className="bg-white rounded-lg border p-2 flex items-center gap-4">
+            <div className="bg-white border rounded-lg px-4 py-2 flex items-center gap-2">
               <UserCircle size={16} />
               {users.length} Users
             </div>
           </div>
 
           <div className="grid grid-cols-1  md:grid-cols-3 gap-6">
-            <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-white/40 p-6 shadow-lg max-h-[700px] overflow-y-auto">
-              <h3 className="font-semibold mb-4 flex items-center gap-2 text-green-900 sticky top-0 bg-white/70 pb-2">
+            <div className="bg-white/70 backdrop-blur-xl rounded-3xl border border-blue-200 p-6 shadow-lg h-fit">
+              <h3 className="font-semibold mb-4 flex items-center gap-2 text-blue-600">
                 {editingId ? <Edit3 size={18} /> : <UserPlus size={18} />}
                 {editingId ? "Edit User" : "Add User"}
               </h3>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium  mb-1 text-green-600">
+                  <label className="block text-sm font-medium  mb-1 text-cyan-600">
                     Full Name *
                   </label>
                   <input
@@ -260,13 +261,13 @@ export default function UsersPage() {
                     value={form.name}
                     onChange={handleChange}
                     placeholder="e.g., John Doe"
-                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-green-600 mb-1">
+                  <label className="block text-sm font-medium text-cyan-600 mb-1">
                     Email Address *
                   </label>
                   <input
@@ -275,14 +276,14 @@ export default function UsersPage() {
                     value={form.email}
                     onChange={handleChange}
                     placeholder="e.g., admin@company.com"
-                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                     required
                   />
                 </div>
 
                 {!editingId && (
                   <div>
-                    <label className="block text-sm font-medium text-green-600 mb-1">
+                    <label className="block text-sm font-medium text-cyan-600 mb-1">
                       Password *
                     </label>
                     <input
@@ -291,21 +292,21 @@ export default function UsersPage() {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Enter secure password"
-                      className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                      className="w-full border border-blue-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                       required
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-green-600 mb-1">
+                  <label className="block text-sm font-medium text-cyan-600 mb-1">
                     Department *
                   </label>
                   <select
                     name="department"
                     value={form.department}
                     onChange={handleChange}
-                    className="w-full border border-green-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                    className="w-full border border-blue-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-300"
                     required
                   >
                     <option value=""> -- Select Department --</option>
@@ -318,27 +319,27 @@ export default function UsersPage() {
                 </div>
 
                 {/* Sidebar Permissions */}
-                <div className="border border-green-300 rounded-lg p-4">
-                  <label className="block text-sm font-semibold text-green-700 mb-3">
+                <div className="border border-blue-300 rounded-lg p-4">
+                  <label className="block text-sm font-semibold text-cyan-700 mb-3">
                     Sidebar Permissions
                   </label>
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {availableSidebarOptions.map((option) => (
                       <label
                         key={option}
-                        className="flex items-center gap-2 cursor-pointer hover:bg-green-50 p-2 rounded"
+                        className="flex items-center gap-2 cursor-pointer hover:bg-blue-50 p-2 rounded"
                       >
                         <input
                           type="checkbox"
                           checked={form.sidebarPermissions.includes(option)}
                           onChange={() => handlePermissionToggle(option)}
-                          className="w-4 h-4 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                          className="w-4 h-4 text-cyan-600 rounded focus:ring-2 focus:ring-cyan-600"
                         />
-                        <span className="text-sm text-green-700">{option}</span>
+                        <span className="text-sm text-cyan-700">{option}</span>
                       </label>
                     ))}
                   </div>
-                  <p className="text-xs text-green-600 mt-2">
+                  <p className="text-xs text-cyan-600 mt-2">
                     {form.sidebarPermissions.length === 0
                       ? "No permissions selected - user will see all options"
                       : `${form.sidebarPermissions.length} permission(s) selected`}
@@ -347,7 +348,7 @@ export default function UsersPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-medium transition"
+                  className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 font-medium transition"
                 >
                   {editingId ? "Update User" : "Create User"}
                 </button>
@@ -365,7 +366,7 @@ export default function UsersPage() {
                         sidebarPermissions: [],
                       });
                     }}
-                    className="w-full text-sm text-green-500 hover:text-green-700"
+                    className="w-full text-sm text-blue-500 hover:text-blue-700"
                   >
                     Cancel
                   </button>
@@ -374,8 +375,8 @@ export default function UsersPage() {
             </div>
 
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-white border border-green-200 rounded-2xl p-4 flex items-center gap-2">
-                <Search size={18} className="text-green-400" />
+              <div className="bg-white border border-blue-200 rounded-2xl p-4 flex items-center gap-2">
+                <Search size={18} className="text-blue-400" />
                 <input
                   type="text"
                   placeholder="Search users..."
@@ -385,10 +386,10 @@ export default function UsersPage() {
                 />
               </div>
 
-              <div className="bg-white border border-green-300 rounded-2xl overflow-hidden">
-                <div className="flex overflow-auto h-[500px]">
+              <div className="bg-white border border-blue-300 rounded-2xl overflow-hidden">
+                <div className="w-full text-sm md:text-md min-w-[600px]">
                   <table className="w-full text-sm  ">
-                    <thead className="border-b border-green-500 bg-green-100 sticky top-0 z-10">
+                    <thead className="border-b border-blue-500 bg-blue-100 sticky top-0 z-10">
                       <tr>
                         <th className="p-3 text-left">User</th>
 
@@ -409,11 +410,11 @@ export default function UsersPage() {
                         filteredUsers.map((user) => (
                           <tr
                             key={user._id}
-                            className="border-b border-green-200 hover:bg-green-50"
+                            className="border-b border-blue-200 hover:bg-blue-50"
                           >
                             <td className="p-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center text-green-600 font-semibold">
+                                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
                                   {user.name?.charAt(0).toUpperCase()}
                                 </div>
 
@@ -431,7 +432,7 @@ export default function UsersPage() {
                             </td>
 
                             <td className="p-3 hidden md:table-cell">
-                              <span className="px-2 py-1 bg-green-100 rounded-full text-xs">
+                              <span className="px-2 py-1 bg-blue-100 rounded-full text-xs">
                                 {user.role?.name || "User"}
                               </span>
                             </td>
@@ -441,7 +442,7 @@ export default function UsersPage() {
                               <div className="flex justify-end gap-3">
                                 <button
                                   onClick={() => setChatUser(user)}
-                                  className="text-green-600 hover:text-green-800"
+                                  className="text-green-600 hover:text-cyan-800"
                                   title="Chat with user"
                                 >
                                   <MessageCircle size={16} />
@@ -449,7 +450,7 @@ export default function UsersPage() {
 
                                 <button
                                   onClick={() => startEdit(user)}
-                                  className="text-green-600 hover:text-green-800"
+                                  className="text-blue-600 hover:text-cyan-600"
                                 >
                                   <Edit3 size={16} />
                                 </button>
@@ -468,7 +469,7 @@ export default function UsersPage() {
                         <tr>
                           <td
                             colSpan="4"
-                            className="p-10 text-center text-green-400"
+                            className="p-10 text-center text-cyan-400"
                           >
                             No Users Found
                           </td>

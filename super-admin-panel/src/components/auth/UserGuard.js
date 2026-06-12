@@ -7,10 +7,11 @@ import ProtectedRoute from "./ProtectedRoute";
  * Used by the dashboard layout so every sub-page is automatically guarded.
  */
 export default function UserGuard({ children }) {
-  return (
-    <ProtectedRoute allowedRoles={["USER"]}>
-      {children}
-    </ProtectedRoute>
-  );
+  return <ProtectedRoute allowedRoles={["USER"]}>{children}</ProtectedRoute>;
 }
 
+export function SuperAdminGuard({ children }) {
+  return (
+    <ProtectedRoute allowedRoles={["SUPER_ADMIN"]}>{children}</ProtectedRoute>
+  );
+}

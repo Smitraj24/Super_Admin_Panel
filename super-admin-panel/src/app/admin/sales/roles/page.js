@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/layout/Navbar";
 import { Shield, Edit3, PlusCircle, Trash2 } from "lucide-react";
+import { toast } from "react-toastify";
 import {
   getRolesApi,
   createRoleApi,
@@ -44,7 +45,7 @@ export default function RolesPage() {
       fetchRoles(); // Refresh the list
     } catch (error) {
       console.error("Failed to create role:", error);
-      alert("Failed to create role");
+      toast.error("Failed to create role");
     } finally {
       setSubmitting(false);
     }
@@ -61,7 +62,7 @@ export default function RolesPage() {
       fetchRoles();
     } catch (error) {
       console.error("Failed to update role:", error);
-      alert("Failed to update role");
+      toast.error("Failed to update role");
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +76,7 @@ export default function RolesPage() {
       fetchRoles(); 
     } catch (error) {
       console.error("Failed to delete role:", error);
-      alert("Failed to delete role");
+      toast.error("Failed to delete role");
     }
   };
 */

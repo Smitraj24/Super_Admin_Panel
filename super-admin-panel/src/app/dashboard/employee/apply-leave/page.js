@@ -11,6 +11,7 @@ import {
   deleteUserLeaveApi,
   updateUserLeaveApi,
 } from "@/services/leaveApi";
+import { toast } from "react-toastify";
 
 const EMPTY_FORM = { leaveType: "", fromDate: "", toDate: "", reason: "", isHalfDay: false };
 
@@ -60,7 +61,7 @@ export default function EmployeeLeavePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (new Date(form.toDate) < new Date(form.fromDate)) {
-      alert("End date cannot be before start date");
+      toast.error("End date cannot be before start date");
       return;
     }
     setFormLoading(true);
@@ -70,14 +71,14 @@ export default function EmployeeLeavePage() {
         : await applyLeaveApi(form);
 
       if (res.data.success) {
-        alert(editingLeave ? "Leave updated successfully" : "Leave applied successfully");
+        toast.success(editingLeave ? "Leave updated successfully" : "Leave applied successfully");
         setForm(EMPTY_FORM);
         setShowForm(false);
         setEditingLeave(null);
         fetchLeaves();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Server error");
+      toast.error(err.response?.data?.message || "Server error");
     } finally {
       setFormLoading(false);
     }
@@ -87,8 +88,8 @@ export default function EmployeeLeavePage() {
     setEditingLeave(leave);
     setForm({
       leaveType: leave.leaveType,
-      fromDate: new Date(leave.fromDate).toISOString().split("T")[0],
-      toDate: new Date(leave.toDate).toISOString().split("T")[0],
+      fromDate: new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(leave.fromDate)),
+      toDate: new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(leave.toDate)),
       reason: leave.reason,
       isHalfDay: leave.isHalfDay || false,
     });
@@ -107,7 +108,7 @@ export default function EmployeeLeavePage() {
       await deleteUserLeaveApi(id);
       fetchLeaves();
     } catch (err) {
-      alert(err.response?.data?.message || "Error deleting leave");
+      toast.error(err.response?.data?.message || "Error deleting leave");
     }
   };
 

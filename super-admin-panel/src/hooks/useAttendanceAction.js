@@ -8,6 +8,7 @@ import {
   executeAttendanceAction,
   attendanceActions,
 } from "@/services/dashboardService";
+import { toast } from "react-toastify";
 
 export const useAttendanceAction = (onActionSuccess) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +33,7 @@ export const useAttendanceAction = (onActionSuccess) => {
           err.response?.data?.message || `Failed to ${actionType}`;
         setError(errorMsg);
         console.error(`Action ${actionType} failed:`, err);
-        alert(errorMsg);
+      toast.error(errorMsg);
       } finally {
         setIsLoading(false);
       }

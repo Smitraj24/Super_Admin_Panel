@@ -66,12 +66,26 @@ export default function ProtectedRoute({
         return;
       }
     }
-  }, [loading, user, isAuthenticated, getRole, getDepartment, allowedRoles, requiredDepartment, router]);
+  }, [
+    loading,
+    user,
+    isAuthenticated,
+    getRole,
+    getDepartment,
+    allowedRoles,
+    requiredDepartment,
+    router,
+  ]);
 
   if (loading || !isAuthenticated()) {
     return (
-      <div suppressHydrationWarning className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        {loading && <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />}
+      <div
+        suppressHydrationWarning
+        className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100"
+      >
+        {loading && (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
+        )}
       </div>
     );
   }

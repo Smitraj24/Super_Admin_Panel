@@ -166,7 +166,7 @@ export default function HolidayPage() {
               {holidays.map((h) => (
                 <div
                   key={h._id}
-                  className="flex justify-between items-center border border-transparent py-3 px-4 rounded-lg transition-all duration-300 hover:border-blue-300 hover:bg-gradient-to-r hover:from-cyan-100 hover:via-blue-100 hover:to-purple-100 hover:shadow-md"
+                  className="flex justify-between items-center border border-blue-100 py-3 px-4 rounded-lg transition-all duration-300 hover:border-blue-300 hover:bg-gradient-to-r hover:from-cyan-100 hover:via-blue-100 hover:to-purple-100 hover:shadow-md"
                 >
                   <div>
                     <h3 className="font-medium text-blue-600">{h.title}</h3>

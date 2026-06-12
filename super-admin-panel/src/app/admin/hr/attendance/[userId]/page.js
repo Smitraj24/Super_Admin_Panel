@@ -7,9 +7,9 @@ import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/Sidebar";
 
 import {
-  getAllUsersAttendanceApi,
+  getUserAttendanceByIdApi,
   updateAttendanceApi,
-  getAttendanceSummary,
+  getUserSummaryByIdApi,
 } from "@/services/attandanceApi";
 
 import { getUsersApi, getAdminsApi } from "@/services/adminApi";
@@ -29,6 +29,7 @@ import {
   XCircle,
   Briefcase,
 } from "lucide-react";
+import { toast } from "react-toastify";
 
 //   CONSTANTS
 
@@ -55,13 +56,14 @@ const MONTHS = [
 
 //HELPER FUNCS
 
-const getMonthRange = (month, year) => {
-  return {
-    firstDay: new Date(year, month - 1, 1).toISOString().split("T")[0],
+// Build YYYY-MM-DD strings for a given month/year without timezone shifts
+const toDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
-    lastDay: new Date(year, month, 0).toISOString().split("T")[0],
-  };
-};
+const getMonthRange = (month, year) => ({
+  firstDay: `${year}-${String(month).padStart(2, "0")}-01`,
+  lastDay:  toDateStr(new Date(year, month, 0)),
+});
 
 const formatDateTimeLocal = (dateString) => {
   if (!dateString) return "";
@@ -181,21 +183,21 @@ export default function HRUserAttendanceDetail() {
     setLoading(true);
 
     try {
-      const { firstDay, lastDay } = getMonthRange(
-        parseInt(selectedMonth),
-        parseInt(selectedYear),
-      );
+      const year  = parseInt(selectedYear);
+      const month = parseInt(selectedMonth);
 
       const [attendanceRes, summaryRes] = await Promise.all([
-        getAllUsersAttendanceApi(firstDay, lastDay),
-        getAttendanceSummary(firstDay, lastDay),
+        getUserAttendanceByIdApi(userId,
+          getMonthRange(month, year).firstDay,
+          getMonthRange(month, year).lastDay,
+        ),
+        getUserSummaryByIdApi(userId, year, month),
       ]);
 
-      const userAttendance = (attendanceRes.data?.data || [])
-        .filter((a) => a.userId?._id === userId)
+      const records = (attendanceRes.data?.data || [])
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      setAttendance(userAttendance);
+      setAttendance(records);
       setSummary(summaryRes.data);
     } catch (error) {
       console.error(error);
@@ -268,13 +270,13 @@ export default function HRUserAttendanceDetail() {
 
       await fetchAttendance();
 
-      alert("Attendance updated successfully");
+      toast.success("Attendance updated successfully");
 
       setShowEditModal(false);
       setEditingRecord(null);
     } catch (error) {
       console.error(error);
-      alert("Failed to update attendance");
+      toast.error("Failed to update attendance");
     }
   };
 

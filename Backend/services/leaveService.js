@@ -175,7 +175,7 @@ export const checkDLEligibility = async (userId, fromDate) => {
  * @param {'mark'|'unmark'} action
  */
 export const markHalfDayAttendance = async (userId, leaveDate, action) => {
-  const dateStr = new Date(leaveDate).toISOString().split("T")[0];
+  const dateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(leaveDate));
 
   if (action === "mark") {
     // Upsert: if a real check-in exists keep it, just set status

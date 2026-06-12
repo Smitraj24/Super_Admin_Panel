@@ -4,19 +4,35 @@
  */
 
 /**
- * Get the first and last day of the current month
+ * Format a local Date object to YYYY-MM-DD without UTC conversion.
+ * Avoids timezone shift bugs from toISOString() when local time is ahead of UTC.
+ */
+export const toDateStr = (d) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * Get the first and last day of the current month as YYYY-MM-DD strings.
+ * Uses local year/month to avoid timezone-induced date shifting.
  */
 export const getMonthBounds = () => {
   const now = new Date();
+  const year  = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-based
   return {
-    first: new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split("T")[0],
-    last: new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0],
+    first: `${year}-${String(month).padStart(2, "0")}-01`,
+    // Day 0 of next month = last day of current month (handles 28/29/30/31 correctly)
+    last: toDateStr(new Date(year, month, 0)),
   };
 };
+
+/**
+ * Build first/last day strings for any given month + year.
+ * Handles leap years and all month lengths correctly.
+ */
+export const getMonthRange = (month, year) => ({
+  firstDay: `${year}-${String(month).padStart(2, "0")}-01`,
+  lastDay:  toDateStr(new Date(year, month, 0)),
+});
 
 /**
  * Convert date to readable time format (HH:MM)
@@ -98,6 +114,8 @@ export const formatCurrentDate = () =>
   });
 
 /**
- * Get today's date in YYYY-MM-DD format
+ * Get today's date in YYYY-MM-DD format using IST timezone (Asia/Kolkata).
+ * Avoids the UTC midnight shift — e.g. 00:30 IST would return yesterday in UTC.
  */
-export const getTodayDate = () => new Date().toISOString().split("T")[0];
+export const getTodayDate = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
